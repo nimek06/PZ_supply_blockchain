@@ -1,5 +1,5 @@
 # PZ_supply_blockchain
-1. Smart Contracts & Blockchain (Osoba 1)
+### 1. Smart Contracts & Blockchain (Osoba 1)
 Logika maszyny stanów partii, walidacja kolejności etapów, bramki kontroli jakości (QA) oraz przypisanie uprawnień (RBAC).
 - Język: Solidity (0.8.24+)
 - Narzędzia lokalne i testowe: Hardhat lub Foundry (Anvil)
@@ -10,7 +10,7 @@ Logika maszyny stanów partii, walidacja kolejności etapów, bramki kontroli ja
   - OpenZeppelin Contracts:
     - AccessControl.sol – zarządzanie rolami (np. STATION_ROLE, QA_INSPECTOR_ROLE, ADMIN_ROLE).
     - ECDSA.sol / MessageHashUtils.sol – do kryptograficznej weryfikacji podpisów przesyłanych ze stacji.
-2. Backend, Relayer & Storage (Osoba 2)
+### 2. Backend, Relayer & Storage (Osoba 2)
 Centralny punkt logiki biznesowej, bezpieczny relayer transakcji blockchainowych oraz integracja z rozproszonym magazynem danych IPFS.
 - Język i Framework: Java 21 (LTS) + Spring Boot 3.3+
 - Integracja z Blockchainem: Web3j (org.web3j:core)
@@ -23,7 +23,7 @@ Centralny punkt logiki biznesowej, bezpieczny relayer transakcji blockchainowych
   - Zapisuje bieżący cache stanu partii, historię transakcji relayera i logi błędów.
 - Kolejkowanie transakcji: Zwykła asynchroniczna kolejka (np. @Async / Java BlockingQueue lub prosty lightweight Redis / RabbitMQ).
   - Dlaczego: Jeśli dwie stacje zgłoszą ukończenie etapu w tej samej sekundzie, relayer w Javie musi wysłać transakcje z kolejnymi numerami nonce, unikając błędu nonce collision.
-3. Symulator IoT i Stacji Montażowych (Osoba 4)
+### 3. Symulator IoT i Stacji Montażowych (Osoba 4)
 Samodzielny skrypt/serwis udający fizyczne gniazda produkcyjne i sterowniki maszyn (PLC/sensory).
 - Język: Python 3.11+
 - Biblioteki kluczowe:
@@ -33,7 +33,7 @@ Samodzielny skrypt/serwis udający fizyczne gniazda produkcyjne i sterowniki mas
   - httpx lub requests: Wysyłanie podpisanych pakietów telemetrycznych HTTP POST do backendu w Javie.
 - Struktura symulacji:
   - Możliwość uruchomienia w trybie pętli (automatyczna linia montażowa) lub w trybie interaktywnym (ręczne wyzwalanie kolejnych kroków i testów negatywnych).
-4. Frontend & Panel Operatora / Paszport Produktu (Osoba 3)
+### 4. Frontend & Panel Operatora / Paszport Produktu (Osoba 3)
 Aplikacja SPA/PWA pozwalająca operatorom na hali montażowej rejestrować zdarzenia oraz oferująca publiczny portal weryfikacji partii.
 - Framework: React 18/19 (Vite + TypeScript)
 - Komunikacja z Blockchainem i Portfelami:
