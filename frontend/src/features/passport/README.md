@@ -3,8 +3,8 @@
 **Język:** TypeScript/TSX.
 
 Plan: `PassportPage.tsx`, `ReportDetails.tsx`, `reportIntegrity.ts`.
-Użytkownik wchodzi bez portfela przez batchId lub QR.
-Pokaż podsumowanie, potwierdzoną historię, link IPFS i explorer danej sieci.
+Użytkownik wchodzi bez portfela przez numer partii (`B-RRRR-NNNN`) lub QR.
+Pokaż podsumowanie, potwierdzoną historię (także etapy odrzucone: `StageRejected`), link IPFS (CIDv0/CIDv1) i explorer danej sieci.
 
 Przy odczycie JSON waliduj schemat, kanonizuj według wspólnego protokołu
 i porównaj Keccak reportHash z potwierdzonym eventem/projekcją.

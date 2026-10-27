@@ -1,142 +1,122 @@
 # 3. Dwa klucze zamknięcia kontroli
 
-## Wymaganie i wariant wykonawczy
+## Wymaganie i rozwiązanie (DEC-04, zmiana V2-03)
 
 Wymóg PDF: klucz stacji/czujnika + niezależny klucz operatora zmiany.
-**Proponowany wariant DEC-04:** podpis EIP-712 stacji pod raportem i podpisana
-transakcja operatora zatwierdzająca ten sam raport. Wariant pozostaje
-do zatwierdzenia; nie oznacza portfela Safe ani dwóch podpisów jednej tx.
+**Rozwiązanie:** podpis EIP-712 stacji pod raportem (`StageCompletion`) i podpis
+EIP-712 operatora zmiany pod tym samym raportem (`StageApproval`), oba weryfikowane
+razem przez kontrakt w jednym wywołaniu `completeStage`. Nie ma transakcji
+`approveStage`, stanu approval w storage ani portfela multisig (Safe).
+Operator nie płaci gazu; transakcję wysyła relayer.
 
-Etap wymagający tej bramki to **2 / QUALITY_CONTROL** z
-[marszruty](production-rules.md). Każdy etap ma pozytywną ocenę stacji;
-operator jest dodatkowym warunkiem etapu kontroli, nie zastępuje pomiarów.
+Etap wymagający bramki to **2 / QUALITY_CONTROL** z [marszruty](production-rules.md).
+Każdy etap ma pozytywną ocenę stacji; operator jest dodatkowym warunkiem etapu
+kontroli, nie zastępuje pomiarów.
 
 ## Cztery różne dowody
 
 | Dowód | Kto podpisuje | Co autoryzuje | Gdzie weryfikowany |
 |---|---|---|---|
-| Login challenge | właściciel konta operatora/stacji | sesję dla wskazanego serwisu | backend; nie upoważnia do completeStage |
-| StageCompletion EIP-712 | stacja | batchId, stageId, reportHash, qaPassed, nonce, deadline i domenę | backend + kontrakt |
-| Transakcja approveStage | operator zmiany z QA_INSPECTOR_ROLE | trójkę batchId/stageId/reportHash w konkretnym kontrakcie i sieci | EVM + kontrakt |
-| Transakcja completeStage | relayer | wykonanie wywołania z autoryzacją stacji | EVM + kontrakt; nie jest drugim podpisem QA |
+| Login (SIWE) | właściciel konta operatora/stacji | token Bearer dla backendu | backend; nie upoważnia do completeStage |
+| StageCompletion EIP-712 | stacja | batchId, stageId, reportHash, qaPassed, deadline i domenę | backend + kontrakt |
+| StageApproval EIP-712 | operator zmiany z QA_INSPECTOR_ROLE | batchId, stageId, reportHash, approvalDeadline i domenę | backend + kontrakt |
+| Transakcja completeStage | relayer | wykonanie wywołania z dwoma dowodami | EVM; nie jest drugim podpisem QA |
 
-Parametry StageCompletion i kolejność pól pozostają z [protocol](protocol.md).
-Operator nie podpisuje nieznanego CID, nie podpisuje dowolnej decyzji dla
-całej partii i nie posługuje się kluczem stacji.
-Kod i adres kontraktu oraz chainId należą do kontekstu transakcji operatora.
+Typy i kolejność pól: [protokół](protocol.md). Operator nie podpisuje CID, decyzji
+dla całej partii ani niczego kluczem stacji. Domena (chainId, adres kontraktu)
+chroni przed użyciem podpisu w innym wdrożeniu.
 
-## Klucz powiązania approval
+## Wiązanie approval
 
-`(chainId, contractAddress, batchId, stageId, reportHash)`.
-W storage kontraktu sieć/adres wynikają z wdrożenia; nie powielaj ich
-w każdym rekordzie, ale uwzględniaj w DB i klientach.
-Zachowaj **adres operatora**, nie sam boolean.
-
-Approval wiąże operatora z treścią raportu. **Nie obejmuje nonce/deadline
-obwiedni podpisu stacji.** To oznacza, że w proponowanym MVP akceptacja
-dotyczy raportu, a nie pojedynczej próby wysłania. Nowy hash wymaga nowego
-approval; ponowne użycie tego samego raportu z inną autoryzacją stacji nie jest
-dozwolone automatycznie, dopóki DEC-09 nie określi odcięcia poprzedniej.
-Jeśli approval ma wygasać lub być związane z konkretną rewizją, trzeba dodać
-takie pole do ABI/zdarzeń przed implementacją. Nie udawaj, że zapewnia to
-sam deadline podpisu stacji.
+`StageApproval(batchId, stageId, reportHash, approvalDeadline)` w domenie
+konkretnego kontraktu i sieci. Approval dotyczy **raportu** (hash), a nie
+pojedynczej próby wysyłki; wygasa po własnym `approvalDeadline`.
+Nowy raport (nowy hash) wymaga nowego approval. Stary approval nie może
+uprawnić innego raportu, bo hash jest częścią podpisu.
+Podpis jest argumentem wywołania, więc pozostaje w calldata i jest audytowalny;
+kontrakt nie przechowuje go w storage. Adres operatora trafia do zdarzenia
+`StageCompleted.qaOperator`.
 
 ## Przyjęcie i zatwierdzenie kandydata
 
-1. Backend sprawdza podpis, certyfikat, profil pomiarów, qaPassed=true
-   i tożsamość raportu. Trwale przyjmuje polecenie.
-2. Worker pinując zapisuje CID i `WAITING_FOR_QA`; nie zajmuje nonce relayera.
-3. Uprawniony operator czyta kandydata w chronionym API, łącznie z deadline
-   i stanem aktualności. Publiczny paszport nie zawiera tej kolejki.
+1. Backend sprawdza podpis, certyfikat, rejestr stacji, profil pomiarów,
+   `qaPassed=true` i tożsamość raportu. Trwale przyjmuje polecenie.
+2. Worker pinując zapisuje CID i `WAITING_FOR_QA`.
+3. Uprawniony operator czyta kandydata w chronionym API (deadline i aktualność).
+   Publiczny paszport tej kolejki nie zawiera.
 4. UI sprawdza schemat i hash raportu, pokazuje partię/etap, stację, pomiary,
-   hash, sieć i kontrakt. Przed podpisem ponownie odświeża kandydata.
-5. Operator swoim portfelem wykonuje proponowane
-   `approveStage(batchId, stageId, reportHash)`.
-6. Indexer po potwierdzeniach odczytuje approval; worker ponawia preflight.
-7. Relayer wysyła completeStage z oryginalnym podpisem stacji.
-8. Dopiero kanoniczny StageCompleted zamyka etap.
+   hash, sieć i kontrakt. Przed podpisem odświeża kandydata.
+5. Operator podpisuje portfelem `StageApproval` (`eth_signTypedData_v4`)
+   i wysyła go: `POST /api/v1/qa/candidates/{commandId}/approval`.
+6. Backend odzyskuje adres z podpisu, wymaga zgodności z sesją, aktualnej
+   QA_INSPECTOR_ROLE (odczyt z łańcucha), adresu różnego od stacji i
+   niewygasłego `approvalDeadline`. Zapisuje approval w `qa_approvals`.
+7. Polecenie przechodzi do `READY_TO_SUBMIT`; worker ponawia preflight i wysyła
+   `completeStage` z obu podpisami.
+8. Dopiero kanoniczny `StageCompleted` zamyka etap.
 
-Szczegółowy diagram połączeń pozostaje w [flows](flows.md).
-Receipt approval nie jest receipt completeStage; UI musi pokazywać dwa kroki:
-„zatwierdzenie kontroli” i „rejestracja zakończenia etapu”.
+Szczegółowy diagram: [flows](flows.md). UI pokazuje dwa kroki: „zatwierdzenie
+kontroli” (podpis, bez transakcji) i „rejestracja zakończenia etapu” (relayer).
 
 ## Warunki kontraktu
 
-### approveStage
+`completeStage` dla etapu 2 z `qaPassed=true` wymaga:
 
-- Nadawca ma aktualną QA_INSPECTOR_ROLE.
-- Partia istnieje, nie jest zakończona, oczekuje na etap 2.
-- Parametry wskazują etap 2 i niezerowy reportHash.
-- Zapisany adres operatora dotyczy dokładnie tej trójki; event pozwala
-  odtworzyć autora i hash. Odróżniaj zatwierdzenie od ukończenia.
+- zwykłych warunków: RELAYER_ROLE nadawcy, istniejąca niezakończona partia,
+  `stageId == nextStage`, deadline w oknie, aktywna stacja z `stageMask`;
+- poprawnego `approvalSignature` dla `StageApproval` z tymi samymi
+  `batchId`, `stageId`, `reportHash`;
+- `block.timestamp <= approvalDeadline`;
+- operatora z **aktualną** QA_INSPECTOR_ROLE i adresem **różnym** od adresu stacji.
 
-Kontrakt w tym prostym wywołaniu nie widzi JSON, certyfikatu ani podpisu stacji.
-Nie może więc na etapie approveStage dowieść, że raport pochodzi z poprawnej
-stacji. To sprawdzi completeStage. Backend/UI nie udostępniają do approval
-niezweryfikowanego kandydata, ale kontrakt nie ufa wyłącznie interfejsowi.
+Kontrakt nie widzi JSON ani certyfikatu; zgodność hasha z treścią raportu
+sprawdzają backend, UI operatora i paszport. Brak lub błąd approval cofa całe
+wywołanie (revert), bez zmiany stanu.
 
-### completeStage dla kontroli
+Różne adresy są weryfikowalnym minimum. Nie dowodzą dwóch różnych ludzi, gdy ktoś
+posiada oba klucze; organizacyjnie klucze rozdziel. Podpis admina/relayera bez
+roli operatora nie spełnia kontroli.
 
-- Wszystkie zwykłe warunki RBAC, partii, etapu, podpisu i nonce/deadline.
-- Odzyskany signer stacji ma aktualną STATION_ROLE.
-- qaPassed=true; hash w argumentach jest tym z podpisu stacji.
-- Approval dla tej partii/etapu/hash istnieje, zapisany operator ma
-  **aktualną** QA_INSPECTOR_ROLE i jego adres jest różny od signera stacji.
-- Dopiero po tych sprawdzeniach aktualizacja stanu i zużycie nonce.
+## Co się upraszcza względem wcześniejszego wariantu
 
-Różne adresy są weryfikowalnym minimum. Nie dowodzą dwóch różnych ludzi,
-gdy ktoś posiada oba klucze. Organizacyjnie klucze powinny być rozdzielone.
-Podpis admina/relayera bez wymaganej roli operatora nie spełnia kontroli.
-
-## Zmiana decyzji, role i konkurencja
-
-Propozycja dla prostego mappingu trójka -> operator:
-- ponowne approve przez tego samego operatora jest idempotentne bez kolejnego
-  efektu biznesowego;
-- approval innego operatora nie nadpisuje aktywnego zatwierdzenia; zwraca jawny
-  konflikt;
-- jeśli zapisany operator utracił rolę QA, nowy uprawniony operator może
-  zastąpić nieaktywne approval, z nowym eventem.
-
-To reguły do zatwierdzenia wraz z DEC-04, nie istniejące ABI.
-Nie dopisujemy cichego „ostatni zapis wygrywa”. Przy reorg indexer odtwarza
-aktualny rekord. Cofnięcie roli przed completeStage blokuje poprzednie approval.
-Ponowne nadanie roli może ponownie uaktywnić historyczne approval, jeżeli
-kontrakt sprawdza tylko aktualną rolę. Wariant bazowy **nie zapewnia trwałego
-unieważnienia** approval; jeśli jest potrzebne, należy zaprojektować
-osobną operację revoke/version, a nie polegać na chwilowym odebraniu roli.
-
-Brak osobnej formalnej odmowy QA i brak recovery wybranego w DEC-09:
-odrzucony lub zmieniony kandydat nie może automatycznie zastąpić starego.
+- Brak konfliktu operatorów w kontrakcie (nie ma zapisanego approval do nadpisania).
+  Backend trzyma jedno aktywne approval na polecenie: ten sam operator jest
+  idempotentny, drugi operator przy ważnym approval dostaje `409`.
+- Brak trwałego „odwołania approval”: approval wygasa swoim deadline, a odebranie
+  roli operatorowi blokuje `completeStage` natychmiast, bo rola jest sprawdzana
+  w chwili wykonania. Ponowne nadanie roli **nie ożywia** wygasłego approval.
+- Brak indexowania approval i reorg approval; approval nie jest stanem łańcucha.
+- Odmowa operatora to brak podpisu: kandydat czeka do wygaśnięcia i przechodzi w
+  FAILED. Formalna decyzja „odrzuć” nie istnieje w MVP.
 
 ## Czas i awarie
 
-- Deadline stacji ma obejmować pinowanie, inspekcję, approval i inclusion
-  completeStage. Konkretna wartość to DEC-11, nie czas oczekiwania na 202.
-- Po expiry przed send: FAILED; nie wydłużaj terminu w bazie.
-- Po send: najpierw uzgodnij receipt; obecny czas nie dowodzi, że tx wygasła
-  przed wykonaniem.
-- Reorg approval: worker czeka lub wysłana tx rewertuje; cache nie daje prawa
-  do przejścia wbrew kontraktowi.
-- Odmowa portfela, brak gazu i zła sieć są jawne; UI nie pokazuje sukcesu.
-- Unieważnienie certyfikatu w backendzie blokuje dalsze wysyłanie przez
-  uczciwego relayera, lecz on-chain potrzebne jest także odebranie roli stacji.
+- Deadline stacji ma obejmować pinowanie, inspekcję i inclusion `completeStage`;
+  kontrakt ogranicza go przez `maxDeadlineWindow` (DEC-11, robocze 3600 s).
+  `approvalDeadline` domyślnie jak deadline stacji.
+- Po wygaśnięciu przed send: FAILED; nowy raport według
+  [reguły zastępowania](corrections.md). Nie wydłużaj terminu w bazie.
+- Po send: najpierw uzgodnij receipt; czas nie dowodzi, że tx wygasła przed wykonaniem.
+- Odmowa portfela, zła sieć i brak sesji są jawne; UI nie pokazuje sukcesu.
+- Unieważnienie certyfikatu to `revokeStation` on-chain: kontrakt odrzuca kolejne
+  `completeStage` tej stacji niezależnie od backendu.
 
 ## Minimalna macierz testów
 
 | Przypadek | Oczekiwany wynik |
 |---|---|
-| Podpis stacji + approval niezależnego operatora, ten sam hash | jeden StageCompleted |
-| Tylko stacja / tylko operator | brak przejścia |
-| Dwa dowody z tego samego adresu | brak przejścia |
-| Approval innego batchId, stageId lub reportHash | brak przejścia |
-| qaPassed=false mimo approval | brak przejścia |
-| Odebrana rola stacji/operatora przed zamknięciem | brak przejścia |
-| Podmieniony pomiar po podpisie | odrzucenie hash/signature |
-| Drugi approve tego samego operatora | brak drugiego efektu biznesowego |
-| Approval ważnego operatora próbuje nadpisać drugi operator | konflikt według proponowanej polityki |
-| Reorg approval lub completeStage | odtworzenie projekcji, bez fałszywego CONFIRMED |
+| Podpis stacji + approval niezależnego operatora, ten sam hash | jeden StageCompleted z `qaOperator` |
+| Brak approval / brak podpisu stacji | revert, brak przejścia |
+| Ten sam adres jako stacja i operator | revert |
+| Approval dla innego batchId, stageId lub reportHash | revert |
+| Approval po `approvalDeadline` | revert |
+| qaPassed=false mimo approval | tylko `StageRejected`, bez przejścia |
+| Operator bez QA_INSPECTOR_ROLE albo z odebraną rolą | revert |
+| Stacja odwołana lub wygasła przed wykonaniem | revert |
+| Podmieniony pomiar po podpisie | odrzucenie hash/podpisu w backendzie i kontrakcie |
+| Ponowne `POST approval` tego samego operatora | idempotentne, jedno zapisane approval |
+| Approval od operatora, gdy zapisano już inne ważne | konflikt `409` (pierwszy ważny wygrywa) lub idempotencja przy tym samym adresie |
 
-Osoba 1 egzekwuje reguły w Solidity, osoba 2 prowadzi kandydatów i indeksację,
-osoba 3 prezentuje dwa kroki w portfelu/UI, osoba 4 testuje brakujące dowody
-i wyścigi. Zamknięcie DEC-04 wymaga wspólnego potwierdzenia tych zachowań.
+Osoba 1 egzekwuje reguły w Solidity, osoba 2 prowadzi kandydatów i `qa_approvals`,
+osoba 3 prezentuje dwa kroki i podpis, osoba 4 testuje brakujące dowody
+i wyścigi.

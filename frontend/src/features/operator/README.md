@@ -18,5 +18,5 @@ złą partię, konflikt etapu i failure polecenia.
 Panel ma umożliwiać zmianę statusu detalu zgodnie z PDF: wskazanie partii
 ręcznie/QR, wybór dozwolonej operacji i podgląd jej wyniku.
 Zamknięcie kontroli prowadzi do widoku QA, gdzie operator zmiany podpisuje
-zatwierdzenie raportu stacji własnym, niezależnym kluczem.
+`StageApproval` dla raportu stacji własnym, niezależnym kluczem.
 Nie dodawaj przycisku ustawiającego dowolny status w bazie.

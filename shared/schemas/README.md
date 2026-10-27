@@ -3,23 +3,26 @@
 **Języki:** YAML/JSON; dokumentacja Markdown.
 
 Planowane pliki:
-- `openapi.yaml`: ścieżki, auth, request/response, statusy i Problem Details.
+- `openapi.yaml`: ścieżki, auth (SIWE -> opaque Bearer), request/response, statusy i Problem Details.
 - `telemetry.schema.json`: wersja raportu, wymagane pola, typy, limity, jednostki.
-- `eip712.json`: domena demonstracyjna, primary type i uporządkowane definicje pól.
+- `eip712.json`: domena demonstracyjna, typy `StageCompletion` (bez nonce) i `StageApproval`
+  oraz uporządkowane definicje pól.
 - `station-certificate.schema.json`: format poświadczenia stacji, wystawca,
-  adres, serial i ważność; wariant certyfikatu wymaga DEC-13.
+  adres, serial, ważność i `stageMask`; certyfikat jest poświadczeniem audytowym i musi zgadzać się
+  z rejestrem on-chain (wariant certyfikatu wg DEC-13; sprawdź [decisions](../../docs/decisions.md)).
 
 OpenAPI obejmuje też chronioną kolejkę raportów WAITING_FOR_QA i uzgodniony
-login. Podpis stacji i podpis operatora zmiany dotyczą tej samej partii,
+login SIWE (wydanie tokenu). Podpis stacji i podpis operatora zmiany dotyczą tej samej partii,
 etapu i hash; nie definiuj approval jako dowolnego boolean z przeglądarki.
+Status polecenia ma `outcome` (ACCEPTED/REJECTED); `qaPassed=false` to `202`, nie `422`.
+Numer partii: `B-RRRR-NNNN`.
 
 Przed tworzeniem tych plików zatwierdź pięć rozwinięć:
 [reguły/profil pomiarów](../../docs/production-rules.md),
 [zakres approval](../../docs/quality-approval.md),
 [format certyfikatu](../../docs/station-identity.md)
-i [transport loginu/sesji](../../docs/access-control.md).
-[Recovery](../../docs/corrections.md) nadal porównuje alternatywy;
-schema nie może narzucić nowego nonce/revision bez decyzji.
+i [login i autoryzacja](../../docs/access-control.md).
+Zmiany v2 ([changes-v2](../../docs/changes-v2.md)) są wiążące: brak nonce, brak cookie/CSRF.
 W bieżącym etapie rozpisano dokumentację tych obszarów, nie gotowe schematy.
 
 Zacznij od [protokołu](../../docs/protocol.md). Zabroń nieznanych pól raportu.

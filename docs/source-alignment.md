@@ -44,23 +44,28 @@ a raporty w IPFS. Nie oznacza jednak decentralizacji każdej części systemu.
    Nazwa katalogu `qa` i rola `QA_INSPECTOR_ROLE` mogą zostać; oznaczają operatora
    uprawnionego do zamknięcia kontroli. Nie wymagamy trzeciej osoby.
 2. „Multi-sig” oznacza w tym MVP dwa niezależne dowody autoryzacji tego samego
-   raportu: EIP-712 stacji i podpisaną transakcję zatwierdzenia przez operatora.
-   Nie jest to automatycznie portfel Safe ani dwa podpisy pod tą samą transakcją.
-   Ten wariant wykonawczy wymaga zatwierdzenia DEC-04, a samo wymaganie dwóch
-   kluczy wynika już z PDF i nie jest do dowolnego usunięcia.
+   raportu: EIP-712 `StageCompletion` stacji i EIP-712 `StageApproval` operatora,
+   weryfikowane razem w jednym wywołaniu kontraktu (v2; bez transakcji approval
+   operatora). Nie jest to portfel Safe ani dwa podpisy pod tą samą transakcją.
+   Samo wymaganie dwóch kluczy wynika z PDF i nie jest do dowolnego usunięcia.
 3. Dodano obsługę certyfikowanej tożsamości symulowanych stacji, bez udawania
    sprzętowego TPM/TEE. Podpis potwierdza źródło, nie fizyczną prawdziwość pomiaru.
+   Egzekucję (ważność, zakres etapów, odwołanie) przejął rejestr stacji on-chain.
 4. On-chain nie kopiujemy JSON, certyfikatów, podpisów ani nieograniczonej historii.
    Podpisy mogą być argumentem transakcji do weryfikacji, nie muszą być storage.
 5. Panel operatora obejmuje zmianę statusu przez właściwe zgłoszenie/approval,
    nie bezpośrednią edycję projekcji i nie tylko bierny podgląd.
-6. Wstępny plan obejmuje 12 tygodni, MVP lokalne i końcową demonstrację testnet.
+6. Wstępny plan obejmuje 12 tygodni, MVP lokalne i końcową demonstrację testnet;
+   smoke deploy na Amoy jest już w tygodniu 1.
+7. Zmiany v2 z 2026-10-27 (brak nonce, off-chain approval, rejestr stacji,
+   token Bearer, `StageRejected`) opisuje [changes-v2](changes-v2.md); w razie
+   sprzeczności ten dokument ma pierwszeństwo przed starszym tekstem.
 
 ## Czego PDF nie rozstrzyga
 
 Konkretnych etapów i limitów pomiarowych, formatu certyfikatu, TTL podpisów,
 finalności, uwierzytelnienia API i dokładnego wariantu dwóch podpisów.
-Pozostają one jawne w [decyzjach](decisions.md). „Darmowy testnet” nie gwarantuje
+Wybory wykonawcze są jawne w [decyzjach](decisions.md). „Darmowy testnet” nie gwarantuje
 bezterminowej darmowej Pinaty/RPC ani dostępności faucet; przed demonstracją
 sprawdź limity kont i testowe środki na gaz. DPP nie oznacza certyfikacji
 zgodności z regulacjami UE ani gotowego liczenia śladu węglowego.

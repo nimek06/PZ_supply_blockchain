@@ -8,9 +8,9 @@ Mock/stub klienta HTTP ma sprawdzać body, status, timeout i liczbę żądań.
 
 Sprawdź strict validation, jednostki, kanoniczny hash oraz wspólny wektor
 z shared/fixtures. Zmiana podpisanej treści musi być wykrywalna.
-Retry ma zachować podpis, nonce i raport; błędny podpis/QA nie ma nieskończonego retry.
+Retry ma zachować podpis i raport (brak nonce); błędny podpis/QA nie ma nieskończonego retry.
 Runner nie przechodzi do następnego etapu po samym `202`.
-Sprawdź zgodność certyfikatu z signerem, wygaśnięcie, odwołanie i nieznanego
+Sprawdź zgodność certyfikatu z signerem i rejestrem stacji, wygaśnięcie, odwołanie i nieznanego
 wystawcę. W integracji kontroli drugi klucz należy do operatora zmiany;
 klucz relayera ani ponowny podpis stacji nie zastępują tego dowodu.
 

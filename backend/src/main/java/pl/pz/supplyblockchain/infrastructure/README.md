@@ -2,8 +2,8 @@
 
 **Język:** Java 21, biblioteki integracyjne.
 
-- [blockchain](blockchain/README.md): Web3j, transakcje, weryfikacja podpisu, logi.
-- [ipfs](ipfs/README.md): Pinata i pobieranie raportów.
+- [blockchain](blockchain/README.md): Web3j (kodowanie/podpis), transakcje, weryfikacja EIP-712, indexer.
+- [ipfs](ipfs/README.md): `ReportStorage` - Kubo i Pinata, pobieranie raportów.
 - [persistence](persistence/README.md): encje, mapping i repozytoria PostgreSQL.
 - [queue](queue/README.md): pobieranie zadań i kontrolowany worker relayera.
 

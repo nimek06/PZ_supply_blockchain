@@ -4,7 +4,7 @@
 
 Planowane pliki `local.example.json` i `amoy.json`: chainId, adres kontraktu,
 deployment block, hash transakcji, wersja kontraktu/kompilatora i publiczne
-parametry domeny EIP-712. Nie dopisuj pliku Amoy przed faktycznym wdrożeniem.
+parametry domeny EIP-712. Nie dopisuj pliku Amoy przed faktycznym wdrożeniem (smoke deploy na Amoy w tygodniu 1).
 
 Lokalny adres po restarcie sieci może się zmienić; przykład nie jest aktywnym
 wdrożeniem. Rzeczywiste lokalne dane dostarczaj konfiguracją środowiska

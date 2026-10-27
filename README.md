@@ -41,7 +41,7 @@ PZ_supply_blockchain/
 |       |   |   |-- domain/            model i reguły biznesowe
 |       |   |   `-- infrastructure/
 |       |   |       |-- blockchain/    Web3j i indeksowanie zdarzeń
-|       |   |       |-- ipfs/          klient Pinata
+|       |   |       |-- ipfs/          port ReportStorage: Kubo i Pinata
 |       |   |       |-- persistence/   JPA i repozytoria
 |       |   |       `-- queue/         trwała kolejka relayera
 |       |   `-- resources/db/migration/ konfiguracja i migracje SQL
@@ -88,12 +88,13 @@ z odnośnikami do właściwych pakietów. Nie są osobnymi modułami.
 
 | Moduł | Osoba | Język i narzędzia | Odpowiedzialność |
 |---|---|---|---|
-| [contracts](contracts/README.md) | 1 | Solidity 0.8.24+, Foundry, OpenZeppelin | kolejność etapów, EIP-712, role, QA, zdarzenia |
-| [backend](backend/README.md) | 2 | Java 21, Spring Boot 3.3+, Maven, Web3j, JPA | REST, IPFS, relayer, PostgreSQL, indeksowanie |
-| [frontend](frontend/README.md) | 3 | TypeScript, React 18/19, Vite | operator, QA, publiczna historia, QR, portfel |
-| [simulator](simulator/README.md) | 4 | Python 3.11+, eth-account, Pydantic, httpx | pomiary, podpisy, scenariusze pozytywne i negatywne |
+| [contracts](contracts/README.md) | 1 | Solidity 0.8.24+, Foundry, OpenZeppelin | kolejność etapów, EIP-712, role, rejestr stacji, podpis QA, zdarzenia; też indexer, weryfikacja certyfikatów, historia API i CI |
+| [backend](backend/README.md) | 2 | Java 21, Spring Boot (aktualna wspierana wersja), Maven, Web3j, JPA | REST, auth Bearer, IPFS, relayer, PostgreSQL, kolejka QA |
+| [frontend](frontend/README.md) | 3 | TypeScript, React 18/19, Vite | operator, QA (podpis approval), publiczna historia, QR, portfel |
+| [simulator](simulator/README.md) | 4 | Python 3.11+, eth-account, Pydantic, httpx | pomiary, podpisy, certyfikaty, scenariusze pozytywne i negatywne |
 
 Osoba 4 odpowiada także za testy integracyjne całego systemu i dokumentację.
+Szczegółowy podział zadań: [team-split](docs/team-split.md).
 Panel QA obsługuje operatora zmiany uprawnionego do współzatwierdzania kontroli;
 nie wymaga dodatkowego, piątego członka zespołu.
 
@@ -103,37 +104,47 @@ potrzeby. Wybierz dokładne, kompatybilne wersje zależności podczas inicjaliza
 i zapisz je w manifestach oraz dostępnych lockfile'ach.
 
 Sieć lokalna: Anvil. Sieć docelowa: Polygon Amoy (`chainId = 80002`).
-Pinata przechowuje raporty; PostgreSQL przechowuje projekcję stanu i trwałe
-zadania. Blockchain pozostaje źródłem prawdy o potwierdzonych etapach.
+Magazyn raportów: Kubo lokalnie i w CI, Pinata w demo; PostgreSQL przechowuje
+projekcję stanu i trwałe zadania. Blockchain pozostaje źródłem prawdy o
+potwierdzonych etapach.
 
 ## Przepływ zdarzenia
 
 1. Stacja tworzy raport według wspólnego schematu i podpisuje dane EIP-712
-   zawierające jego skrót, identyfikator etapu, nonce oraz termin ważności.
+   zawierające jego skrót, identyfikator etapu, wynik QA oraz termin ważności
+   (bez nonce).
 2. Backend waliduje żądanie i podpis, trwale zapisuje polecenie i zwraca `202`.
-3. Worker pinuje raport w IPFS, zapisuje CID, a pojedynczy relayer przesyła
-   transakcję do kontraktu. Przy etapie kontroli najpierw czeka na podpisane
-   zatwierdzenie tego samego raportu przez operatora zmiany.
-4. Kontrakt sprawdza podpis, role, nonce, kolejność etapów i bramkę QA.
+3. Worker zapisuje raport w IPFS, zapisuje CID, a pojedynczy relayer przesyła
+   transakcję do kontraktu. Przy etapie kontroli najpierw czeka na podpis
+   `StageApproval` tego samego raportu przez operatora zmiany (bez gazu operatora).
+4. Kontrakt sprawdza podpis i rejestrację stacji, role, kolejność etapów i bramkę QA.
+   Wynik negatywny kończy się zdarzeniem `StageRejected` bez przesunięcia partii.
 5. Indexer aktualizuje projekcję po uzgodnionej liczbie potwierdzeń.
 6. Frontend pokazuje osobno stan oczekiwania, sukces i błąd. Publiczny paszport
-   umożliwia odczyt raportu z IPFS i porównanie jego skrótu z blockchainem.
+   (QR z numerem partii `B-RRRR-NNNN`) umożliwia odczyt raportu z IPFS i
+   porównanie jego skrótu z blockchainem.
 
-Szczegóły i decyzje wymagające wspólnego zatwierdzenia opisuje
-[protokół](docs/protocol.md). Przykładowe sygnatury funkcji są projektem
-interfejsu, nie deklaracją istniejącego ABI.
+Szczegóły opisuje [protokół](docs/protocol.md), a zmiany po analizie
+2026-10-27 - [changes-v2](docs/changes-v2.md) (wiążące). Przykładowe sygnatury
+funkcji są projektem interfejsu, nie deklaracją istniejącego ABI.
 
 ## Kolejność realizacji
 
-1. Uzgodnijcie etapy produkcji, zasady QA i format podpisywanych danych.
-2. Utwórzcie schematy i wspólne wektory testowe.
-3. Zaimplementujcie kontrakt i testy, następnie eksportujcie ABI.
+1. Potwierdźcie zmiany v2, etapy produkcji, zasady QA i format podpisywanych danych.
+2. Utwórzcie schematy i wspólne wektory testowe (wtorek tygodnia 1).
+3. Zaimplementujcie kontrakt i testy, wdróżcie smoke na Amoy, następnie eksportujcie ABI.
 4. Zbudujcie backend i symulator na tych samych danych testowych.
 5. Zbudujcie frontend z kontrolowanymi odpowiedziami API, potem podłączcie API.
-6. Uruchomcie całą ścieżkę lokalnie; dopiero potem wdrażajcie na Amoy.
+6. Uruchomcie całą ścieżkę lokalnie (tydzień 5), powtórzcie ją na Amoy i
+   dopiero potem przygotowujcie próbę demo (tydzień 10).
+
+Plan pierwszego tygodnia: [week1-plan](docs/week1-plan.md).
 
 ## Pozostałe instrukcje
 
+- **[Zmiany v2 po analizie (wiążące)](docs/changes-v2.md)**,
+  **[plan pierwszego tygodnia](docs/week1-plan.md)** i
+  **[nowy podział zadań](docs/team-split.md)**.
 - **[Pięć obszarów przed kodowaniem](docs/README.md)**:
   [przebieg produkcji](docs/production-rules.md),
   [błędy i poprawki](docs/corrections.md),
@@ -145,7 +156,7 @@ interfejsu, nie deklaracją istniejącego ABI.
 - [Szczegółowe przepływy](docs/flows.md)
 - [Model danych i statusy](docs/data-model.md)
 - [Plan 12 tygodni i zadania zespołu](docs/plan.md)
-- [Wymagania MVP](docs/spec.md) i [otwarte decyzje](docs/decisions.md)
+- [Wymagania MVP](docs/spec.md) i [rejestr decyzji](docs/decisions.md)
 - [Tożsamość i certyfikaty stacji](docs/station-identity.md)
 - [Architektura i granice modułów](docs/architecture.md)
 - [Protokół API, raportów i podpisów](docs/protocol.md)

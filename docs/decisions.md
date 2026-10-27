@@ -1,73 +1,63 @@
 # Założenia, decyzje i granice MVP
 
-**Status:** propozycje planistyczne, nie zatwierdzona konfiguracja produkcji.
-Data bazowa: 2026-10-26. Osoby 1/2/3/4 odpowiadają modułom z głównego README.
+**Status:** po analizie 2026-10-27 wprowadzono zmiany [v2](changes-v2.md).
+Pozycje oznaczone `USTALONA` zatwierdził użytkownik 2026-10-27; zespół
+potwierdza je na spotkaniu startowym ([plan tygodnia 1](week1-plan.md)),
+dopisując datę i inicjały. Osoby 1/2/3/4 odpowiadają modułom z głównego README.
 Wymagania PDF mają pierwszeństwo: dwa klucze przy zamknięciu kontroli,
 certyfikat każdej stacji, minimalny zapis on-chain i 12 tygodni nie są
-opcjonalnymi propozycjami. Otwarte są ich szczegóły wykonawcze.
+opcjonalne. Szczegóły wykonawcze są poniżej.
 
 ## Jak używać
 
-Przed rozpoczęciem zadania zamknij wskazane decyzje: dopisz datę, osoby
-zatwierdzające, wybrany wariant i uzasadnienie. Zmień status na `ZATWIERDZONA`
-dopiero po rzeczywistym uzgodnieniu. Jeśli wariant się zmienia, popraw równocześnie
-diagramy, protokół, schematy, fixture'y i plan. Nie odgaduj decyzji w kodzie.
+Przed rozpoczęciem zadania sprawdź wskazane decyzje. Zmiana wariantu wymaga
+poprawy diagramów, protokołu, schematów, fixture'ów i planu w jednym PR.
+Nie odgaduj decyzji w kodzie. Status `DO POTWIERDZENIA` oznacza wartość roboczą
+do zatwierdzenia przez zespół w wyznaczonym terminie, nie zgodę na zmianę w kodzie.
 
 ## Rejestr
 
-Aktualizacja po odpowiedzi użytkownika 2026-10-27:
-ustalono **ogólną** linię przygotowanie -> montaż -> kontrola -> pakowanie,
-bez wskazania konkretnego produktu. Polecono pozostawić DEC-09 otwartą,
-opisując alternatywy. Pozostałe poniższe szczegóły są projektami do
-zatwierdzenia, nie decyzjami automatycznie podjętymi przez autora dokumentacji.
-
-| ID / status | Propozycja robocza i uzasadnienie | Właściciel | Co blokuje |
+| ID / status | Decyzja | Właściciel | Co blokuje |
 |---|---|---|---|
-| DEC-01 / ZAKRES USTALONY Z UŻYTKOWNIKIEM | Ogólne przygotowanie -> montaż -> kontrola -> pakowanie. Dokument produkcji przypisuje stageId 0..3 i bramkę dwóch kluczy etapowi 2; szczegóły storage i DTO są propozycją wykonawczą. Bez konkretnego produktu ani fabrycznych norm. | cały zespół | [reguły produkcji](production-rules.md); spójne enumy przed kodem |
-| DEC-02 / DO ZATWIERDZENIA | Całkowite jednostki i jeden zamrożony zestaw profili demonstracyjnych na wdrożenie v1. Bez produktu nie wybieramy fizycznych progów. Trzeba uzupełnić tabelę kluczy, jednostek, kompletności, granic i testów dla każdego etapu. | 2 + 4, konsultacja 1 | [profile QA](production-rules.md), schema, walidacja i generatory |
-| DEC-03 / DO ZATWIERDZENIA | JCS + Keccak + StageCompletion EIP-712 z protokołu; CID jest osobnym wskazaniem relayera. Brak podwójnego podpisu po IPFS upraszcza ścieżkę. | 1 + 2 + 4 | schemat i wektory podpisów |
-| DEC-04 / WYMÓG PDF, WARIANT DO ZATWIERDZENIA | EIP-712 stacji + podpisana tx operatora approveStage; adresy różne, aktualne role. Approval dotyczy raportu, nie nonce/deadline jego obwiedni. Zaproponowano idempotencję i zakaz nadpisywania aktywnego operatora przez innego; brak trwałego revoke approval w wariancie bazowym. | 1 + 2 + 3 | [protokół dwóch kluczy](quality-approval.md), funkcje QA |
-| DEC-05 / DO ZATWIERDZENIA | Propozycja: EOA + SIWE, jednorazowy challenge, serwerowa cookie session, CSRF, ten sam origin przez proxy; Python używa cookie jar. Nowy POST stages może korzystać z podpisu raportu, prywatny GET wymaga sesji owner/Admin. Wartości TTL są robocze. | 2 + 3 + 4 | [login i sesje](access-control.md), OpenAPI i bezpieczeństwo API |
-| DEC-06 / DO ZATWIERDZENIA | OPERATOR_ROLE dla create w API, RELAYER_ROLE dla wykonania on-chain; QA_INSPECTOR_ROLE dla operatora kontroli. Domyślna odmowa, role nie dziedziczą wszystkich praw Admin. Własne statusy dla owner; QA czyta kandydatów, nie wszystkie commands. | 1 + 2 + 3 | [macierz uprawnień](access-control.md), role i endpointy |
-| DEC-07 / DO ZATWIERDZENIA | Domyślnie jedna aktywna operacja na stację do potwierdzenia. Historia wymaga konfigurowalnych potwierdzeń; lokalnie roboczo 1, dla Amoy wartość trzeba ustalić i przetestować. | 1 + 2 + 4 | finalność, kolejność i deadline |
-| DEC-08 / DO ZATWIERDZENIA | PostgreSQL jako trwała kolejka, jedna instancja relayera i scheduler indexera w backendzie. Bez Redis/RabbitMQ w MVP. | 2 | persistence i worker |
-| DEC-09 / OTWARTA ZGODNIE Z WYBOREM UŻYTKOWNIKA | Nie wybrano mechanizmu. Porównano unieważnienie nonce on-chain, wersjonowane autoryzacje, ponowienie po expiry oraz ograniczenie do diagnozy. Żadna alternatywa nie pozwala usuwać idempotencji ani podmieniać podpisu w miejscu. | 1 + 2 + 4 | [alternatywy poprawek](corrections.md), T026 i pełny odbiór recovery |
-| DEC-10 / DO ZATWIERDZENIA | Symulator odczytuje oczekiwany nonce bezpośrednio z kontraktu przez publiczne RPC, bez sekretów. Nie dodajemy kolejnego endpointu tylko do tego odczytu. | 1 + 4 | konfiguracja symulatora |
-| DEC-11 / DO ZATWIERDZENIA | Limity API, timeouty, retry/backoff, polling, retention danych i logów ustalamy przed odbiorem. QA ma skończony czas: deadline musi obejmować pinowanie, inspekcję i inclusion. | 2 + 3 + 4 | odporność i odbiór |
-| DEC-12 / DO ZATWIERDZENIA | batchId losowany jako bytes32 przez backend, zatwierdzany jako wynik polecenia; etykieta produktu jest osobnym publicznym polem lub poza MVP. Dokładne wersje zależności przypinamy podczas inicjalizacji. | 2, cały zespół | CreateBatchRequest i konfiguracja |
-| DEC-13 / WYMÓG PDF, FORMAT DO ZATWIERDZENIA | Propozycja: payload JSON z serialem, stationId, adresem, datami, wdrożeniem i zakresem; JCS/Keccak + osobny typ EIP-712 wystawcy, allowlista i rejestr odwołań. Aktywacja dopiero z aktualną STATION_ROLE. Nie deklarujemy X.509 ani sprzętowego TPM. | 2 + 4, konsultacja 1 | [pełny projekt certyfikatu](station-identity.md), wektor i schema |
+| DEC-01 / USTALONA | Ogólna marszruta przygotowanie -> montaż -> kontrola -> pakowanie, stageId 0..3, bramka dwóch kluczy na etapie 2. Bez konkretnego produktu i norm fabrycznych | cały zespół | [reguły produkcji](production-rules.md) |
+| DEC-02 / DO POTWIERDZENIA (piątek tyg. 1) | Całkowite jednostki; jeden zamrożony zestaw profili demonstracyjnych v1 dla etapów 0..3. Szkic przygotowują osoby 2 + 4 do środy tyg. 1 | 2 + 4, konsultacja 1 | schema, walidacja, generatory |
+| DEC-03 / USTALONA | JCS + Keccak + EIP-712 `StageCompletion` **bez nonce**; CID jest osobnym wskazaniem relayera. Ręczna implementacja EIP-712 w Javie, wspólny wektor w 4 językach (V2-01, V2-10) | 1 + 2 + 4 | wektory podpisów |
+| DEC-04 / USTALONA | Dwa klucze: EIP-712 stacji + **podpis EIP-712 `StageApproval` operatora poza łańcuchem**, weryfikowane razem w `completeStage`. Adresy różne, aktualna rola QA. Brak `approveStage` on-chain (V2-03) | 1 + 2 + 3 | [dwa klucze](quality-approval.md) |
+| DEC-05 / USTALONA | SIWE (EIP-4361) tylko do wydania opaque tokenu Bearer (w bazie skrót SHA-256). Brak cookie i CSRF. Wartości TTL robocze (DEC-11) (V2-06) | 2 + 3 + 4 | [logowanie](access-control.md), OpenAPI |
+| DEC-06 / USTALONA | OPERATOR_ROLE dla create w API, RELAYER_ROLE dla wykonania on-chain, QA_INSPECTOR_ROLE dla operatora kontroli. **Brak STATION_ROLE** - zastępuje ją rejestr stacji (DEC-13). Domyślna odmowa | 1 + 2 + 3 | [macierz uprawnień](access-control.md) |
+| DEC-07 / DO POTWIERDZENIA (po smoke Amoy) | Jedna aktywna operacja na `(batchId, stageId)`. Liczba potwierdzeń: lokalnie 1, na Amoy wartość po pomiarach w tyg. 1 i 5 | 1 + 2 + 4 | finalność, deadline |
+| DEC-08 / USTALONA | PostgreSQL jako trwała kolejka (`FOR UPDATE SKIP LOCKED`), jedna instancja relayera i scheduler indexera. Bez Redis/RabbitMQ. **Bez fee-bump transakcji** (V2-07) | 2 | persistence, worker |
+| DEC-09 / USTALONA (2026-10-27) | Wariant C uproszczony: nowy raport etapu dopiero, gdy stary nie może się już wykonać (deadline minął w potwierdzonym bloku). Bez nonce i bez dodatkowych funkcji kontraktu. `maxDeadlineWindow` egzekwuje kontrakt. Opis: [corrections](corrections.md) (V2-02) | 1 + 2 + 4 | T026 |
+| DEC-10 / USTALONA | Symulator odczytuje z kontraktu przez publiczne RPC wyłącznie stan partii (`getBatch`, `nextStage`); nonce nie istnieje | 1 + 4 | konfiguracja symulatora |
+| DEC-11 / DO POTWIERDZENIA (pon. tyg. 1) | Robocze: `maxDeadlineWindow` 3600 s, `approvalDeadline` domyślnie jak deadline stacji, token 8 h / 30 min bezczynności, challenge 5 min, limity API i retry/backoff ustalane przed odbiorem. Minimalny priority fee relayera konfigurowalny (Polygon wymaga wysokiego progu - zweryfikuj wartość) | 2 + 3 + 4 | odporność i odbiór |
+| DEC-12 / USTALONA | Numer partii `B-RRRR-NNNN` nadawany przez backend; `batchId = keccak256(utf8(batchNumber))`, liczony też on-chain w `createBatch(string)`. QR i ręczne wpisanie używają numeru (V2-11). Wersje zależności przypinane przy inicjalizacji | 2, cały zespół | CreateBatchRequest |
+| DEC-13 / USTALONA | Rejestr stacji on-chain (`registerStation`/`revokeStation`, `expiresAt`, `stageMask`) jest źródłem egzekucji. JSON certyfikatu: payload + EIP-712 wystawcy jako poświadczenie audytowe zgodne z rejestrem. Aktywacja po potwierdzonej rejestracji. Nie deklarujemy X.509 ani TPM (V2-04) | 2 + 4, 1 (kontrakt i Java) | [certyfikat](station-identity.md) |
+| DEC-14 / USTALONA | Magazyn raportów: port `ReportStorage`, Kubo lokalnie i w CI, Pinata w demo; upload bajtów JCS jako plik; walidator CID przyjmuje CIDv0 i CIDv1 (V2-12) | 2 | IPFS, CI |
+| DEC-15 / USTALONA | Odrzucenie kontroli zapisywane on-chain (`StageRejected`), bez przesunięcia partii; HTTP `202`, `outcome=REJECTED` (V2-05) | 1 + 2 | kontrakt, historia |
+| DEC-16 / USTALONA | Środowiska: smoke deploy na Amoy w tyg. 1, integracja pionowa także na Amoy w tyg. 5, próba demo w tyg. 10; lokalny HTTPS dla frontendu; Spring Boot = aktualna wspierana wersja (V2-13..15) | cały zespół | plan |
 
 ## Dlaczego QA potrzebuje osobnej kolejki
 
 Na łańcuchu raport nie jest ukończonym etapem przed `completeStage`.
-Gdyby inspektor szukał tylko potwierdzonych StageCompleted, nigdy nie zobaczy
-raportu do zatwierdzenia, a relayer będzie stale czekał.
-Dlatego kandydat istnieje wcześniej w bazie, po pinowaniu, i jest dostępny
-wyłącznie uprawnionej stacji/obsłudze/QA. Publiczna historia nadal go nie zawiera.
-Dokładny przebieg: [flows](flows.md).
+Inspektor szukający tylko potwierdzonych `StageCompleted` nigdy nie zobaczyłby
+raportu do zatwierdzenia. Kandydat istnieje wcześniej w bazie, po pinowaniu,
+i jest dostępny wyłącznie uprawnionej obsłudze/QA. Publiczna historia go nie zawiera.
+Operator zatwierdza go podpisem `StageApproval`, który backend zapisuje i
+przekazuje kontraktowi razem z podpisem stacji. Przebieg: [flows](flows.md).
 
-## Dwa podpisy, nie dwa warianty tego samego podpisu
+## Cztery rodzaje podpisów
 
-- Login challenge: jednorazowe uwierzytelnienie sesji; domena/origin, adres,
-  chainId, nonce, expiry i ochrona przed replay. Jeśli wybierzecie SIWE,
-  ma własne zasady podpisu EIP-191; **nie** weryfikuj go jak StageCompletion.
-- StageCompletion: podpis EIP-712 autoryzujący konkretny raport na kontrakcie.
-- Transakcja QA: niezależny podpis portfela operatora zmiany pod zatwierdzeniem
-  tego samego raportu; wraz z EIP-712 stacji spełnia współautoryzację kontroli.
-- Transakcja relayera: podpis serwera; nie zastępuje podpisu stacji.
+- **Login (SIWE, EIP-191):** wydanie tokenu Bearer; nie autoryzuje zdarzeń.
+- **StageCompletion (EIP-712):** podpis stacji pod konkretnym raportem.
+- **StageApproval (EIP-712):** podpis operatora zmiany pod tym samym `reportHash`
+  (bez gazu operatora).
+- **Transakcja relayera:** podpis serwera; nie zastępuje podpisu stacji ani operatora.
 
-Mechanizm sesji musi określić wygaśnięcie, logout/revocation, CSRF przy cookies
-i weryfikację aktualnych ról przy zapisach. To osobne wymagania auth, nie
-właściwości zapewniane automatycznie przez RainbowKit.
+Każdy ma osobny typ lub schemat podpisu, więc jednego nie da się użyć jako drugiego.
 
-## Co można robić przed zatwierdzeniem
+## Co można robić przed potwierdzeniem
 
-Inicjalizacja narzędzi, layout UI, komponenty stanów i projekt stubów.
-Zakres etapów DEC-01 jest ustalony; formaty i parametry DEC-02..06 nadal
-wymagają zatwierdzenia przed zamrożeniem ABI/schematów.
-Nie wykonuj pełnego odbioru testnet przed rozstrzygnięciem DEC-07..13.
-Otwarta zgodnie z życzeniem DEC-09 nie blokuje samego projektowania i setupu,
-ale blokuje implementację wybranego recovery i jego deklarację jako gotowego.
-Wdrożenie realnej fizycznej linii
-nie jest zadaniem tego MVP.
-Plan nie uznaje żadnej otwartej decyzji za rozstrzygniętą.
+Inicjalizacja narzędzi, layout UI, wektory, szkielet kontraktu i API.
+Profile DEC-02 i wartości DEC-07/11 muszą być potwierdzone przed zamrożeniem
+schematów i ABI (piątek tyg. 1). Nie wykonuj pełnego odbioru na Amoy przed
+zamknięciem DEC-07 i DEC-11. Wdrożenie fizycznej linii nie jest zadaniem MVP.

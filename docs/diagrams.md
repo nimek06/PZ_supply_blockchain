@@ -5,8 +5,9 @@ To **projekt docelowy**, nie diagram istniejącego kodu. Czytaj razem z
 [przepływami](flows.md). Mermaid renderuje się w podglądzie Markdown
 obsługującym Mermaid oraz na GitHubie.
 Nadrzędny zakres opisuje [mapa PDF](source-alignment.md). QA oznacza operatora
-zmiany; jego niezależny klucz współautoryzuje zamknięcie kontroli.
-Certyfikaty stacji są off-chain, a nie nową fizyczną infrastrukturą.
+zmiany; jego niezależny podpis `StageApproval` współautoryzuje zamknięcie kontroli.
+Rejestr stacji jest on-chain, certyfikaty są off-chain (poświadczenie audytowe),
+a nie nową fizyczną infrastrukturą. Zmiany v2: [changes-v2](changes-v2.md).
 
 ## 1. Architektura aplikacji
 
@@ -32,23 +33,23 @@ flowchart TD
         IndexerA["Indexer zdarzen"]
     end
     DatabaseA[("PostgreSQL")]
-    PinataA["Pinata API"]
+    StorageA["Kubo lokalnie albo Pinata API"]
     GatewayA["IPFS Gateway"]
     RpcA["EVM RPC - Anvil albo Amoy"]
     ContractA["Kontrakt SupplyChain"]
     VisitorA -->|"Odczyt bez portfela"| FrontendA
     OperatorA -->|"Panel i decyzje QA"| FrontendA
-    SimulatorA -->|"HTTPS - raport podpisany i ID certyfikatu"| ApiA
-    SimulatorA -->|"Odczyt nonce stacji"| RpcA
-    FrontendA -->|"HTTPS - dane i polecenia"| ApiA
+    SimulatorA -->|"HTTP - raport podpisany i ID certyfikatu"| ApiA
+    SimulatorA -->|"Odczyt stanu partii"| RpcA
+    FrontendA -->|"HTTP z tokenem Bearer - dane i polecenia"| ApiA
     FrontendA -->|"Odczyt raportu CID"| GatewayA
     FrontendA -->|"Weryfikacja on-chain"| RpcA
-    FrontendA -->|"Prosba o transakcje QA"| WalletA
-    WalletA -->|"Podpisana transakcja"| RpcA
-    ApiA -->|"Zapis polecen i odczyt projekcji"| DatabaseA
+    FrontendA -->|"Prosba o podpis StageApproval"| WalletA
+    WalletA -->|"Podpis EIP-712 bez transakcji"| FrontendA
+    ApiA -->|"Zapis polecen, approval i odczyt projekcji"| DatabaseA
     ApiA -->|"Weryfikacja rol i stanu"| RpcA
     WorkerA -->|"Zadania i wyniki prob"| DatabaseA
-    WorkerA -->|"Pinowanie raportu"| PinataA
+    WorkerA -->|"Zapis bajtow JCS raportu"| StorageA
     WorkerA -->|"Wyslanie i uzgodnienie transakcji"| RpcA
     IndexerA -->|"Odczyt blokow i logow"| RpcA
     IndexerA -->|"Projekcja i checkpoint"| DatabaseA
@@ -59,17 +60,17 @@ flowchart TD
 
 | Warstwa | Technologia / wersja bazowa | Rola |
 |---|---|---|
-| Kontrakt | Solidity 0.8.24+, OpenZeppelin, Foundry | reguły i ostateczna autoryzacja etapów |
-| Backend | Java 21, Spring Boot 3.3+, Maven, Web3j | API, trwałe polecenia, relayer i indexer |
-| Baza | PostgreSQL + Flyway + JPA | zadania, próby, projekcje i checkpoint |
+| Kontrakt | Solidity 0.8.24+ (jawny `evm_version`), OpenZeppelin, Foundry | reguły i ostateczna autoryzacja etapów |
+| Backend | Java 21, Spring Boot (aktualna wspierana wersja), Maven, Web3j (tylko kodowanie i podpis) | API, trwałe polecenia, relayer i indexer |
+| Baza | PostgreSQL + Flyway + JPA | zadania, próby, approval, projekcje i checkpoint |
 | Symulator | Python 3.11+, Pydantic, eth-account, httpx | podpisane dane i scenariusze |
-| Frontend | React 18/19, TypeScript, Vite, Wagmi v2/Viem | UI, portfel QA i paszport |
-| Raporty | Pinata i publiczny gateway IPFS | zapis i odczyt JSON |
+| Frontend | React 18/19, TypeScript, Vite, Wagmi v2/Viem | UI, podpis approval operatora i paszport |
+| Raporty | Kubo (lokalnie, CI) i Pinata (demo), publiczny gateway IPFS | zapis i odczyt JSON |
 | Sieć | Anvil 31337 / Polygon Amoy 80002 | lokalna i testowa egzekucja EVM |
 
 Dokładne wersje są do przypięcia podczas inicjalizacji, nie wynikają ze znaku `+`.
 Nie ma osobnego serwera kolejek i osobnego mikroserwisu indexera.
-Pinata API pinuje dane, gateway je odczytuje; brak strzałki między nimi oznacza,
+Magazyn raportów zapisuje dane, gateway je odczytuje; brak strzałki między nimi oznacza,
 że replikacji IPFS nie implementujemy we własnym kodzie.
 
 ## 2. Zależności kodu backendu
@@ -116,11 +117,11 @@ flowchart LR
 | SubmitStageUseCase | spójność raportu, podpis, idempotencja, trwałe przyjęcie | HTTP 202 przed zatwierdzeniem zapisu DB |
 | ProcessStageCommand | kroki pinowania, QA i wysłania | jedna długa transakcja SQL obejmująca RPC |
 | ChainGateway / ReportStorage | interfejsy aplikacji | Web3j Response w modelu domenowym |
-| Web3jChainGateway | ABI, role, nonce, send/receipt/logs | uznanie timeout za dowód niewysłania |
-| PinataReportStorage | pinowanie i walidacja CID | sukces z pustym CID |
+| Web3jChainGateway | kodowanie ABI, odczyt ról/rejestru, podpis i wysyłka tx, receipt/logi | `.send()`/`DefaultGasProvider`, uznanie timeout za dowód niewysłania |
+| ReportStorage (Kubo/Pinata) | zapis bajtów JCS i walidacja CID (v0/v1) | sukces z pustym CID |
 | CommandRepository | trwałość i constraints | deduplikacja wyłącznie w pamięci |
 | RelayerWorker | lease, wznawianie i pojedynczy writer | wielowątkowe przydzielanie nonce konta |
-| ChainEventIndexer | kanoniczna historia i checkpoint | brak cofania projekcji po reorg |
+| ChainEventIndexer | kanoniczna historia, checkpoint, okno ponownego skanu | brak cofania projekcji po reorg |
 | domain | typy i invariants | zależność od Spring/JPA/Web3j |
 
 ## 3. Zależności buildów i formatów
@@ -157,30 +158,32 @@ flowchart LR
     FixturesC -->|"Wektory zgodnosci"| TypescriptC
     FixturesC -->|"Weryfikacja podpisu"| SolidityC
     DeploymentC -->|"Siec i adres"| JavaC
-    DeploymentC -->|"Domena i nonce"| PythonC
+    DeploymentC -->|"Domena EIP-712"| PythonC
     DeploymentC -->|"Siec i adres"| TypescriptC
 ```
 
 Generowane klasy Java trafiają do `backend/target/generated-sources/`,
-nie do ręcznie utrzymywanego modelu. Po zmianie podpisywanego pola trzeba
+nie do ręcznie utrzymywanego modelu; wrapper służy do kodowania wywołań
+(bez `.send()`). Po zmianie podpisywanego pola trzeba
 zaktualizować wszystkie cztery moduły, nie tylko schema JSON.
 Zmiana adresu wdrożenia wymaga nowej domeny; stary podpis nie przejdzie.
 
 ## 4. Katalog połączeń runtime
 
-Porty to lokalna propozycja, nie sztywne adresy w kodzie. Na zewnątrz HTTPS.
+Porty to lokalna propozycja, nie sztywne adresy w kodzie. API używa tokenu Bearer,
+więc lokalnie wystarcza HTTP; HTTPS jest potrzebny frontendowi (kamera/QR).
 API wewnątrz jednego procesu nie potrzebuje brokera ani połączenia HTTP.
 
 | Inicjator -> odbiorca | Protokół / lokalny port | Dane | Uprawnienie i błąd |
 |---|---|---|---|
-| przeglądarka -> frontend | HTTP 5173 | pliki SPA | publiczne; błąd ładowania |
-| frontend -> backend | REST JSON 8080 | odczyty, tworzenie partii, prywatne statusy | sesja dla zapisu/statusu; Problem Details |
-| symulator -> backend | REST JSON 8080 | raport + EIP-712, login/status | podpis stacji; sesja dla prywatnego GET |
-| symulator -> RPC | JSON-RPC 8545 | odczyt nonce i domeny | brak klucza relayera; jawny błąd RPC |
-| backend -> PostgreSQL | PostgreSQL 5432 | zadania, próby, projekcja | osobne konto bazy, brak publicznego portu w deploymencie |
-| backend -> Pinata | HTTPS 443 | raport JSON | JWT tylko na serwerze; timeout/401/429/5xx |
-| backend -> RPC | JSON-RPC 8545 / HTTPS 443 | role, stan, tx, receipt, logi | klucz relayera tylko do podpisu; RPC nigdy nie dostaje go jako JSON |
-| portfel operatora zmiany -> RPC | JSON-RPC | podpisana transakcja zatwierdzenia tego samego raportu | QA_INSPECTOR_ROLE, inny adres niż stacja, gaz z konta operatora |
+| przeglądarka -> frontend | HTTPS 5173 (lokalny certyfikat deweloperski) | pliki SPA | publiczne; błąd ładowania |
+| frontend -> backend | REST JSON 8080 | odczyty, tworzenie partii, prywatne statusy, `POST approval` | token Bearer dla zapisu/statusu; Problem Details |
+| symulator -> backend | REST JSON 8080 | raport + EIP-712, login/status | podpis stacji; token Bearer dla prywatnego GET |
+| symulator -> RPC | JSON-RPC 8545 | odczyt stanu partii i domeny | brak klucza relayera; jawny błąd RPC |
+| backend -> PostgreSQL | PostgreSQL 5432 | zadania, próby, approval, projekcja | osobne konto bazy, brak publicznego portu w deploymencie |
+| backend -> magazyn raportów | Kubo API (lokalnie, port do weryfikacji) / Pinata HTTPS 443 | bajty JCS raportu | JWT Pinaty tylko na serwerze; timeout/401/429/5xx |
+| backend -> RPC | JSON-RPC 8545 / HTTPS 443 | role, rejestr stacji, stan, tx, receipt, logi | klucz relayera tylko do podpisu; RPC nigdy nie dostaje go jako JSON |
+| portfel operatora zmiany -> frontend | `eth_signTypedData_v4` | podpis `StageApproval` | QA_INSPECTOR_ROLE, inny adres niż stacja; bez transakcji i gazu |
 | frontend -> gateway | HTTP lokalnie / HTTPS 443 | raport z CID | publiczne; limit rozmiaru, hash i schema |
 | frontend -> RPC | JSON-RPC | niezależny odczyt stanu/logu | publiczny endpoint bez prywatnego tokenu w buildzie |
 
@@ -190,10 +193,10 @@ API wewnątrz jednego procesu nie potrzebuje brokera ani połączenia HTTP.
 |---|---|---|
 | etapy/QA | kontrakt, backend, symulator, UI | te same scenariusze i oczekiwany nextStage |
 | schema raportu / JCS | Python, Java, TypeScript | identyczny hash fixture |
-| EIP-712 | Solidity, Python, Java | jeden signer we wspólnym wektorze |
+| EIP-712 (`StageCompletion`, `StageApproval`) | Solidity, Python, Java, TS | jeden signer we wspólnym wektorze |
 | ABI / events | wrapper Java, Viem, indexer | lokalny deployment i odczyt logów |
 | OpenAPI | kontrolery, klient frontendowy, symulator | walidacja request/response |
 | sieć/adres kontraktu | cała czwórka modułów | chainId i domena zgodne z deploymentem |
 | migracje DB | API, worker i indexer | upgrade pustej i istniejącej bazy |
 | status polecenia | API, worker, polling i UI QA | każdy status ma prezentację i regułę retry |
-| certyfikat stacji / wystawca | rejestr backendu, symulator, administracja ról | zgodny signer, ważność, odwołanie i STATION_ROLE |
+| rejestr stacji / certyfikat / wystawca | kontrakt, rejestr backendu, symulator, administracja | zgodny signer, ważność, `stageMask`, odwołanie |

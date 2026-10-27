@@ -1,23 +1,22 @@
 # Przepływy od kliknięcia do potwierdzenia
 
-**Status:** projekt wykonania, zgodny z [protokołem](protocol.md).
-Rozszerzenia QA/auth z tego dokumentu wymagają zatwierdzenia
-[DEC-04..06](decisions.md) i dopisania do OpenAPI przed implementacją.
+**Status:** projekt wykonania, zgodny z [protokołem](protocol.md) po zmianach [v2](changes-v2.md).
+Szczegóły QA/auth z tego dokumentu trafiają do OpenAPI przed implementacją.
 QA oznacza operatora zmiany uprawnionego do kontroli, nie dodatkową osobę.
-Wymóg drugiego klucza i certyfikatu stacji pochodzi z PDF; jedynie szczegóły
-techniczne realizacji są propozycją.
+Wymóg drugiego klucza i certyfikatu stacji pochodzi z PDF; techniczna realizacja
+(podpis `StageApproval`, rejestr stacji on-chain) jest opisana w v2.
 Strzałki sekwencji oznaczają wywołania i odpowiedzi, nie importy.
 Dokładne warunki etapów ustala [production-rules](production-rules.md),
 politykę approval [quality-approval](quality-approval.md), a role i sesje
-[access-control](access-control.md). Alternatywy poprawek są w
-[corrections](corrections.md), bez wybranego recovery.
+[access-control](access-control.md). Wznowienie po błędzie: [corrections](corrections.md).
 
 ## 1. Przygotowanie środowiska
 
-1. Uruchom PostgreSQL i Anvil; sprawdź health, RPC chainId i dostępność bazy.
+1. Uruchom PostgreSQL, Anvil i Kubo; sprawdź health, RPC chainId i dostępność bazy.
 2. Wykonaj migracje. Wdróż kontrakt i zapisz adres, deployment block i ABI.
-3. Admin wystawia/rejestruje certyfikaty stacji i nadaje role relayerowi,
-   stacjom oraz operatorom (w tym operatorowi zmiany z QA) według DEC-06/13.
+3. Admin nadaje role relayerowi, operatorom i operatorowi zmiany z QA oraz
+   rejestruje stacje on-chain (`registerStation`: adres, stationId, `expiresAt`,
+   `stageMask`); wystawia JSON certyfikatu zgodny z rejestrem (DEC-06/13).
 4. Każdy moduł dostaje tę samą domenę, sieć, adres i uzgodnioną marszrutę.
 5. Backend sprawdza dostęp do DB, zgodność sieci/kontraktu i zależności.
 6. Frontend i symulator uruchamiają się dopiero po gotowości API.
@@ -28,8 +27,9 @@ Nie usuwaj wolumenów automatycznie.
 
 ## 2. Tworzenie partii
 
-Proponowana autoryzacja: operator loguje się challenge, a API sprawdza rolę.
-Relayer tworzy partię on-chain, więc kontrakt autoryzuje jego konto.
+Autoryzacja: operator loguje się przez SIWE i dostaje token Bearer, a API sprawdza rolę.
+Backend nadaje numer partii `B-RRRR-NNNN`; `batchId = keccak256(numer)`.
+Relayer tworzy partię on-chain (`createBatch(string)`), więc kontrakt autoryzuje jego konto.
 Audyt powiązania operatora z poleceniem pozostaje w backendzie.
 Jeżeli ma być dowodzony także on-chain, potrzebny jest odrębny podpis operatora
 i zmiana interfejsu; nie zapewnia tego sam `msg.sender` relayera.
@@ -45,43 +45,50 @@ sequenceDiagram
     participant ChainCreate as "Kontrakt przez RPC"
     participant IndexCreate as "Indexer"
     UserCreate->>UiCreate: Utworz partie
-    UiCreate->>ApiCreate: POST batches z sesja i Idempotency-Key
+    UiCreate->>ApiCreate: POST batches z tokenem Bearer i Idempotency-Key
     ApiCreate->>ApiCreate: Sprawdz role operatora
-    ApiCreate->>DbCreate: Zapisz CREATE_BATCH i batchId
+    ApiCreate->>DbCreate: Zapisz CREATE_BATCH i numer partii
     DbCreate-->>ApiCreate: commandId
     ApiCreate-->>UiCreate: 202 i statusUrl
     WorkerCreate->>DbCreate: Przejmij polecenie
     WorkerCreate->>DbCreate: Zapisz nonce i podpisana transakcje
-    WorkerCreate->>ChainCreate: createBatch
+    WorkerCreate->>ChainCreate: createBatch z numerem partii
     ChainCreate-->>WorkerCreate: Receipt z BatchCreated albo revert
     IndexCreate->>ChainCreate: Odczytaj kanoniczne potwierdzone logi
     IndexCreate->>DbCreate: Zapisz partie i CONFIRMED
     UiCreate->>ApiCreate: Odczytaj status polecenia
-    ApiCreate-->>UiCreate: Wynik i batchId
+    ApiCreate-->>UiCreate: Wynik z numerem partii i batchId
 ```
 
 Polecenie CREATE_BATCH pomija pinowanie i QA. Przed potwierdzeniem partia
 może być widoczna w prywatnym statusie, nie jako ukończone utworzenie
 w publicznej projekcji. Ponowny Idempotency-Key z tą samą treścią wskazuje
-ten sam commandId i batchId; z inną treścią daje konflikt.
+ten sam commandId i numer partii; z inną treścią daje konflikt.
 
 ## 3. Zgłoszenie etapu bez ręcznej bramki QA
 
-1. Symulator czeka na poprzedni etap i czyta nonce stacji z kontraktu.
-2. Buduje raport, waliduje, kanonizuje, liczy hash i podpisuje StageCompletion.
+1. Symulator czeka na poprzedni etap i czyta stan partii (`getBatch`) z kontraktu.
+2. Buduje raport, waliduje, kanonizuje, liczy hash i podpisuje StageCompletion
+   (bez nonce, z deadline w oknie `maxDeadlineWindow`).
 3. API sprawdza format, path/body, hash, podpis, aktywny certyfikat zgodny
-   z adresem stacji, rolę, deadline i reguły wstępne.
-4. Identyczny wcześniejszy podpisany zamiar zwraca istniejące polecenie.
-   Lookup istniejącego polecenia następuje po uwierzytelnieniu/weryfikacji
-   dowodu stacji, lecz **przed** odrzuceniem za nonce/deadline zużyte przez ten
-   sam zamiar. Inaczej retry po sukcesie mylnie dawałby konflikt.
-5. Nowy zamiar przechodzi pełne sprawdzenie bieżącego nonce/deadline i jest
-   zapisany atomowo wraz z idempotencją.
-6. Worker pinując zapisuje CID, potem weryfikuje aktualny stan, deadline i QA.
+   z adresem stacji i rejestrem on-chain (`expiresAt`, `stageMask`), deadline
+   i reguły wstępne.
+4. Identyczny wcześniejszy podpisany zamiar (ten sam digest) zwraca istniejące
+   polecenie. Lookup następuje po weryfikacji dowodu stacji, lecz **przed**
+   odrzuceniem za deadline lub zmieniony stan etapu. Inaczej retry po sukcesie
+   mylnie dawałby konflikt.
+5. Nowy zamiar przechodzi sprawdzenie bieżącego stanu, deadline i
+   [reguły zastępowania](corrections.md) i jest zapisany atomowo wraz z idempotencją.
+6. Worker pinując zapisuje CID, potem weryfikuje aktualny stan i deadline.
 7. Jeden writer przygotowuje, podpisuje i zapisuje transakcję, potem ją wysyła.
 8. Receipt sukcesu nie jest jeszcze potwierdzeniem projekcji.
 9. Indexer po wymaganej liczbie bloków zapisuje historię i CONFIRMED atomowo
    z checkpointem. Frontend odświeża partię i historię.
+
+Raport z `qaPassed=false` zgodny z profilem pomiarów przechodzi tę samą ścieżkę
+(przyjęcie `202`, pinowanie), ale pomija bramkę QA. `completeStage` emituje
+`StageRejected` bez zmiany stanu partii, a polecenie kończy `CONFIRMED` z
+`outcome=REJECTED`. Niespójność `qaPassed` z profilem to `422` bez przyjęcia.
 
 <!-- mermaid-checked: every participant uses `participant Id as "Label"`, no \n in aliases/messages/notes, every alt/opt/loop closed by end, no `:` inside any alias -->
 ```mermaid
@@ -90,24 +97,24 @@ sequenceDiagram
     participant ApiStage as "Backend API"
     participant DbStage as "PostgreSQL"
     participant WorkerStage as "Worker relayera"
-    participant PinataStage as "Pinata"
+    participant StorageStage as "Magazyn raportow IPFS"
     participant RpcStage as "RPC i kontrakt"
     participant IndexStage as "Indexer"
-    StationStage->>RpcStage: Odczytaj nonce i stan
+    StationStage->>RpcStage: Odczytaj stan partii
     StationStage->>StationStage: Waliduj raport i podpisz EIP-712
     StationStage->>ApiStage: POST stages z raportem i podpisem
     ApiStage->>ApiStage: Sprawdz podpis certyfikat i spojnosc
-    ApiStage->>DbStage: Lookup idempotencji
+    ApiStage->>DbStage: Lookup idempotencji i regula zastepowania
     alt Istnieje identyczne polecenie
         DbStage-->>ApiStage: Dotychczasowy commandId
         ApiStage-->>StationStage: 202 i ten sam commandId
     else Nowe polecenie
-        ApiStage->>RpcStage: Weryfikuj role nonce deadline i etap
+        ApiStage->>RpcStage: Weryfikuj stacje deadline i etap
         ApiStage->>DbStage: Zapisz ACCEPTED i raport
         ApiStage-->>StationStage: 202 po commit
         WorkerStage->>DbStage: Przejmij polecenie
-        WorkerStage->>PinataStage: Pinuj raport
-        PinataStage-->>WorkerStage: CID
+        WorkerStage->>StorageStage: Zapisz bajty JCS raportu
+        StorageStage-->>WorkerStage: CID
         WorkerStage->>DbStage: Zapisz CID i READY_TO_SUBMIT
         WorkerStage->>DbStage: Zapisz podpisana probe transakcji
         WorkerStage->>RpcStage: Wyslij completeStage
@@ -124,27 +131,28 @@ Uwierzytelnienie prywatnego GET statusu opisuje sekcja 7.
 
 ## 4. Dwa klucze przy zamknięciu kontroli - wariant wykonawczy
 
-PDF wymaga podpisu maszyny/czujnika i operatora zmiany. W tym wariancie
-podpis stacji to EIP-712 raportu, a drugi podpis to transakcja operatora
-zatwierdzająca ten sam raport. Operator ma techniczną rolę QA_INSPECTOR_ROLE.
-To obowiązkowa bramka dla etapu kontroli, nie opcjonalny trzeci audyt.
+PDF wymaga podpisu maszyny/czujnika i operatora zmiany. Podpis stacji to EIP-712
+`StageCompletion` pod raportem, a drugi podpis to EIP-712 `StageApproval` operatora
+pod tym samym `reportHash`; oba trafiają do jednego wywołania `completeStage`.
+Operator ma techniczną rolę QA_INSPECTOR_ROLE i nie wysyła transakcji ani nie
+płaci gazu. To obowiązkowa bramka dla etapu kontroli, nie opcjonalny trzeci audyt.
 
-Raport z `qaPassed=false` jest odrzucany z `422`; nie trafia do kolejki
-zatwierdzania i nie może zostać zalegalizowany przez inspektora.
-Jeśli pomiary są poprawne, ale etap wymaga ręcznego QA:
+Raport z `qaPassed=false` nie trafia do kolejki zatwierdzania i nie może zostać
+zalegalizowany przez operatora (kontrakt zapisuje tylko `StageRejected`).
+Jeśli pomiary są poprawne, a etap wymaga ręcznego QA:
 
 1. Przyjmij i przypnij raport jak wyżej. Zapisz `WAITING_FOR_QA`, CID i hash.
 2. Udostępnij kandydata tylko uprawnionej obsłudze/QA. Nie jest publiczną historią.
 3. QA sprawdza tożsamość stacji, raport, jego hash i wybraną partię/etap.
-4. Portfel wysyła `approveStage(batchId, stageId, reportHash)` według przyszłego ABI.
-5. Kontrakt sprawdza rolę QA, istnienie partii, aktualny etap i brak ukończenia.
-   Wiąże approval z pełną trójką i adresem operatora, emituje zdarzenie.
-6. Backend widzi kanoniczne potwierdzenie approval; worker ponownie czyta
-   stan/approval/deadline i może przejść do READY_TO_SUBMIT.
-7. `completeStage` sam sprawdza approval. Cofnięcie/zniknięcie approval przez
-   reorg nie może być obchodzone przez cache backendu. Odzyskany signer stacji
-   i zapisany signer approval muszą być różnymi adresami; aktualne role
-   obu muszą pozwalać na zamknięcie kontroli.
+4. Portfel podpisuje `StageApproval` (`eth_signTypedData_v4`), UI wysyła podpis
+   `POST /api/v1/qa/candidates/{commandId}/approval`.
+5. Backend odzyskuje adres z podpisu i sprawdza: zgodność z sesją, aktualną
+   QA_INSPECTOR_ROLE (z łańcucha), adres różny od stacji, hash i niewygasły
+   `approvalDeadline`. Zapisuje approval w `qa_approvals`.
+6. Worker ponownie czyta stan i deadline, po czym przechodzi do READY_TO_SUBMIT.
+7. `completeStage` weryfikuje oba podpisy sam; backend niczego nie „wymusza”
+   cache'em. Odzyskany signer stacji i operator muszą być różnymi adresami;
+   aktualne role obu (rejestracja stacji, QA) muszą pozwalać na zamknięcie kontroli.
 
 <!-- mermaid-checked: every participant uses `participant Id as "Label"`, no \n in aliases/messages/notes, every alt/opt/loop closed by end, no `:` inside any alias -->
 ```mermaid
@@ -155,38 +163,36 @@ sequenceDiagram
     participant UiQa as "Panel QA"
     participant WalletQa as "Portfel operatora zmiany"
     participant ChainQa as "Kontrakt przez RPC"
-    participant IndexQa as "Indexer"
     WorkerQa->>DbQa: WAITING_FOR_QA z CID i reportHash
-    UiQa->>ApiQa: Lista kandydatow z sesja QA
+    UiQa->>ApiQa: Lista kandydatow z tokenem QA
     ApiQa->>DbQa: Pobierz raporty oczekujace
     ApiQa-->>UiQa: Kandydat i dane raportu
     UiQa->>UiQa: Sprawdz hash i pokaz pomiary
-    UiQa->>WalletQa: Popros o approveStage dla konkretnego hash
-    WalletQa->>ChainQa: Podpisana transakcja QA
-    ChainQa-->>WalletQa: Receipt i adres zatwierdzajacego
-    IndexQa->>ChainQa: Odczytaj potwierdzony approval
-    IndexQa->>DbQa: Aktualizuj projekcje QA
-    WorkerQa->>ChainQa: Sprawdz approval i aktualny stan
-    alt Approval wazny i podpis niewygasly
-        WorkerQa->>DbQa: READY_TO_SUBMIT
-        WorkerQa->>ChainQa: completeStage z podpisem stacji
+    UiQa->>WalletQa: Popros o podpis StageApproval dla konkretnego hash
+    WalletQa-->>UiQa: Podpis EIP-712 bez transakcji
+    UiQa->>ApiQa: POST approval z podpisem
+    ApiQa->>ChainQa: Sprawdz role QA operatora
+    ApiQa->>DbQa: Zapisz qa_approvals
+    WorkerQa->>DbQa: READY_TO_SUBMIT
+    WorkerQa->>ChainQa: Sprawdz stan i deadline
+    alt Podpisy wazne i niewygasle
+        WorkerQa->>ChainQa: completeStage z podpisem stacji i approval
     else Brak approval albo podpis wygasl
         WorkerQa->>DbQa: Nadal oczekuje albo FAILED z przyczyna
     end
 ```
 
-### Proponowane uzupełnienie API dla QA
+### API dla QA
 
 | Metoda / ścieżka | Dostęp | Wynik |
 |---|---|---|
 | `GET /api/v1/qa/candidates` | aktualna rola QA | paginowana lista WAITING_FOR_QA, bez sekretów/signature |
 | `GET /api/v1/qa/candidates/{commandId}` | QA lub właściciel polecenia | raport, CID, hash, partia/etap, deadline i aktualność |
+| `POST /api/v1/qa/candidates/{commandId}/approval` | aktualna rola QA, sesja = adres z podpisu | zapis approval; `409` gdy inny operator ma ważne approval |
 
-Brak `POST /qa/approve` w bazowym wariancie: transakcję podpisuje i opłaca
-operator zmiany z uprawnieniem QA.
-W MVP brak osobnej trwałej decyzji „odrzucono przez QA”: odmowa nie daje approval,
-polecenie czeka do wygaśnięcia. Osobna decyzja odrzucenia/wymiana raportu
-wymaga zaplanowania zdarzeń i procedury DEC-09, nie cichej edycji kandydata.
+W MVP brak osobnej trwałej decyzji „odrzucono przez QA”: odmowa to brak podpisu,
+polecenie czeka do wygaśnięcia i przechodzi w FAILED. Osobna decyzja odrzucenia
+wymagałaby nowego typu EIP-712 i zdarzenia, nie cichej edycji kandydata.
 
 ## 5. Publiczny paszport i integralność
 
@@ -198,8 +204,8 @@ sequenceDiagram
     participant ApiRead as "Publiczne API"
     participant GatewayRead as "IPFS Gateway"
     participant RpcRead as "RPC"
-    ReaderRead->>UiRead: Otworz URL z QR
-    UiRead->>ApiRead: GET partia i historia
+    ReaderRead->>UiRead: Otworz URL z QR z numerem partii
+    UiRead->>ApiRead: GET partia po numerze i historia
     ApiRead-->>UiRead: Potwierdzone etapy z CID i reportHash
     UiRead->>GatewayRead: Pobierz raport
     GatewayRead-->>UiRead: JSON albo blad dostepnosci
@@ -216,6 +222,9 @@ sequenceDiagram
 Sprawdzenie on-chain obejmuje właściwą sieć/adres kontraktu, tx receipt
 z sukcesem, logIndex, batchId, stageId, reportHash i kanoniczny blockHash,
 przy tej samej polityce potwierdzeń co API. Nie wystarczy dowolny log z takim hash.
+UI liczy `batchId = keccak256(numer partii)` samodzielnie i filtruje logi po
+indeksowanym `batchId`. Historia pokazuje też odrzucenia (`StageRejected`) jako
+osobne wpisy, odróżnione od ukończonych etapów.
 
 UI rozróżnia:
 - **Dane API:** odczytano projekcję; nie wykonano niezależnego sprawdzenia.
@@ -233,12 +242,12 @@ UI rozróżnia:
 | po commit, przed odpowiedzią | polecenie | identyczny POST zwraca istniejący commandId |
 | pinowanie timeout | raport i etap polecenia, CID może być jeszcze nieznany | sprawdź/ponów pinowanie tej samej treści z backoff; nie twórz nowego command |
 | CID zapisany, proces padł | raport i CID | wznowienie nie musi ponownie pinować |
-| tx zapisana, przed broadcast | nonce i podpisane bajty/hash | wyślij tę samą transakcję |
-| timeout send / brak receipt | tx hash i nonce | uzgadniaj transakcję; brak receipt nie oznacza FAILED |
-| receipt revert | znany skutek i zużyty nonce konta relayera | FAILED; nonce stacji przy rewercie nie wzrósł |
-| deadline minął przed send | oryginalny podpis i polecenie | FAILED; nie zmieniaj deadline bez nowego podpisu/procedury DEC-09 |
-| brak approval | przypięty kandydat | WAITING_FOR_QA do zatwierdzenia lub wygaśnięcia |
-| reorg | surowe logi, checkpoint i potwierdzona wcześniej projekcja | znajdź wspólnego przodka, unieważnij skutki, odtwórz projekcję i statusy |
+| tx zapisana, przed broadcast | nonce relayera i podpisane bajty/hash | wyślij te same bajty |
+| timeout send / brak receipt | tx hash i nonce relayera | uzgadniaj transakcję; brak receipt nie oznacza FAILED; zablokowana tx = procedura ręczna (bez fee-bump w MVP) |
+| receipt revert | znany skutek i zużyty nonce konta relayera | FAILED; stan partii się nie zmienił |
+| deadline minął przed send | oryginalny podpis i polecenie | FAILED z `retryAllowedAfter`; nowy raport po warunku [reguły zastępowania](corrections.md) |
+| brak approval | przypięty kandydat | WAITING_FOR_QA do podpisu operatora lub wygaśnięcia |
+| reorg | surowe logi, checkpoint i potwierdzona wcześniej projekcja | ponowny skan okna N bloków, unieważnij skutki, odtwórz projekcję i statusy |
 
 Retry ma limit i jawny nextRetryAt dla przejściowego kroku.
 SUBMITTED o nieznanym wyniku wymaga alarmu/uzgodnienia, nie automatycznego
@@ -246,28 +255,27 @@ porzucenia tylko dlatego, że skończyły się próby odpytywania.
 Wygaśnięcie podpisu po wysłaniu nie dowodzi revertu: transakcja mogła zostać
 wykonana przed deadline. Najpierw sprawdź kanoniczny receipt.
 
-## 7. Dostęp do prywatnego statusu - propozycja
+## 7. Dostęp do prywatnego statusu
 
-Challenge login z DEC-05 ma być jednorazowy i związany z domeną oraz adresem.
-Po weryfikacji powstaje sesja z terminem ważności. Stacja skryptowa może
-użyć tego samego protokołu, podpisując challenge przez eth-account.
-Dokładna treść challenge i sposób transportu sesji muszą znaleźć się w OpenAPI.
+Challenge SIWE jest jednorazowy i związany z domeną oraz adresem.
+Po weryfikacji backend wydaje losowy token Bearer z terminem ważności (w bazie
+tylko jego skrót SHA-256). Stacja skryptowa używa tego samego protokołu,
+podpisując challenge przez eth-account i wysyłając nagłówek `Authorization`.
+Brak cookie i CSRF. Dokładna treść challenge i format tokenu trafiają do OpenAPI.
 
-Proponowane ścieżki: `POST /api/v1/auth/challenges`,
+Ścieżki: `POST /api/v1/auth/challenges`,
 `POST /api/v1/auth/sessions`, `DELETE /api/v1/auth/sessions/current`.
 Nie są zaimplementowane. Nie traktuj losowego UUID commandId jako uprawnienia.
 Tożsamość właściciela zgłoszenia stacji wynika z recover raportu, a nie
-z niezweryfikowanego `owner` w JSON. Sesja użyta do prywatnego odczytu musi
+z niezweryfikowanego `owner` w JSON. Token użyty do prywatnego odczytu musi
 odpowiadać temu adresowi lub mieć aktualną rolę administratora.
 Sama rola QA daje dostęp do kandydatów, nie do wszystkich prywatnych commands.
-Szczegóły propozycji SIWE, cookie i CSRF opisuje
-[access-control](access-control.md); nie traktuj ich jako już działających
-endpointów.
+Szczegóły opisuje [access-control](access-control.md).
 
 ## 8. Zasada spójności projekcji
 
 Backend może odebrać receipt zanim indexer dojdzie do tego bloku.
 Dlatego jedno miejsce (indexer) zatwierdza domenowy CONFIRMED i projekcję;
 worker zapisuje receipt/próbę. Indexer identyfikuje efekt po logu, a nie
-wyłącznie po ostatnim txHash polecenia: replacement mógł wykonać wcześniejszą próbę.
-Zdarzenia QA wysłane portfelem nie mają obowiązkowo lokalnego commandId.
+wyłącznie po ostatniej próbie polecenia: wcześniejsza próba mogła zostać wykonana.
+Approval operatora nie jest zdarzeniem łańcucha; `qaOperator` pochodzi z `StageCompleted`.

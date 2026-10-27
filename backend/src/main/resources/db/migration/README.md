@@ -3,7 +3,8 @@
 **Język:** SQL zgodny z PostgreSQL.
 
 Plan: `V1__initial_schema.sql`, potem kolejne numerowane migracje.
-Twórz tabele projekcji partii, historii, poleceń, prób transakcji i checkpointów
+Twórz tabele projekcji partii, historii, poleceń, prób transakcji (z podpisaną transakcją), `qa_approvals`,
+rejestru certyfikatów, tokenów (skrót SHA-256) i checkpointów
 z constraints/idempotencją potrzebnymi workerowi.
 Znaczniki czasu zapisuj z jasną strefą, np. `timestamptz`; domenowe Unix seconds
 mapuj jawnie. Zdefiniuj indeksy wyszukiwania zadań i historii.

@@ -1,18 +1,16 @@
-# Protokół integracji v1 - projekt do wspólnego zatwierdzenia
+# Protokół integracji v1 (zmiany v2) - kontrakt integracji
 
 ## Zanim powstanie kod
 
-To proponowany kontrakt integracji, nie istniejące endpointy ani gotowy standard
-projektu. Wszystkie cztery osoby powinny zatwierdzić go przed pisaniem klientów.
+To kontrakt integracji po zmianach [v2](changes-v2.md), nie istniejące endpointy.
+Wszystkie cztery osoby potwierdzają go na spotkaniu startowym przed pisaniem klientów.
 Zakres nadrzędny wyznacza [opis PDF](source-alignment.md).
 Wymagane są certyfikat stacji i dwa niezależne klucze do zamknięcia kontroli:
-stacji oraz operatora zmiany. Otwarty pozostaje format i sposób powiązania
-tych dowodów, a nie możliwość pominięcia drugiego klucza.
+stacji (`StageCompletion`) i operatora zmiany (`StageApproval`).
 Wybrana ogólna marszruta to przygotowanie -> montaż -> kontrola -> pakowanie,
 opisana w [regułach produkcji](production-rules.md) jako stageId 0..3.
-Do zatwierdzenia pozostają profile pomiarów, parametry finalności/czasu
-i wykonawcze warianty auth/certyfikatów/approval. Nie stosuj fikcyjnych
-progów ani ukrytego domyślnego PASS.
+Do zatwierdzenia pozostają profile pomiarów (DEC-02) oraz wartości czasu i
+potwierdzeń (DEC-07/11). Nie stosuj fikcyjnych progów ani ukrytego domyślnego PASS.
 
 Zapisz implementowalne schematy w [shared/schemas](../shared/schemas/README.md).
 Identyczny testowy raport ma dać identyczny hash w Pythonie, Javie i TypeScript.
@@ -24,16 +22,20 @@ Raport v1 zawiera `schemaVersion` (stała `1`), `batchId`, `stageId`,
 
 | Pole | Reprezentacja |
 |---|---|
-| `batchId` | `bytes32`, tekst `0x` z dokładnie 64 znakami hex; nie dowolna nazwa produktu |
+| `batchNumber` | tekst `B-RRRR-NNNN` (np. `B-2026-0001`), nadawany przez backend; widoczny w QR i UI |
+| `batchId` | `bytes32` = `keccak256(utf8(batchNumber))`, tekst `0x` z dokładnie 64 znakami hex; liczony też on-chain w `createBatch` |
 | `stageId` | liczba całkowita zgodna z `uint32`, z uzgodnionej listy etapów |
 | `stationAddress` | adres EVM; w kanonicznym raporcie małe litery z prefiksem `0x` |
 | `timestamp`, `deadline` | Unix time w sekundach, nie milisekundach |
 | `measurements` | obiekt dozwolonych pomiarów; ustalone klucze, jednostki i zakresy |
 | `qaPassed` | boolean, podpisany wynik stacji; nie decyzja ręcznego QA |
-| `nonce` | w HTTP dziesiętny string, na łańcuchu `uint256` |
+| `deadline`, `approvalDeadline` | Unix seconds (`uint256`); w HTTP liczba całkowita; kontrakt ogranicza `deadline` do `block.timestamp + maxDeadlineWindow` |
 | `reportHash` | Keccak-256 kanonicznych bajtów raportu, `bytes32` |
-| `signature` | podpis EIP-712: 65 bajtów zapisanych jako hex z `0x` |
-| `ipfsCid` | zweryfikowany CID z Pinaty, bez URL bramki |
+| `signature`, `approvalSignature` | podpis EIP-712: 65 bajtów zapisanych jako hex z `0x` |
+| `ipfsCid` | zweryfikowany CID z magazynu raportów (CIDv0 lub CIDv1), bez URL bramki |
+
+Nonce stacji **nie istnieje** (V2-01). Dlatego pole nie występuje ani w raporcie,
+ani w podpisanej strukturze, ani w HTTP.
 
 Użyj całkowitych jednostek pomiarowych, np. `temperatureMilliC`, `torqueMilliNm`
 i `pressurePa`. Ich konkretne zakresy trzeba zatwierdzić. Nie używaj
@@ -50,8 +52,9 @@ brak zatwierdzonego profilu jest blokadą walidatora, nie pustym raportem PASS.
 2. Utwórz bajty UTF-8 według RFC 8785 (JSON Canonicalization Scheme).
    Samo sortowanie kluczy lub domyślny serializer nie gwarantuje JCS.
 3. Oblicz **Keccak-256**, nie NIST SHA3-256.
-4. Pinuj ten sam raport; przy odczycie pobierz JSON, waliduj, kanonizuj i
-   porównaj hash z wartością zapisaną on-chain.
+4. Zapisz w magazynie raportów **dokładnie te bajty JCS jako plik** (nie obiekt JSON
+   do serializacji przez usługę); przy odczycie pobierz JSON, waliduj, kanonizuj i
+   porównaj hash z wartością zapisaną on-chain. Walidator CID przyjmuje CIDv0 i CIDv1.
 
 CID może być inny niż hash raportu (kodowanie i struktura IPFS). Nie porównuj
 bezpośrednio tekstu CID do `reportHash`.
@@ -82,24 +85,43 @@ StageCompletion(
     uint32 stageId,
     bytes32 reportHash,
     bool qaPassed,
-    uint256 nonce,
     uint256 deadline
 )
 ```
 
 To zapis pól do implementacji EIP-712, nie gotowa deklaracja Solidity.
 Type string musi być dokładnie:
-`StageCompletion(bytes32 batchId,uint32 stageId,bytes32 reportHash,bool qaPassed,uint256 nonce,uint256 deadline)`.
+`StageCompletion(bytes32 batchId,uint32 stageId,bytes32 reportHash,bool qaPassed,uint256 deadline)`.
 
 Podpisuje klucz stacji. Adres odzyskany z podpisu musi równać się
-`report.stationAddress` oraz mieć `STATION_ROLE`. Backend sprawdza też, że
+`report.stationAddress` i być aktywną stacją w rejestrze on-chain
+(ważność `expiresAt` i `stageMask` obejmujące `stageId`). Backend sprawdza też, że
 `batchId`, `stageId` i `qaPassed` w danych podpisanych odpowiadają raportowi.
-Nonce jest osobnym licznikiem **dla adresu stacji w danym kontrakcie**,
-nie nonce konta relayera. Kontrakt sprawdza oczekiwaną wartość i zużywa ją tylko
-przy poprawnym przejściu. Deadline weryfikuj także on-chain.
+Ochrona przed replay (bez nonce): etap `(batchId, stageId)` kończy się raz,
+`deadline` jest sprawdzany on-chain i ograniczony przez `maxDeadlineWindow`,
+a domena wiąże podpis z siecią i kontraktem.
 
-Nie używaj `personal_sign`/`encode_defunct` jako zamiennika EIP-712.
+Drugi typ, podpisywany przez operatora zmiany (etap kontroli, `qaPassed=true`),
+w tej samej domenie:
+
+```solidity
+StageApproval(
+    bytes32 batchId,
+    uint32 stageId,
+    bytes32 reportHash,
+    uint256 deadline
+)
+```
+
+Type string: `StageApproval(bytes32 batchId,uint32 stageId,bytes32 reportHash,uint256 deadline)`.
+W kontrakcie wartość `deadline` przekazywana jako `approvalDeadline`.
+
+Nie używaj `personal_sign`/`encode_defunct` jako zamiennika EIP-712 dla tych typów.
 Zmiana domeny, sieci, kontraktu, etapu, QA lub skrótu ma unieważnić podpis.
+Typy `StageCompletion`, `StageApproval` i `StationCertificate` mają różne type hashes,
+więc podpisu jednego nie użyje się jako drugiego. Login SIWE używa EIP-191.
+Implementacje EIP-712 w Javie są ręczne (jedna stała struktura), a poprawność
+potwierdza wspólny wektor w Pythonie, Javie, TS i Solidity.
 
 ## Planowane API
 
@@ -108,11 +130,17 @@ to polecenia asynchroniczne. Schemat OpenAPI ma opisywać wszystkie odpowiedzi.
 
 | Metoda | Ścieżka | Znaczenie / odpowiedź |
 |---|---|---|
-| `POST` | `/api/v1/batches` | autoryzowane utworzenie partii, `202 CommandAccepted` |
+| `POST` | `/api/v1/auth/challenges` | wiadomość SIWE do podpisu (challenge jednorazowy) |
+| `POST` | `/api/v1/auth/sessions` | podpisany challenge -> `200` z tokenem Bearer; `DELETE /api/v1/auth/sessions/current` wylogowuje |
+| `POST` | `/api/v1/batches` | autoryzowane utworzenie partii (`Idempotency-Key`), `202 CommandAccepted`; wynik zawiera `batchNumber` i `batchId` |
 | `GET` | `/api/v1/batches/{batchId}` | projekcja partii, `200 BatchResponse`, brak: `404` |
-| `GET` | `/api/v1/batches/{batchId}/history` | historia z CID, reportHash, tx hash i statusem potwierdzenia |
-| `POST` | `/api/v1/batches/{batchId}/stages` | podpisana telemetria, `202 CommandAccepted` |
-| `GET` | `/api/v1/commands/{commandId}` | status polecenia, `200 CommandStatus`, brak: `404` |
+| `GET` | `/api/v1/batch-numbers/{batchNumber}` | to samo po numerze `B-RRRR-NNNN` (QR, ręczne wpisanie) |
+| `GET` | `/api/v1/batches/{batchId}/history` | historia (ukończone i odrzucone etapy) z CID, reportHash, tx hash i statusem potwierdzenia |
+| `POST` | `/api/v1/batches/{batchId}/stages` | podpisana telemetria, `202 CommandAccepted` (także dla `qaPassed=false`) |
+| `GET` | `/api/v1/commands/{commandId}` | status polecenia, `200 CommandStatus` (`outcome`, `retryAllowedAfter`), brak: `404` |
+| `GET` | `/api/v1/qa/candidates` | lista kandydatów WAITING_FOR_QA (rola QA) |
+| `GET` | `/api/v1/qa/candidates/{commandId}` | szczegóły kandydata |
+| `POST` | `/api/v1/qa/candidates/{commandId}/approval` | podpis `StageApproval` operatora (`approvalDeadline`, `signature`), `200` lub `409` |
 
 Treść zgłoszenia etapu:
 
@@ -121,7 +149,6 @@ StageSubmissionRequest {
   report: TelemetryReport,
   stationCertificateId: registered certificate identifier,
   reportHash: hex bytes32,
-  nonce: decimal string,
   deadline: integer Unix seconds,
   signature: hex
 }
@@ -131,7 +158,8 @@ StageSubmissionRequest {
 z konfiguracji danej sieci, nie z dowolnej domeny dostarczonej przez klienta.
 `202` zwraca `commandId` i adres odczytu statusu. Nie zwraca fikcyjnego `txHash`.
 Certyfikat jest uprzednio rejestrowany i weryfikowany; jego ID jest poza
-raportem JCS. Adres certyfikatu musi odpowiadać signerowi raportu.
+raportem JCS. Adres certyfikatu musi odpowiadać signerowi raportu i aktywnej
+rejestracji stacji on-chain.
 Zasady wystawienia, ważności i odwołania opisuje [station-identity](station-identity.md).
 Publiczny paszport nie udostępnia wewnętrznych błędów relayera, surowych podpisów
 ani danych administracyjnych. Endpoint statusu polecenia wymaga uprawnienia
@@ -140,7 +168,8 @@ właściciela/obsługi, nie jest publiczny tylko dlatego, że identyfikator to U
 Do historii dodaj ograniczoną paginację i stabilne sortowanie według pozycji
 zdarzenia na łańcuchu. Nie mieszaj niepotwierdzonych poleceń z ukończonymi etapami.
 
-Precyzyjne prawa do endpointów, owner, propozycję SIWE/cookie/CSRF i rozdzielenie
+Uwierzytelnienie: token Bearer w nagłówku `Authorization` (SIWE tylko do jego
+wydania, brak cookie i CSRF). Precyzyjne prawa do endpointów, owner i rozdzielenie
 podpisanego POST od prywatnego GET opisuje [access-control](access-control.md).
 Nie nazywaj ogólnie „obsługą” wszystkich ról: QA widzi kandydatów, a status
 command jest dla właściciela lub aktualnego administratora.
@@ -150,88 +179,96 @@ command jest dla właściciela lub aktualnego administratora.
 Minimalne statusy polecenia:
 `ACCEPTED -> PINNING -> READY_TO_SUBMIT -> SUBMITTED -> CONFIRMED`.
 Etap wymagający współzatwierdzenia operatora przechodzi po pinowaniu przez
-`WAITING_FOR_QA`, a dopiero po uzyskaniu drugiego dowodu do `READY_TO_SUBMIT`.
-CREATE_BATCH pomija pinowanie i QA. Pełne warianty i recovery opisuje
+`WAITING_FOR_QA`, a dopiero po zapisaniu ważnego `StageApproval` do `READY_TO_SUBMIT`.
+CREATE_BATCH pomija pinowanie i QA. Raport z `qaPassed=false` pomija QA i po
+potwierdzeniu `StageRejected` kończy `CONFIRMED` z `outcome=REJECTED`.
+Pełne warianty i recovery opisuje
 [model stanów](data-model.md); API/UI muszą obsługiwać każdy z tych statusów.
 Niepowodzenie oznacz jako `FAILED` z kodem błędu; zaplanowane ponowienie ma
-zachować aktualny etap i jawne `retryAt`. Brak dostępności nie oznacza sukcesu.
+zachować aktualny etap i jawne `retryAt`, a wznowienie nowego raportu - `retryAllowedAfter`.
+Brak dostępności nie oznacza sukcesu.
 Reorganizacja może cofnąć pozorne potwierdzenie do ponownej weryfikacji.
 
 | HTTP | Znaczenie |
 |---|---|
 | `400` | niepoprawny format, schemat lub niespójne pola |
 | `401` | brak wymaganego uwierzytelnienia |
-| `403` | zły podpis lub brak roli/uprawnienia |
+| `403` | zły podpis, stacja nieaktywna/wygasła/poza zakresem lub brak roli |
 | `404` | nieznana partia/polecenie |
-| `409` | konflikt etapu, nonce lub idempotency key |
-| `422` | negatywny wynik QA / raport poza dozwoloną regułą |
+| `409` | konflikt etapu, aktywnego polecenia (`STAGE_ALREADY_PENDING`), approval lub idempotency key |
+| `422` | raport niespójny z profilem pomiarów albo poza dozwoloną regułą |
+| `429` | limit żądań |
 | `503` | backend nie może trwale przyjąć polecenia |
 
 Błędy API zwracaj jako `application/problem+json` ze stabilnym kodem domenowym
-i identyfikatorem korelacji. Szczegóły RPC, JWT i stack trace zostają poza
+i identyfikatorem korelacji. Szczegóły RPC, tokenów i stack trace zostają poza
 odpowiedzią. Walidacja wstępna nie usuwa ryzyka późniejszego revertu kontraktu;
 taki wynik zapisz jako błąd polecenia.
 
-## Idempotencja i dwa różne nonce
+## Idempotencja i reguła zastępowania (bez nonce stacji)
 
-Dla zgłoszenia etapu zapisz unikalność `(chainId, contractAddress, stationAddress, nonce)`.
-Powtórzenie identycznej treści podpisywanej zwraca istniejący `commandId`.
-Inna treść z tą samą tożsamością daje `409`. Dla tworzenia partii użyj
+Tożsamość zamiaru stacji to **digest EIP-712 `StageCompletion`**
+(`signed_payload_digest`), zapisany z `(chainId, contractAddress)`.
+Powtórzenie identycznej treści zwraca istniejący `commandId`. Dla tego samego
+`(deployment, batchId, stageId)` obowiązuje
+[reguła zastępowania](corrections.md): aktywne polecenie z innym hashem daje
+`409 STAGE_ALREADY_PENDING`, a nowy raport po FAILED jest dozwolony dopiero gdy
+stary deadline minął w potwierdzonym bloku. Dla tworzenia partii użyj
 `Idempotency-Key`, zakresu użytkownika i skrótu treści żądania.
 
-Stacja nie wysyła dwóch nowych raportów jednocześnie z tym samym nonce.
-Po timeout sprawdza status lub ponawia identyczne żądanie. Po trwałym błędzie
-konieczne jest jawne uzgodnienie wznowienia; nie usuwaj automatycznie wpisu
-idempotencji, nie zwiększaj nonce stacji bez sprawdzenia kontraktu.
-Na życzenie użytkownika mechanizm DEC-09 nie został wybrany.
-[Corrections](corrections.md) porównuje alternatywy, ich zmiany w ABI/DB
-i zagrożenie starym podpisem. Sam nowy deadline lub nowy hash nie daje prawa
-do zastąpienia poprzedniej autoryzacji.
+Po timeout stacja sprawdza status lub ponawia identyczne żądanie. Nie usuwaj
+wpisu idempotencji, by „odblokować” stację. DEC-09 jest zamknięta
+(wariant C uproszczony, [corrections](corrections.md)).
 
 Relayer ma niezależny nonce transakcyjny konta EVM. Jeden writer przydziela
 go dla danego `(chainId, relayerAddress)`. Samo `@Async` lub równoległe
 `FastRawTransactionManager` nie zapewnia globalnej synchronizacji.
-Zapisuj hash i parametry podpisanej transakcji przed wysłaniem. Nieznany wynik
-RPC wymaga odszukania tej transakcji; replacement korzysta z tego samego nonce
-i tej samej operacji. Retry nie może wykonać podwójnego przejścia.
+Zapisuj hash i parametry podpisanej transakcji przed wysłaniem; transakcję
+podpisuje własny kod (Web3j do kodowania wywołania i podpisu, **bez `.send()`**
+i bez `DefaultGasProvider`). Opłaty: EIP-1559 z konfigurowalnym minimalnym
+priority fee (Polygon wymaga wysokiego progu - zweryfikuj wartość dla Amoy).
+Nieznany wynik RPC wymaga odszukania tej transakcji i ponownego wysłania
+identycznych bajtów. Fee-bump/replacement nie jest zaimplementowany w MVP;
+zablokowana transakcja to procedura ręczna. Retry nie może wykonać
+podwójnego przejścia.
 
 ## Projekt interfejsu kontraktu
 
-Przewidywane operacje: `createBatch`, `completeStage`, odczyt nonce stacji
-i stanu partii, przypisanie ról, zatwierdzenie konkretnego raportu przez
-operatora zmiany z uprawnieniem QA.
-`completeStage` przyjmuje pola podpisanej struktury, osobno CID i podpis.
-Zdarzenie `StageCompleted` zawiera co najmniej `batchId`, `stageId`,
-`stationAddress`, `reportHash` i `ipfsCid`. Ręczne QA emituje osobne zdarzenie.
-Dokładne ABI musi powstać z kompilatora, a nie z ręcznie napisanego JSON.
+Powierzchnię kontraktu (funkcje, zdarzenia, reguły `completeStage`) opisuje
+[changes-v2](changes-v2.md); poniżej skrót. Dokładne ABI musi powstać z kompilatora
+(`forge inspect`), a nie z ręcznie napisanego JSON.
+
+- `createBatch(string batchNumber)` (RELAYER_ROLE): `batchId = keccak256(batchNumber)`.
+- `completeStage(batchId, stageId, reportHash, qaPassed, deadline, ipfsCid,
+  stationSignature, approvalDeadline, approvalSignature)` (RELAYER_ROLE).
+- `registerStation`/`revokeStation`/`setMaxDeadlineWindow` (admin); odczyty
+  `getBatch`, `getStation`.
+- Zdarzenia: `BatchCreated`, `StageCompleted` (z `qaOperator`), `StageRejected`,
+  `StationRegistered`, `StationRevoked`; `batchId` indeksowany, aby paszport mógł
+  niezależnie przeszukać logi przez RPC.
+- `qaPassed=false` nie przesuwa partii i emituje `StageRejected` (ślad odrzucenia).
 
 ### Dwa klucze przy zamknięciu kontroli
 
-Wariant do zatwierdzenia: operator zmiany wysyła swoim portfelem podpisaną
-transakcję `approveStage(batchId, stageId, reportHash)`. Kontrakt przechowuje
-adres zatwierdzającego związany z tą trójką. `completeStage` odzyskuje adres
-stacji z EIP-712, sprawdza jego rolę i dla etapu kontroli wymaga approval
-od **innego** adresu z aktualnym uprawnieniem operatora QA.
-Rejestrowanie jedynie boolean approval bez adresu nie wystarczy do sprawdzenia
-niezależności obu kluczy. Cofnięcie roli przed zamknięciem blokuje approval.
-Oba dowody autoryzują ten sam hash; pozytywnego wyniku stacji nie można
-zastąpić decyzją człowieka. Nie jest to portfel multisig ani obowiązek
-podpisania jednej transakcji przez dwa konta.
-Przepływ i proponowane endpointy kolejki/auth są w [flows](flows.md).
-Szczegóły wiązania approval, jego powtórzeń, roli i ograniczeń odwołania
-są w [quality-approval](quality-approval.md). Approval zatwierdza raport,
-nie nonce/deadline jego obwiedni. Zmiana tego zakresu wymaga zmiany ABI,
-nie jedynie nowej etykiety w panelu.
+Operator zmiany podpisuje portfelem EIP-712 `StageApproval` dla konkretnego
+`(batchId, stageId, reportHash, deadline)`. Backend zbiera podpis
+(`POST /api/v1/qa/candidates/{commandId}/approval`), a relayer przekazuje go razem
+z podpisem stacji do `completeStage`. Dla etapu kontroli (`stageId == 2`, `qaPassed=true`)
+kontrakt wymaga ważnego approval operatora z aktualną QA_INSPECTOR_ROLE i adresem
+**różnym** od stacji. Oba dowody autoryzują ten sam hash; pozytywnego wyniku stacji
+nie zastąpi decyzja człowieka. Nie ma transakcji `approveStage`, stanu approval
+w storage ani portfela multisig; operator nie płaci gazu.
+Szczegóły: [quality-approval](quality-approval.md), przepływ: [flows](flows.md).
+Approval wiąże raport (hash), nie pojedynczą próbę wysyłki, i wygasa po swoim deadline.
 
 ### Minimalny zapis on-chain
 
-Pełny JSON i certyfikat zostają off-chain. On-chain zapisuj identyfikator partii,
-CID/hash oraz wyłącznie stan potrzebny maszynie/RBAC/replay/approval.
+Pełny JSON i certyfikat zostają off-chain. On-chain zapisuj: istnienie partii
+i `nextStage`/`completed`, rejestr stacji (`active`, `expiresAt`, `stageMask`),
+role, skróty odrzuceń (by nie powielać zdarzeń) i parametr okna deadline.
 Nie duplikuj nieograniczonej historii raportów w storage: do historii służą
-minimalne eventy i indexer. Podpisy mogą być calldata do weryfikacji, ale nie
-przechowuj ich kopii w stanie kontraktu. CID i reportHash mają różne funkcje
-opisane wyżej; dodatkowy hash integralności jest uzasadnionym metadanym,
-nie pretekstem do przechowywania pomiarów.
+zdarzenia i indexer. Podpisy są calldata do weryfikacji, nie przechowuj ich kopii
+w stanie. CID i reportHash mają różne funkcje opisane wyżej.
 
 ## Skrócony przepływ etapu bez bramki operatora
 
@@ -245,7 +282,7 @@ sequenceDiagram
     participant API as "Backend API"
     participant DB as "PostgreSQL"
     participant Worker as "Relayer worker"
-    participant IPFS as "Pinata IPFS"
+    participant IPFS as "Magazyn raportow IPFS"
     participant Chain as "Kontrakt"
     participant Indexer as "Indexer"
     participant UI as "Frontend"

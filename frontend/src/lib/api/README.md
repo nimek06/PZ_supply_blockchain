@@ -2,9 +2,10 @@
 
 **Język:** TypeScript; Axios.
 
-Plan: `client.ts`, `batchesApi.ts`, `commandsApi.ts` i typy wynikające z OpenAPI.
+Plan: `client.ts`, `authApi.ts` (SIWE), `batchesApi.ts`, `commandsApi.ts` i typy wynikające z OpenAPI.
 Generowane typy/klient mają jawny proces aktualizacji; nie poprawiaj ich ręcznie.
-Wspólna instancja Axios: baseURL, timeout, obsługa cancellation i Problem Details.
+Wspólna instancja Axios: baseURL, timeout, nagłówek `Authorization: Bearer` (token z SIWE
+w pamięci; bez cookie/CSRF), obsługa cancellation i Problem Details.
 
 Funkcje zwracają typowane dane lub jawny błąd. Nie zwracaj `[]` po timeout.
 Query hooks należą do features/batches, nie do tej warstwy transportowej.
