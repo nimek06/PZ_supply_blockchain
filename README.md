@@ -1,61 +1,160 @@
 # PZ_supply_blockchain
-### 1. Smart Contracts & Blockchain (Osoba 1)
-Logika maszyny stanów partii, walidacja kolejności etapów, bramki kontroli jakości (QA) oraz przypisanie uprawnień (RBAC).
-- Język: Solidity (0.8.24+)
-- Narzędzia lokalne i testowe: Hardhat lub Foundry (Anvil)
-  - Rekomendacja: Nawet jeśli backend jest w Javie, kontrakt najwygodniej pisać i kompilować lokalnie za pomocą Foundry (błyskawiczne testy jednostkowe) lub Hardhat (generuje folder artifacts/, z którego Java łatwo pobierze pliki .abi i .bin).
-- Lokalny węzeł: Anvil lub wbudowany Hardhat Network (lokalna sieć stawiająca się w sekundę do szybkich testów integracyjnych z Javą).
-- Sieć docelowa: Polygon Amoy Testnet (oficjalny testnet Polygon bazujący na Ethereum Sepolia, zerowe koszty testów, darmowy kranik monet testowych POL).
-- Biblioteki kontraktowe:
-  - OpenZeppelin Contracts:
-    - AccessControl.sol – zarządzanie rolami (np. STATION_ROLE, QA_INSPECTOR_ROLE, ADMIN_ROLE).
-    - ECDSA.sol / MessageHashUtils.sol – do kryptograficznej weryfikacji podpisów przesyłanych ze stacji.
-### 2. Backend, Relayer & Storage (Osoba 2)
-Centralny punkt logiki biznesowej, bezpieczny relayer transakcji blockchainowych oraz integracja z rozproszonym magazynem danych IPFS.
-- Język i Framework: Java 21 (LTS) + Spring Boot 3.3+
-- Integracja z Blockchainem: Web3j (org.web3j:core)
-  - Użyj Web3j CLI lub pluginu Gradle/Maven (web3j-maven-plugin), aby wygenerować klasy Javowe bezpośrednio z plików ABI kontraktu. Dzięki temu wywołanie metody kontraktu w Javie wygląda jak zwykła metoda: myContract.advanceStage(batchId, ipfsCid, signature).send().
-  - Zarządzanie kontem/Relayerem: RawTransactionManager lub FastRawTransactionManager z Web3j (pozwala na podpisywanie transakcji kluczem prywatnym serwera i wysyłanie ich na Polygon).
-- Składowanie danych (IPFS):
-  - Pinata Cloud API z wykorzystaniem Spring RestClient lub WebClient.
-  - Backend odbiera pomiary, pakuje je do ustrukturyzowanego JSON-a, wysyła żądaniem HTTP POST (Multipart/JSON) do endpointu /pinning/pinJSONToIPFS Pinaty i odbiera skrót IpfsHash (CID).
-- Baza danych (Cache & Event Indexer): PostgreSQL + Spring Data JPA
-  - Zapisuje bieżący cache stanu partii, historię transakcji relayera i logi błędów.
-- Kolejkowanie transakcji: Zwykła asynchroniczna kolejka (np. @Async / Java BlockingQueue lub prosty lightweight Redis / RabbitMQ).
-  - Dlaczego: Jeśli dwie stacje zgłoszą ukończenie etapu w tej samej sekundzie, relayer w Javie musi wysłać transakcje z kolejnymi numerami nonce, unikając błędu nonce collision.
-### 3. Symulator IoT i Stacji Montażowych (Osoba 4)
-Samodzielny skrypt/serwis udający fizyczne gniazda produkcyjne i sterowniki maszyn (PLC/sensory).
-- Język: Python 3.11+
-- Biblioteki kluczowe:
-  - eth-account: Generowanie par kluczy kryptograficznych (adres Ethereum + klucz prywatny) dla każdego stanowiska oraz podpisywanie wiadomości zgodnie ze standardem EIP-712 (strukturyzowane dane JSON).
-  - pydantic: Definiowanie ścisłych modeli danych telemetrycznych (np. temperature: float, torque_nm: float, qa_passed: bool, timestamp: int).
-  - faker / random: Generowanie realistycznych danych produkcyjnych (z kontrolowaną możliwością wywołania anomalii na potrzeby testów odrzucania przez QA).
-  - httpx lub requests: Wysyłanie podpisanych pakietów telemetrycznych HTTP POST do backendu w Javie.
-- Struktura symulacji:
-  - Możliwość uruchomienia w trybie pętli (automatyczna linia montażowa) lub w trybie interaktywnym (ręczne wyzwalanie kolejnych kroków i testów negatywnych).
-### 4. Frontend & Panel Operatora / Paszport Produktu (Osoba 3)
-Aplikacja SPA/PWA pozwalająca operatorom na hali montażowej rejestrować zdarzenia oraz oferująca publiczny portal weryfikacji partii.
-- Framework: React 18/19 (Vite + TypeScript)
-- Komunikacja z Blockchainem i Portfelami:
-  - Wagmi v2 + Viem: Najnowocześniejsze i najbardziej stabilne biblioteki do łączenia Reacta z EVM (Polygon).
-  - RainbowKit (lub AppKit / dawniej Web3Modal): Gotowy komponent logowania portfelem (MetaMask / Coinbase Wallet) dla uprawnionych kierowników jakości (QA).
-- UI & Style: Tailwind CSS + shadcn/ui
-  - Gotowe, nowoczesne komponenty interfejsu (karty, statusy linii produkcyjnej, tabelki historii, alerty błędów).
-- Obsługa kodów QR (Kamera & Generowanie):
-  - @html5-qrcode: Obsługa skanowania etykiet partii bezpośrednio z kamery telefonu/tabletu w widoku operatora.
-  - qrcode.react: Dynamiczne generowanie kodu QR dla partii gotowej do przekazania dalej.
-- Komunikacja z Backendem: TanStack Query (React Query) + Axios do pobierania zbuforowanych danych, raportów i statusów z API Spring Boota.
-- Wizualizacja osi czasu: Własny komponent osi czasu (Timeline) prezentujący każdy krok (wraz z linkiem do IPFS Gateway oraz Polygonscan).
-Przebieg pojedynczego zdarzenia produkcyjnego (End-to-End)
-1. Stacja montażowa (Python): Kończy operację. Tworzy JSON z pomiarami (np. ciśnienie 6.2 bar, status: PASS). Podpisuje obiekt kluczem stacji i wysyła do Javy:POST /api/v1/batches/{batchId}/stages
-2. Backend (Java / Spring):
-  - Odbiera żądanie, sprawdza poprawność schematu.
-  - Wysyła pełny JSON do Pinata IPFS i otrzymuje hash, np. QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco.
-  - Przez Web3j tworzy i podpisuje transakcję wywołującą smart kontrakt:contract.completeStage(batchId, "QmXoy...", signature).send().
-3. Smart Kontrakt (Solidity na Polygon):
-  - Sprawdza, czy podpis pochodzi od zarejestrowanej stacji (ecrecover).
-  - Sprawdza, czy poprzedni krok został zaliczony (maszyna stanów).
-  - Zapisuje CID w tablicy historii partii i emituje zdarzenie StageCompleted(batchId, stageId, ipfsCid).
-4. Interfejs (React):
-  - Operator widzi natychmiastową zmianę statusu na zielony.
-  - Publiczny użytkownik po wpisaniu ID partii widzi pełną oś czasu, a klikając w dany etap, aplikacja pobiera oryginalny raport pomiarowy bezpośrednio z bramki IPFS.
+
+System śledzenia produkcji: stacje IoT podpisują raporty, backend przechowuje je
+w IPFS i przekazuje transakcje do kontraktu, a panel pokazuje historię partii.
+
+Źródłem nadrzędnym jest [opis projektu](Opis_Projectu%20%283%29.pdf).
+MVP dotyczy modelowej linii montażowej, bez przebudowy fizycznej infrastruktury.
+Zamknięcie etapu kontroli wymaga pozytywnego QA oraz autoryzacji **stacji
+i operatora zmiany**. Każda symulowana stacja ma własny klucz i certyfikat.
+Projekt planujemy na 12 tygodni; [mapa zgodności](docs/source-alignment.md)
+odróżnia wymagania PDF od decyzji technicznych.
+
+## Status i sposób korzystania z instrukcji
+
+Repozytorium zawiera **strukturę oraz instrukcje implementacji**, nie gotową
+aplikację. Pliki źródłowe, manifesty zależności, wrappery, konfiguracje usług
+i testy opisane w instrukcjach należy dopiero utworzyć. Nie ma jeszcze
+działających endpointów, zabezpieczeń ani integracji. Komendy w przewodnikach
+dotyczą etapu po inicjalizacji odpowiedniego modułu.
+
+W każdym katalogu znajduje się `README.md`: opis odpowiedzialności, języków,
+planowanych plików oraz zasad pracy. Nie kopiuj całych instrukcji do kodu.
+Zacznij od [przewodnika pracy](docs/development.md), potem przeczytaj README
+swojego modułu i [protokół integracji](docs/protocol.md).
+
+## Mapa projektu
+
+```text
+PZ_supply_blockchain/
+|-- contracts/                         Solidity, Foundry, Anvil
+|   |-- src/                           kontrakt produkcyjny
+|   |-- test/                          testy Solidity
+|   `-- script/                        wdrożenie i konfiguracja ról
+|-- backend/                           Java 21, Spring Boot, Maven
+|   `-- src/
+|       |-- main/
+|       |   |-- java/pl/pz/supplyblockchain/
+|       |   |   |-- api/dto/            REST i modele transportowe
+|       |   |   |-- application/ports/  przypadki użycia i granice integracji
+|       |   |   |-- config/            konfiguracja Spring
+|       |   |   |-- domain/            model i reguły biznesowe
+|       |   |   `-- infrastructure/
+|       |   |       |-- blockchain/    Web3j i indeksowanie zdarzeń
+|       |   |       |-- ipfs/          klient Pinata
+|       |   |       |-- persistence/   JPA i repozytoria
+|       |   |       `-- queue/         trwała kolejka relayera
+|       |   `-- resources/db/migration/ konfiguracja i migracje SQL
+|       `-- test/
+|           |-- java/pl/pz/supplyblockchain/
+|           `-- resources/             konfiguracja i dane testowe
+|-- simulator/                         Python 3.11+
+|   |-- src/supply_chain_simulator/    modele, podpisy, HTTP i CLI
+|   |-- scenarios/                    deklaratywne scenariusze
+|   `-- tests/                        testy Python
+|-- frontend/                          React, TypeScript, Vite
+|   |-- public/                       pliki bez przetwarzania przez Vite
+|   |-- src/
+|   |   |-- app/                      start, router i dostawcy kontekstu
+|   |   |-- assets/                   zasoby importowane w kodzie
+|   |   |-- components/
+|   |   |   |-- ui/                    bazowe elementy interfejsu
+|   |   |   |-- timeline/              oś czasu
+|   |   |   `-- qr/                    skanowanie i generowanie QR
+|   |   |-- features/
+|   |   |   |-- batches/               współdzielone widoki danych partii
+|   |   |   |-- operator/              panel operatora
+|   |   |   |-- qa/                    panel inspektora jakości
+|   |   |   `-- passport/              publiczny paszport produktu
+|   |   `-- lib/
+|   |       |-- api/                   klient HTTP
+|   |       `-- blockchain/            portfele i wywołania kontraktu
+|   `-- tests/                        testy modułu frontendowego
+|-- shared/                            wspólne artefakty, nie wspólny kod
+|   |-- schemas/                      OpenAPI, JSON Schema, EIP-712
+|   |-- fixtures/                     przykłady i wektory testowe
+|   |-- abi/                          eksport interfejsu kontraktu
+|   `-- deployments/                  publiczne adresy wdrożeń
+|-- infrastructure/
+|   |-- local/                        lokalne usługi i Compose
+|   `-- ci/                           opis automatycznej weryfikacji
+`-- docs/                              architektura, protokół i proces pracy
+```
+
+Pośrednie katalogi, takie jak `src/` i `java/`, również mają krótkie instrukcje
+z odnośnikami do właściwych pakietów. Nie są osobnymi modułami.
+
+## Podział zespołu i technologie
+
+| Moduł | Osoba | Język i narzędzia | Odpowiedzialność |
+|---|---|---|---|
+| [contracts](contracts/README.md) | 1 | Solidity 0.8.24+, Foundry, OpenZeppelin | kolejność etapów, EIP-712, role, QA, zdarzenia |
+| [backend](backend/README.md) | 2 | Java 21, Spring Boot 3.3+, Maven, Web3j, JPA | REST, IPFS, relayer, PostgreSQL, indeksowanie |
+| [frontend](frontend/README.md) | 3 | TypeScript, React 18/19, Vite | operator, QA, publiczna historia, QR, portfel |
+| [simulator](simulator/README.md) | 4 | Python 3.11+, eth-account, Pydantic, httpx | pomiary, podpisy, scenariusze pozytywne i negatywne |
+
+Osoba 4 odpowiada także za testy integracyjne całego systemu i dokumentację.
+Panel QA obsługuje operatora zmiany uprawnionego do współzatwierdzania kontroli;
+nie wymaga dodatkowego, piątego członka zespołu.
+
+Przewodniki przyjmują Foundry, Maven i npm jako jeden spójny wariant startowy.
+Nie utrzymuj równolegle Hardhat i Foundry ani Maven i Gradle bez konkretnej
+potrzeby. Wybierz dokładne, kompatybilne wersje zależności podczas inicjalizacji
+i zapisz je w manifestach oraz dostępnych lockfile'ach.
+
+Sieć lokalna: Anvil. Sieć docelowa: Polygon Amoy (`chainId = 80002`).
+Pinata przechowuje raporty; PostgreSQL przechowuje projekcję stanu i trwałe
+zadania. Blockchain pozostaje źródłem prawdy o potwierdzonych etapach.
+
+## Przepływ zdarzenia
+
+1. Stacja tworzy raport według wspólnego schematu i podpisuje dane EIP-712
+   zawierające jego skrót, identyfikator etapu, nonce oraz termin ważności.
+2. Backend waliduje żądanie i podpis, trwale zapisuje polecenie i zwraca `202`.
+3. Worker pinuje raport w IPFS, zapisuje CID, a pojedynczy relayer przesyła
+   transakcję do kontraktu. Przy etapie kontroli najpierw czeka na podpisane
+   zatwierdzenie tego samego raportu przez operatora zmiany.
+4. Kontrakt sprawdza podpis, role, nonce, kolejność etapów i bramkę QA.
+5. Indexer aktualizuje projekcję po uzgodnionej liczbie potwierdzeń.
+6. Frontend pokazuje osobno stan oczekiwania, sukces i błąd. Publiczny paszport
+   umożliwia odczyt raportu z IPFS i porównanie jego skrótu z blockchainem.
+
+Szczegóły i decyzje wymagające wspólnego zatwierdzenia opisuje
+[protokół](docs/protocol.md). Przykładowe sygnatury funkcji są projektem
+interfejsu, nie deklaracją istniejącego ABI.
+
+## Kolejność realizacji
+
+1. Uzgodnijcie etapy produkcji, zasady QA i format podpisywanych danych.
+2. Utwórzcie schematy i wspólne wektory testowe.
+3. Zaimplementujcie kontrakt i testy, następnie eksportujcie ABI.
+4. Zbudujcie backend i symulator na tych samych danych testowych.
+5. Zbudujcie frontend z kontrolowanymi odpowiedziami API, potem podłączcie API.
+6. Uruchomcie całą ścieżkę lokalnie; dopiero potem wdrażajcie na Amoy.
+
+## Pozostałe instrukcje
+
+- **[Pięć obszarów przed kodowaniem](docs/README.md)**:
+  [przebieg produkcji](docs/production-rules.md),
+  [błędy i poprawki](docs/corrections.md),
+  [dwa klucze kontroli](docs/quality-approval.md),
+  [certyfikaty stacji](docs/station-identity.md),
+  [uprawnienia i logowanie](docs/access-control.md).
+- [Zgodność z opisem PDF](docs/source-alignment.md)
+- [Diagramy i zależności](docs/diagrams.md)
+- [Szczegółowe przepływy](docs/flows.md)
+- [Model danych i statusy](docs/data-model.md)
+- [Plan 12 tygodni i zadania zespołu](docs/plan.md)
+- [Wymagania MVP](docs/spec.md) i [otwarte decyzje](docs/decisions.md)
+- [Tożsamość i certyfikaty stacji](docs/station-identity.md)
+- [Architektura i granice modułów](docs/architecture.md)
+- [Protokół API, raportów i podpisów](docs/protocol.md)
+- [Inicjalizacja i codzienna praca](docs/development.md)
+- [Testowanie i kryteria odbioru](docs/testing.md)
+- [Wspólne artefakty integracji](shared/README.md)
+- [Infrastruktura i automatyzacja](infrastructure/README.md)
+
+Nie zapisuj kluczy prywatnych, JWT Pinaty ani haseł w repozytorium.
+W kodzie i nazwach plików używaj angielskiego; dokumentacja zespołu jest
+po polsku. Nie twórz dodatkowego katalogu `utils/` zamiast przypisania
+odpowiedzialności do istniejącego modułu.

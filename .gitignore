@@ -1,0 +1,32 @@
+.DS_Store
+.idea/
+.env
+.env.*
+!.env.example
+*.log
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# Maven
+backend/target/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+
+# Python
+simulator/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+simulator/build/
+simulator/dist/
+
+# Local runtime data and secrets
+infrastructure/local/data/
+infrastructure/local/secrets/
