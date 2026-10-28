@@ -24,3 +24,21 @@ Dodaj fuzz dla identyfikatorów, deadline i kolejności; invariant: bez autoryzo
 poprawnego podpisu nie można przesunąć produkcji. Wspólny wektor z
 [fixtures](../../shared/fixtures/README.md) musi przechodzić także tutaj.
 Po inicjalizacji: `forge test`, a dla pliku `forge test --match-path test/SupplyChain.t.sol`.
+
+## Wspólny wektor podpisu (`SignatureVector.t.sol`)
+
+`test_SharedVector` czyta `shared/fixtures/signature-vector.json` i jest pomijany (SKIP),
+dopóki plik nie istnieje. Domena: `SupplyChain`/`1`, chainId `31337`, kontrakt pod stałym
+adresem `0x5FbDB2315678afecb367f032d93F642f64180aa3` (test wdraża go tam przez `deployCodeTo`).
+Oczekiwane ścieżki JSON (pozostałe pola pliku są dowolne):
+
+```text
+.domain.chainId, .domain.verifyingContract
+.stageCompletion.message.{batchId, stageId, reportHash, qaPassed, deadline}
+.stageCompletion.{digest, signature, signer}
+.stageApproval.message.{batchId, stageId, reportHash, deadline}
+.stageApproval.{digest, signature, signer}
+```
+
+Do czasu publikacji wektora działa wektor tymczasowy (`test_ProvisionalVector_*`): klucze
+Anvil #1 (stacja) i #2 (operator), digesty i podpisy wygenerowane niezależnie przez `cast`.

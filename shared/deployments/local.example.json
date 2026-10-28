@@ -1,0 +1,24 @@
+{
+  "contract": "SupplyChain",
+  "chainId": 31337,
+  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "deploymentBlock": 1,
+  "deploymentTxHash": "0x11d36da66eed8208dae918794ca8226c072832865d667e13a3f4fead2f6dc0fb",
+  "eip712Domain": {
+    "name": "SupplyChain",
+    "version": "1",
+    "chainId": 31337,
+    "verifyingContract": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  },
+  "compiler": {
+    "solc": "0.8.24",
+    "evmVersion": "cancun",
+    "viaIR": true,
+    "optimizerRuns": 200,
+    "forge": "1.8.6"
+  },
+  "abi": {
+    "file": "shared/abi/SupplyChain.abi.json",
+    "sha256": "eadc54c53cc5b7be9be921b2827414787d7ebfb60ab32c09068d132a0f5d819f"
+  }
+}
