@@ -8,7 +8,7 @@
 - Python 3.11-3.12 w venv (nowsze wersje sprawdź pod kątem zgodności `eth-account`);
   Docker z Compose do PostgreSQL, Anvil i Kubo.
 - Konto Pinaty i RPC Amoy: smoke deploy na Amoy już w tygodniu 1, pełna
-  integracja w tygodniu 5 ([plan tygodnia 1](week1-plan.md)).
+  integracja w tygodniu 5 ([plan tygodnia 1](weekly_plans/week1/week1-plan.md)).
 
 **Manifestów i aplikacji jeszcze nie ma.** Najpierw wykonaj inicjalizację poniżej.
 Nie uruchamiaj generatora na całym repozytorium ani opcji nadpisującej README.
@@ -91,7 +91,7 @@ Przed pisaniem reguł przeczytajcie [zmiany v2](changes-v2.md) i pięć rozwini�
 i [uprawnienia/logowanie](access-control.md).
 Ogólna marszruta jest wybrana, ale brak produktu oznacza brak uzasadnionych
 fizycznych progów pomiarowych (DEC-02). Recovery jest wybrane (DEC-09).
-Podział zadań: [team-split](team-split.md); pierwszy tydzień: [week1-plan](week1-plan.md).
+Podział zadań: [team-split](team-split.md); pierwszy tydzień: [week1-plan](weekly_plans/week1/week1-plan.md).
 
 1. Przeczytajcie [mapę zgodności z PDF](source-alignment.md) i
    [plan 12 tygodni](plan.md). Potwierdźcie zmiany v2 i decyzje.

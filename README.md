@@ -138,12 +138,12 @@ funkcji są projektem interfejsu, nie deklaracją istniejącego ABI.
 6. Uruchomcie całą ścieżkę lokalnie (tydzień 5), powtórzcie ją na Amoy i
    dopiero potem przygotowujcie próbę demo (tydzień 10).
 
-Plan pierwszego tygodnia: [week1-plan](docs/week1-plan.md).
+Plan pierwszego tygodnia: [week1-plan](docs/weekly_plans/week1/week1-plan.md).
 
 ## Pozostałe instrukcje
 
 - **[Zmiany v2 po analizie (wiążące)](docs/changes-v2.md)**,
-  **[plan pierwszego tygodnia](docs/week1-plan.md)** i
+  **[plan pierwszego tygodnia](docs/weekly_plans/week1/week1-plan.md)** i
   **[nowy podział zadań](docs/team-split.md)**.
 - **[Pięć obszarów przed kodowaniem](docs/README.md)**:
   [przebieg produkcji](docs/production-rules.md),

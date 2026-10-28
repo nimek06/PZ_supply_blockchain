@@ -1,12 +1,24 @@
 # Plan pierwszego tygodnia implementacji (bez frontendu)
 
 **Status:** plan roboczy dla 4 osób, tydzień 1 z 12. Zakłada zmiany z
-[changes-v2.md](changes-v2.md) i podział z [team-split.md](team-split.md).
+[changes-v2.md](../../changes-v2.md) i podział z [team-split.md](../../team-split.md).
 **Frontend nie jest realizowany w tygodniu 1** (decyzja 2026-10-27): T005 i T032
 (inicjalizacja, HTTPS, skaner QR) startują w poniedziałek tygodnia 2. Osoba 3
 w tym tygodniu wspiera backend, schematy i infrastrukturę, dzięki czemu frontend
 ruszy z gotowym OpenAPI, profilami i środowiskiem lokalnym.
 Pozycje to zadania do wykonania, nie raport ukończenia.
+
+## Plany osobiste (po ludzku)
+
+Ten plik to wersja techniczna, w tabelach. Wersje opisane zwykłym językiem
+(co dokładnie robisz, po co i po czym poznasz, że działa):
+
+| Osoba | Plik |
+|---|---|
+| 1 - Adam (kontrakty i łańcuch) | [adam-plan.md](adam-plan.md) |
+| 2 - Mikołaj (backend) | [mikolaj-plan.md](mikolaj-plan.md) |
+| 3 - Kuba (schematy, Java, infrastruktura) | [kuba-plan.md](kuba-plan.md) |
+| 4 - Robert (symulator i integracja) | [robert-plan.md](robert-plan.md) |
 
 ## Cel tygodnia
 
@@ -32,7 +44,7 @@ Wszyscy: sekrety tylko w `.env` poza Git, `.gitignore` sprawdzony przed pierwszy
 
 ## Poniedziałek - spotkanie startowe (wszyscy, 2 h)
 
-Wejście: [changes-v2](changes-v2.md), [team-split](team-split.md), [decisions](decisions.md).
+Wejście: [changes-v2](../../changes-v2.md), [team-split](../../team-split.md), [decisions](../../decisions.md).
 Wyjście (T001), zapisane w `docs/decisions.md` z datą i inicjałami:
 
 1. Potwierdzenie zmian V2-01..V2-17 lub jawny sprzeciw z alternatywą.
@@ -50,7 +62,7 @@ Wyjście (T001), zapisane w `docs/decisions.md` z datą i inicjałami:
 | Dzień | Zadanie | Wynik |
 |---|---|---|
 | Pon | T003: `foundry.toml` (solc 0.8.24, **jawny `evm_version`**), przypięte OpenZeppelin i forge-std, `forge build`/`forge test` działa | zielony pusty test, wersje w repo |
-| Wt | T012: szkielet `SupplyChain.sol` (OZ `AccessControl`, `EIP712`): role, rejestr stacji, `createBatch(string)`, typy `StageCompletion` i `StageApproval` | kompiluje się; typy zgodne z [protokołem](protocol.md) |
+| Wt | T012: szkielet `SupplyChain.sol` (OZ `AccessControl`, `EIP712`): role, rejestr stacji, `createBatch(string)`, typy `StageCompletion` i `StageApproval` | kompiluje się; typy zgodne z [protokołem](../../protocol.md) |
 | Śr | Test wektora z `shared/fixtures/` (od osoby 4, wtorek wieczór): odzysk adresu stacji i operatora w Solidity | test wektora zielony |
 | Czw | `completeStage`: maszyna stanów 0..3, deadline i `maxDeadlineWindow`, `StageRejected`, approval dla etapu 2 (różne adresy, rola QA), zdarzenia z indeksowanym `batchId` | testy: kolejność, deadline, replay, brak/zły approval, ten sam adres, wygasła stacja, `stageMask` |
 | Pt | T013/T031: skrypt deploy na Anvil; **smoke deploy na Amoy** (rejestracja stacji, `createBatch`, jeden `completeStage`); eksport ABI przez `forge inspect` do `shared/abi/`; dane lokalnego wdrożenia; przegląd modułu krypto Javy (osoba 3) | `forge test` zielone, adres lokalny, notatka: tip gazu, limity RPC i `getLogs`, faucet |
@@ -63,7 +75,7 @@ Ryzyko: `evm_version` nieobsługiwany w sieci -> wynik smoke w piątek, poprawka
 | Dzień | Zadanie | Wynik |
 |---|---|---|
 | Pon | T004: Spring Initializr (aktualna wspierana wersja, Java 21, Maven), Web MVC, Validation, JPA, PostgreSQL, Flyway, Actuator; Web3j osobno; sprawdzić zgodność Web3j z Jackson | aplikacja startuje, `/actuator/health` |
-| Wt | Przegląd OpenAPI osoby 3; szkic migracji `commands`, `qa_approvals`, `auth_*` według [data-model](data-model.md) | uwagi do OpenAPI, szkic SQL |
+| Wt | Przegląd OpenAPI osoby 3; szkic migracji `commands`, `qa_approvals`, `auth_*` według [data-model](../../data-model.md) | uwagi do OpenAPI, szkic SQL |
 | Śr | T033 (część Web3j): kodowanie wywołania `completeStage`, podpis transakcji i opłaty EIP-1559 na Anvil, **bez `.send()`** i bez `DefaultGasProvider` | działający podpis tx na Anvil, notatka o bibliotece i opłatach |
 | Czw | Pierwsza migracja `commands` i `POST .../stages`: walidacja schematu, hash i podpis (moduł krypto osoby 3), idempotencja po digest, reguła zastępowania, `202` dopiero po commit | test integracyjny z PostgreSQL (Testcontainers lub Compose) |
 | Pt | T011 (start): `POST /auth/challenges` i `POST /auth/sessions` (SIWE, token Bearer ze skrótem SHA-256 w bazie), bez ról | testy: challenge jednorazowy, wygasły, zły podpis |
@@ -76,8 +88,8 @@ Ryzyko: niezgodność hashy Java/Python -> zatrzymać integrację do poprawy wek
 
 | Dzień | Zadanie | Wynik |
 |---|---|---|
-| Pon | T002: szkic `shared/schemas/openapi.yaml` (batches, batch-numbers, stages, commands, history, qa, auth, Problem Details, statusy z [data-model](data-model.md)); w tygodniu 2 z niego powstaną mocki i klient frontendu | OpenAPI do przeglądu osoby 2 |
-| Wt | `telemetry.schema.json` i `eip712.json` (typy `StageCompletion`, `StageApproval`); szkic **profili pomiarów** etapów 0..3 (DEC-02, z osobą 4) | schematy zgodne z [protokołem](protocol.md), szkic profili |
+| Pon | T002: szkic `shared/schemas/openapi.yaml` (batches, batch-numbers, stages, commands, history, qa, auth, Problem Details, statusy z [data-model](../../data-model.md)); w tygodniu 2 z niego powstaną mocki i klient frontendu | OpenAPI do przeglądu osoby 2 |
+| Wt | `telemetry.schema.json` i `eip712.json` (typy `StageCompletion`, `StageApproval`); szkic **profili pomiarów** etapów 0..3 (DEC-02, z osobą 4) | schematy zgodne z [protokołem](../../protocol.md), szkic profili |
 | Śr | T033 (część krypto): moduł w `backend/src/main/java/pl/pz/supplyblockchain/infrastructure/blockchain/` - JCS (RFC 8785), Keccak-256 i **ręczny** odzysk adresu z EIP-712 (`StageCompletion`, `StageApproval`) na wektorze osoby 4 | test wektora w Javie zielony (para z osobą 2) |
 | Czw | rano: testy mutacji każdego pola (hash i podpis muszą się zmienić), ten sam wynik dla adresu małymi/dużymi literami; po południu T007: `infrastructure/local/compose.yaml` (PostgreSQL, Anvil, Kubo) i `.env.example` | moduł krypto gotowy dla osoby 2; compose startuje |
 | Pt | Health checki i opis świadomego resetu w README; spike magazynu raportów: upload **bajtów JCS jako plik** do Kubo i Pinaty, wersja CID, pobranie przez bramkę, limity planu; szkic portu `ReportStorage` | notatka o Pinacie i Kubo, port bez implementacji |

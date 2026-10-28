@@ -2,7 +2,7 @@
 
 **Status:** zmiany wynikają z analizy spójności i ryzyk, zatwierdzonej przez
 użytkownika 2026-10-27. Zespół potwierdza je na spotkaniu startowym
-([plan tygodnia 1](week1-plan.md)); ewentualny sprzeciw wymaga zmiany tego pliku
+([plan tygodnia 1](weekly_plans/week1/week1-plan.md)); ewentualny sprzeciw wymaga zmiany tego pliku
 i dokumentów zależnych, nie lokalnego obejścia w kodzie.
 Ten dokument jest **wiążący**, gdy starszy tekst innego pliku mówi inaczej.
 

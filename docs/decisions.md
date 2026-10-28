@@ -2,7 +2,7 @@
 
 **Status:** po analizie 2026-10-27 wprowadzono zmiany [v2](changes-v2.md).
 Pozycje oznaczone `USTALONA` zatwierdził użytkownik 2026-10-27; zespół
-potwierdza je na spotkaniu startowym ([plan tygodnia 1](week1-plan.md)),
+potwierdza je na spotkaniu startowym ([plan tygodnia 1](weekly_plans/week1/week1-plan.md)),
 dopisując datę i inicjały. Osoby 1/2/3/4 odpowiadają modułom z głównego README.
 Wymagania PDF mają pierwszeństwo: dwa klucze przy zamknięciu kontroli,
 certyfikat każdej stacji, minimalny zapis on-chain i 12 tygodni nie są

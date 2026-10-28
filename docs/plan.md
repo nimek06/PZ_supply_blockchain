@@ -4,7 +4,7 @@
 **Wymagania:** [spec](spec.md), REQ-001..014.
 **Zmiany v2 (2026-10-27):** [changes-v2](changes-v2.md) - wiążące, gdy starszy
 tekst mówi inaczej. **Podział zadań:** [team-split](team-split.md) (zastępuje
-kolumny „Osoba” poniżej). **Tydzień 1:** [week1-plan](week1-plan.md).
+kolumny „Osoba” poniżej). **Tydzień 1:** [week1-plan](weekly_plans/week1/week1-plan.md).
 **Status:** plan roboczy, nie lista ukończonych prac. Żadne zadanie wykonawcze
 nie jest oznaczone jako zrobione, bo kod aplikacji jeszcze nie istnieje.
 
@@ -43,7 +43,7 @@ Wytyczne migracyjne framework-to-framework nie dotyczą tego nowego szkieletu.
 - [Poprawki](corrections.md): reguła zastępowania raportu (DEC-09 zamknięta).
 - [Dwa klucze](quality-approval.md): podpisy stacji i operatora, warunki kontraktu.
 - [Uprawnienia](access-control.md): macierz, owner i login (SIWE -> token Bearer).
-- [Zmiany v2](changes-v2.md), [podział zadań](team-split.md), [tydzień 1](week1-plan.md).
+- [Zmiany v2](changes-v2.md), [podział zadań](team-split.md), [tydzień 1](weekly_plans/week1/week1-plan.md).
 
 Przed zadaniem dotyczącym niezatwierdzonego formatu należy sprawdzić odpowiednią
 decyzję. Wymagań dwóch kluczy i certyfikatów nie można usunąć przez głosowanie
@@ -56,7 +56,7 @@ czasu i potwierdzeń). T026 jest zadaniem wykonawczym bez blokady decyzyjnej.
 ## 2. Harmonogram i punkty odbioru
 
 Kolumny „Osoba” wynikają z [team-split](team-split.md). Szczegóły tygodnia 1:
-[week1-plan](week1-plan.md).
+[week1-plan](weekly_plans/week1/week1-plan.md).
 
 | Tydzień | Wspólny wynik | Osoba 1 - kontrakt, indexer, CI | Osoba 2 - backend | Osoba 3 - schematy/Java/infra (tyg. 1), potem frontend | Osoba 4 - symulator/testy/dokumentacja |
 |---|---|---|---|---|---|

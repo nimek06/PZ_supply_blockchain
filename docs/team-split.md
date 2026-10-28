@@ -3,7 +3,7 @@
 **Status:** zastępuje kolumny „Osoba” z dawnych tabel w [plan.md](plan.md).
 Powód: osoba 2 miała 12 z 30 zadań (auth, certyfikaty, trwała kolejka, relayer,
 indexer, reorg), a osoba 1 tylko 4. Zmiany techniczne:
-[changes-v2.md](changes-v2.md). Plan pierwszego tygodnia: [week1-plan.md](week1-plan.md).
+[changes-v2.md](changes-v2.md). Plan pierwszego tygodnia: [week1-plan.md](weekly_plans/week1/week1-plan.md).
 
 ## Zasady podziału
 
@@ -19,7 +19,7 @@ indexer, reorg), a osoba 1 tylko 4. Zmiany techniczne:
 4. Każdy autor pisze testy swojego kodu; osoba 4 koordynuje testy systemowe.
 5. Zadania nowe w v2: T031, T032, T033. **Tydzień 1 bez frontendu** (2026-10-27):
    T005 i T032 przeszły na tydzień 2, a osoba 3 w tygodniu 1 prowadzi OpenAPI, schematy,
-   krypto w Javie i Compose ([week1-plan](week1-plan.md)).
+   krypto w Javie i Compose ([week1-plan](weekly_plans/week1/week1-plan.md)).
 
 ## Role
 

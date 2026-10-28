@@ -8,7 +8,7 @@ Tu opisujemy ustalenia wspólne, nie implementujemy aplikacji.
 
 Po analizie z 2026-10-27 wprowadzono zmiany opisane w [changes-v2.md](changes-v2.md)
 (wiążące, gdy starszy tekst mówi inaczej). Plan pierwszego tygodnia:
-[week1-plan.md](week1-plan.md); nowy podział zadań: [team-split.md](team-split.md).
+[week1-plan.md](weekly_plans/week1/week1-plan.md); nowy podział zadań: [team-split.md](team-split.md).
 
 ## Pięć obszarów przed implementacją
 
@@ -41,7 +41,7 @@ technologiach. Poglądowe skróty z opisu stosu nie definiują ABI ani finalnoś
 6. [data-model.md](data-model.md): relacje, źródła prawdy i statusy.
 7. [station-identity.md](station-identity.md): klucze i certyfikaty stacji.
 8. [decisions.md](decisions.md): rejestr decyzji.
-9. [plan.md](plan.md): 12 tygodni, [team-split.md](team-split.md) i [week1-plan.md](week1-plan.md).
+9. [plan.md](plan.md): 12 tygodni, [team-split.md](team-split.md) i [week1-plan.md](weekly_plans/week1/week1-plan.md).
 
 ## Instrukcje wykonawcze
 
