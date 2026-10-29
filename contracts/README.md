@@ -75,3 +75,32 @@ Nigdy nie przekazuj klucza administratora plikiem w repozytorium.
 Po inicjalizacji: `forge fmt --check`, `forge build`, `forge test`.
 Kontrakt jest gotowy do integracji, gdy testuje role, rejestr stacji, kolejność, QA
 (w tym `StageRejected`), replay (deadline, jedno ukończenie) i wspólny podpis, a ABI odpowiada rzeczywistemu wdrożeniu.
+
+## Uruchomienie (stan po tygodniu 1)
+
+Wersje przypięte: Foundry 1.8.6, solc 0.8.24, `evm_version = "cancun"` (zweryfikowane na
+Amoy), `via_ir = true`, OpenZeppelin Contracts v5.7.0, forge-std v1.17.0 (submoduły w `lib/`,
+commity w `foundry.lock`).
+
+```bash
+curl -L https://foundry.paradigm.xyz | bash && foundryup   # instalacja Foundry
+git submodule update --init --recursive                     # zależności w contracts/lib
+cd contracts
+forge build && forge test                                   # testy kontraktu i wektora
+```
+
+Lokalne wdrożenie (Anvil, publiczne klucze deweloperskie Anvila):
+
+```bash
+anvil                                                       # osobny terminal
+K0=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80  # Anvil #0
+DEPLOYER_PRIVATE_KEY=$K0 EXPECTED_CHAIN_ID=31337 \
+  forge script script/DeploySupplyChain.s.sol --rpc-url anvil --broadcast
+script/export-deployment.sh 31337 local.example             # ABI + shared/deployments
+```
+
+Pierwsze wdrożenie kontem Anvil #0 trafia zawsze pod `0x5FbDB2315678afecb367f032d93F642f64180aa3`
+- to ten sam adres, którego używa domena EIP-712 we wspólnym wektorze podpisu.
+Rejestracja stacji: `script/RegisterStation.s.sol`; partia + etap 0: `script/SmokeStage.s.sol`
+(zmienne opisane w nagłówkach skryptów i w [.env.example](.env.example)).
+Wyniki smoke testu Amoy: [notatka](../docs/weekly_plans/week1/adam-amoy-notes.md).
