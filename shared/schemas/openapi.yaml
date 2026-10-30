@@ -1,8 +1,7 @@
 openapi: 3.1.0
-# Dialekt JSON Schema: 2020-12 (wbudowany w OpenAPI 3.1) - taki sam jak w telemetry.schema.json.
-# STATUS: SZKIC T002 (tydzień 1) do przeglądu osoby 2. Źródło: docs/protocol.md,
-# docs/data-model.md, docs/access-control.md, docs/quality-approval.md, docs/changes-v2.md.
-# Elementy oznaczone "PROPOZYCJA" nie wynikają wprost z protokołu i wymagają potwierdzenia.
+# JSON Schema 2020-12, tak samo jak w telemetry.schema.json.
+# Szkic T002 do przeglądu przez osobę 2. Źródła: protocol, data-model, access-control,
+# quality-approval, changes-v2 (docs/). "PROPOZYCJA" = nie wynika z protokołu, do potwierdzenia.
 info:
   title: PZ Supply Blockchain API
   version: 0.1.0-draft

@@ -1,6 +1,6 @@
-# Lokalne środowisko: PostgreSQL + Anvil + Kubo (T007). Backend, Vite i symulator uruchamiaj
-# poza Compose, w osobnych terminalach. Wszystkie porty są wystawione tylko na 127.0.0.1.
-# Uruchomienie: cp .env.example .env  (uzupełnij sekret), potem docker compose up -d
+# Lokalnie: Postgres, Anvil, Kubo. Backend, Vite i symulator odpalamy osobno.
+# Porty tylko na 127.0.0.1.
+# Start: cp .env.example .env, ustaw hasło, docker compose up -d
 name: pz-supply
 
 services:
@@ -10,7 +10,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-supplychain}
       POSTGRES_USER: ${POSTGRES_USER:-supplychain}
-      # Pusty sekret ma przerwać start zamiast cicho utworzyć bazę bez hasła.
+      # bez hasła ma się wywalić, a nie startować
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ustaw POSTGRES_PASSWORD w infrastructure/local/.env}
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
@@ -24,14 +24,14 @@ services:
       start_period: 5s
 
   anvil:
-    # Ta sama wersja Foundry co contracts/ (forge 1.8.6). Obraz ma domyślny entrypoint powłoki.
+    # wersja jak w contracts/; obraz ma domyślnie entrypoint z shellem, stąd override
     image: ghcr.io/foundry-rs/foundry:v1.8.6
     restart: unless-stopped
     entrypoint: ["anvil"]
     command: ["--host", "0.0.0.0", "--port", "8545", "--chain-id", "${ANVIL_CHAIN_ID:-31337}"]
     ports:
       - "127.0.0.1:${ANVIL_PORT:-8545}:8545"
-    # Bez wolumenu: stan łańcucha znika przy każdym restarcie (zob. README, "Reset środowiska").
+    # bez wolumenu - po restarcie łańcuch jest pusty (patrz README, reset)
     healthcheck:
       test: ["CMD-SHELL", "cast chain-id --rpc-url http://127.0.0.1:8545 | grep -qx ${ANVIL_CHAIN_ID:-31337}"]
       interval: 5s
@@ -42,12 +42,11 @@ services:
   kubo:
     image: ipfs/kubo:v0.32.1
     restart: unless-stopped
-    # --offline: bez DHT i sieci publicznej. Lokalnie i w CI wystarcza zapis i odczyt z własnego węzła,
-    # a testy nie zależą od internetu. (Pinata jest osobną usługą zewnętrzną, tylko do demo.)
+    # --offline: bez DHT, testy nie potrzebują internetu (Pinata tylko na demo)
     command: ["daemon", "--migrate=true", "--offline"]
     ports:
-      - "127.0.0.1:${KUBO_API_PORT:-5001}:5001"       # API: bez uwierzytelnienia, nigdy nie wystawiaj poza localhost
-      - "127.0.0.1:${KUBO_GATEWAY_PORT:-8081}:8080"   # brama HTTP (8080 zajmuje backend)
+      - "127.0.0.1:${KUBO_API_PORT:-5001}:5001"       # API bez auth, tylko localhost
+      - "127.0.0.1:${KUBO_GATEWAY_PORT:-8081}:8080"   # gateway (8080 ma backend)
     volumes:
       - kubo-data:/data/ipfs
     healthcheck:
