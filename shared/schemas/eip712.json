@@ -1,0 +1,49 @@
+{
+  "$comment": "Typy EIP-712 projektu (docs/protocol.md, docs/station-identity.md). Kolejność pól jest CZĘŚCIĄ SPECYFIKACJI. Domena NIE zastępuje konfiguracji sieci: chainId i verifyingContract pochodzą z wdrożenia (shared/deployments/*.json), tutaj są tylko szablonem. Pliki sprawdzone względem contracts/src/SupplyChain.sol (typehashe).",
+  "domain": {
+    "name": "SupplyChain",
+    "version": "1",
+    "chainId": "<z shared/deployments: 31337 lokalnie, 80002 Amoy>",
+    "verifyingContract": "<adres wdrożonego SupplyChain>"
+  },
+  "domainType": [
+    { "name": "name", "type": "string" },
+    { "name": "version", "type": "string" },
+    { "name": "chainId", "type": "uint256" },
+    { "name": "verifyingContract", "type": "address" }
+  ],
+  "types": {
+    "StageCompletion": [
+      { "name": "batchId", "type": "bytes32" },
+      { "name": "stageId", "type": "uint32" },
+      { "name": "reportHash", "type": "bytes32" },
+      { "name": "qaPassed", "type": "bool" },
+      { "name": "deadline", "type": "uint256" }
+    ],
+    "StageApproval": [
+      { "name": "batchId", "type": "bytes32" },
+      { "name": "stageId", "type": "uint32" },
+      { "name": "reportHash", "type": "bytes32" },
+      { "name": "deadline", "type": "uint256" }
+    ]
+  },
+  "primaryTypes": {
+    "StageCompletion": "StageCompletion(bytes32 batchId,uint32 stageId,bytes32 reportHash,bool qaPassed,uint256 deadline)",
+    "StageApproval": "StageApproval(bytes32 batchId,uint32 stageId,bytes32 reportHash,uint256 deadline)"
+  },
+  "offChainOnly": {
+    "$comment": "Poświadczenie audytowe (DEC-13). Własna domena, inna niż SupplyChain - chainId i verifyingContract z payloadu certyfikatu. Nie istnieje on-chain.",
+    "domain": { "name": "SupplyChainStationRegistry", "version": "1" },
+    "types": {
+      "StationCertificate": [
+        { "name": "payloadHash", "type": "bytes32" }
+      ]
+    },
+    "primaryType": "StationCertificate(bytes32 payloadHash)"
+  },
+  "notes": [
+    "Login SIWE używa EIP-191 (personal_sign), NIE tych typów.",
+    "approvalDeadline w kontrakcie jest wartością pola 'deadline' typu StageApproval.",
+    "Brak nonce - V2-01."
+  ]
+}
