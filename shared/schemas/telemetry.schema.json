@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pz-supply-blockchain.local/schemas/telemetry.schema.json",
+  "title": "TelemetryReport",
+  "description": "Raport stacji v1 (docs/protocol.md). To są bajty hashowane przez JCS + Keccak-256 i zapisywane w IPFS. Obwiednia podpisu NIE jest częścią raportu. JSON Schema waliduje wyłącznie format; spójność path/body, qaPassed względem pomiarów, stan kontraktu i kryptografia to osobna walidacja aplikacji. SZKIC T002: profile pomiarów w $defs są DEMONSTRACYJNE (nie normy fizyczne) i czekają na zatwierdzenie DEC-02.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "batchId", "stageId", "stationAddress", "timestamp", "measurements", "qaPassed"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "batchId": { "$ref": "#/$defs/bytes32", "description": "keccak256(utf8(batchNumber))" },
+    "stageId": { "type": "integer", "minimum": 0, "maximum": 3 },
+    "stationAddress": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{40}$",
+      "description": "Adres EVM małymi literami z prefiksem 0x (forma kanoniczna dla JCS)"
+    },
+    "timestamp": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 99999999999,
+      "description": "Unix seconds. Górna granica odrzuca przypadkowe milisekundy."
+    },
+    "measurements": { "type": "object" },
+    "qaPassed": { "type": "boolean", "description": "Podpisany wynik stacji, nie decyzja ręcznego QA" }
+  },
+  "allOf": [
+    { "if": { "properties": { "stageId": { "const": 0 } }, "required": ["stageId"] },
+      "then": { "properties": { "measurements": { "$ref": "#/$defs/profilePreparationV1" } } } },
+    { "if": { "properties": { "stageId": { "const": 1 } }, "required": ["stageId"] },
+      "then": { "properties": { "measurements": { "$ref": "#/$defs/profileAssemblyV1" } } } },
+    { "if": { "properties": { "stageId": { "const": 2 } }, "required": ["stageId"] },
+      "then": { "properties": { "measurements": { "$ref": "#/$defs/profileQualityControlV1" } } } },
+    { "if": { "properties": { "stageId": { "const": 3 } }, "required": ["stageId"] },
+      "then": { "properties": { "measurements": { "$ref": "#/$defs/profilePackagingV1" } } } }
+  ],
+  "$defs": {
+    "bytes32": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" },
+    "count": { "type": "integer", "minimum": 0, "maximum": 10000 },
+    "profilePreparationV1": {
+      "description": "DRAFT profil etapu 0 (PREPARATION): lista sprawdzeń przygotowania. Reguła aplikacji: qaPassed=true tylko gdy checklistItemsPassed == checklistItemsTotal.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checklistItemsTotal", "checklistItemsPassed"],
+      "properties": {
+        "checklistItemsTotal": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "checklistItemsPassed": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "profileAssemblyV1": {
+      "description": "DRAFT profil etapu 1 (ASSEMBLY). Reguła aplikacji: qaPassed=true tylko gdy operationsCompleted == operationsTotal.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operationsTotal", "operationsCompleted", "cycleTimeMs"],
+      "properties": {
+        "operationsTotal": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "operationsCompleted": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "cycleTimeMs": { "type": "integer", "minimum": 0, "maximum": 3600000 }
+      }
+    },
+    "profileQualityControlV1": {
+      "description": "DRAFT profil etapu 2 (QUALITY_CONTROL). Reguła aplikacji: qaPassed=true tylko gdy defectsFound == 0 i checklistItemsPassed == checklistItemsTotal. Ten etap wymaga dodatkowo StageApproval operatora.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inspectedUnits", "defectsFound", "checklistItemsTotal", "checklistItemsPassed"],
+      "properties": {
+        "inspectedUnits": { "type": "integer", "minimum": 1, "maximum": 10000 },
+        "defectsFound": { "$ref": "#/$defs/count" },
+        "checklistItemsTotal": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "checklistItemsPassed": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "profilePackagingV1": {
+      "description": "DRAFT profil etapu 3 (PACKAGING). Reguła aplikacji: qaPassed=true tylko gdy labelsApplied == unitsPacked.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unitsPacked", "labelsApplied"],
+      "properties": {
+        "unitsPacked": { "type": "integer", "minimum": 1, "maximum": 10000 },
+        "labelsApplied": { "$ref": "#/$defs/count" }
+      }
+    }
+  }
+}
