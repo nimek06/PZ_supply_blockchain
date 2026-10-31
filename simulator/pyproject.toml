@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "supply-chain-simulator"
+version = "0.1.0"
+description = "Symulator stacji montażowych i gniazd produkcyjnych (PZ supply blockchain)"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "eth-account>=0.14",
+    "eth-utils>=6.0",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "rfc8785>=0.1.4,<0.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.2"]
+
+[project.scripts]
+supply-chain-simulator = "supply_chain_simulator.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
