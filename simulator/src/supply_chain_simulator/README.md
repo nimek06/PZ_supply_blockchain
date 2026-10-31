@@ -2,22 +2,29 @@
 
 **Język:** Python 3.11-3.12, kod z adnotacjami typów.
 
-Planowane moduły:
+Moduły pakietu (stan 2026-10-31 - gotowe: `__init__`, `__main__`, `cli`, `models`,
+`canonical`, `signing`, `vector`; pozostałe planowane):
 | Plik | Zakres |
 |---|---|
 | `__init__.py` | pakiet, bez efektów ubocznych |
 | `__main__.py`, `cli.py` | argumenty, wybór trybu, exit codes |
 | `config.py` | walidacja adresów, sieci, backend URL i sekretów |
 | `identity.py` | klucz i certyfikat stacji, identyfikator poświadczenia |
-| `models.py` | ścisłe modele Pydantic raportu i obwiedni |
+| `models.py` | ścisłe modele Pydantic raportu v1 i struktur EIP-712 |
+| `canonical.py` | kanonizacja JCS (RFC 8785) i Keccak-256; `reportHash` |
+| `signing.py` | typed data EIP-712 `StageCompletion` (bez nonce), `StageApproval` i eth-account |
+| `vector.py` | deterministyczna budowa `shared/fixtures/signature-vector.json` |
 | `telemetry.py` | deterministyczne pomiary i kontrolowane anomalie |
-| `signing.py` | JCS, Keccak, typed data EIP-712 `StageCompletion` (bez nonce) i eth-account |
 | `client.py` | HTTP, timeout, idempotentne retry, status polecenia |
 | `runner.py` | kolejność kroków i tryb auto/interaktywny |
 
 Najpierw model i test podpisu, potem HTTP, na końcu pętla/scenariusze.
 Nie łącz całej aplikacji w jeden skrypt. Użyj API EIP-712 eth-account zgodnego
 z przypiętą wersją; `encode_defunct` nie jest poprawnym zamiennikiem.
+
+Wektor regeneruje `python -m supply_chain_simulator --export-signature-vector [PATH]`;
+plik jest deterministyczny i nie zawiera kluczy prywatnych. Zmiana jego treści
+wymaga nowej wersji i zgody osób 1, 2 i 3.
 
 Runner po `202` czeka na status (`CONFIRMED`, `outcome`) przed nowym krokiem; `REJECTED` nie przesuwa partii.
 Timeout wymaga ponowienia identycznego żądania, nie losowania nowego raportu.
