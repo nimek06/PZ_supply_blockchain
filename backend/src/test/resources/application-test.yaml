@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: ${TEST_DB_URL:jdbc:postgresql://127.0.0.1:55432/supplychain_test}
+    username: ${TEST_DB_USER:supplychain}
+    password: ${TEST_DB_PASSWORD:supplychain}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    clean-disabled: false
+
+supplychain:
+  chain:
+    chain-id: 31337
+    contract-address: 0x5fbdb2315678afecb367f032d93f642f64180aa3
+    domain-name: SupplyChain
+    domain-version: "1"
+    max-deadline-window-seconds: 3600
+  auth:
+    domain: localhost
+    uri: http://localhost:5173
+    statement: Sign in to PZ Supply Blockchain.
+    challenge-ttl-seconds: 300
+    token-ttl-seconds: 28800
+    idle-timeout-seconds: 1800
+  clock:
+    fixed-now: 1800000000
