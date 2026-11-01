@@ -1,8 +1,10 @@
-"""Podpisy EIP-712 `StageCompletion` i `StageApproval` (bez nonce).
+"""Podpisy EIP-712 `StageCompletion`, `StageApproval` i `StationCertificate`.
 
 Typy i kolejność pól są częścią specyfikacji (`docs/protocol.md`, EIP-712,
-zmiany v2: V2-01, V2-03, V2-10). Nie używamy `encode_defunct`/`personal_sign`
-jako zamiennika EIP-712.
+zmiany v2: V2-01, V2-03, V2-10; certyfikat: DEC-13). Nie używamy
+`encode_defunct`/`personal_sign` jako zamiennika EIP-712.
+Podpis certyfikatu ma własny typ i domenę wystawcy (`certificate.py`), więc nie
+da się go użyć jako `StageCompletion` ani odwrotnie.
 """
 
 from __future__ import annotations
@@ -16,8 +18,10 @@ from eth_account.messages import SignableMessage, encode_typed_data
 from supply_chain_simulator.canonical import keccak256_hex
 from supply_chain_simulator.models import (
     Eip712Domain,
+    SignedMessage,
     StageApprovalMessage,
     StageCompletionMessage,
+    StationCertificateMessage,
     message_payload,
 )
 
@@ -30,6 +34,7 @@ STAGE_COMPLETION_TYPE_STRING = (
 STAGE_APPROVAL_TYPE_STRING = (
     "StageApproval(bytes32 batchId,uint32 stageId,bytes32 reportHash,uint256 deadline)"
 )
+STATION_CERTIFICATE_TYPE_STRING = "StationCertificate(bytes32 payloadHash)"
 
 EIP712_DOMAIN_FIELDS: tuple[dict[str, str], ...] = (
     {"name": "name", "type": "string"},
@@ -50,14 +55,19 @@ STAGE_APPROVAL_FIELDS: tuple[dict[str, str], ...] = (
     {"name": "reportHash", "type": "bytes32"},
     {"name": "deadline", "type": "uint256"},
 )
+STATION_CERTIFICATE_FIELDS: tuple[dict[str, str], ...] = (
+    {"name": "payloadHash", "type": "bytes32"},
+)
 
 _PRIMARY_TYPES: dict[str, tuple[dict[str, str], ...]] = {
     "StageCompletion": STAGE_COMPLETION_FIELDS,
     "StageApproval": STAGE_APPROVAL_FIELDS,
+    "StationCertificate": STATION_CERTIFICATE_FIELDS,
 }
 _TYPE_STRINGS: dict[str, str] = {
     "StageCompletion": STAGE_COMPLETION_TYPE_STRING,
     "StageApproval": STAGE_APPROVAL_TYPE_STRING,
+    "StationCertificate": STATION_CERTIFICATE_TYPE_STRING,
 }
 
 
@@ -72,7 +82,7 @@ def eip712_types(primary_type: str) -> dict[str, list[dict[str, str]]]:
 def typed_data(
     primary_type: str,
     domain: Eip712Domain,
-    message: StageCompletionMessage | StageApprovalMessage,
+    message: SignedMessage,
 ) -> dict[str, Any]:
     """Buduje pełną strukturę `full_message` dla kodera EIP-712."""
     return {
@@ -86,7 +96,7 @@ def typed_data(
 def encode(
     primary_type: str,
     domain: Eip712Domain,
-    message: StageCompletionMessage | StageApprovalMessage,
+    message: SignedMessage,
 ) -> SignableMessage:
     """Koduje struktury do wiadomości EIP-712 (bez podpisywania)."""
     return encode_typed_data(full_message=typed_data(primary_type, domain, message))
@@ -107,7 +117,7 @@ def message_digest(encoded: SignableMessage) -> str:
 def digest(
     primary_type: str,
     domain: Eip712Domain,
-    message: StageCompletionMessage | StageApprovalMessage,
+    message: SignedMessage,
 ) -> str:
     """Zwraca digest EIP-712 (`0x` + 64 hex) - ten sam, który liczy kontrakt."""
     return message_digest(encode(primary_type, domain, message))
@@ -138,7 +148,7 @@ class SignedTypedData:
 def sign(
     primary_type: str,
     domain: Eip712Domain,
-    message: StageCompletionMessage | StageApprovalMessage,
+    message: SignedMessage,
     private_key: int,
 ) -> SignedTypedData:
     """Podpisuje struktury kluczem prywatnym (deterministycznie, RFC 6979)."""
@@ -170,8 +180,22 @@ def sign_stage_approval(
 def recover_signer(
     primary_type: str,
     domain: Eip712Domain,
-    message: StageCompletionMessage | StageApprovalMessage,
+    message: SignedMessage,
     signature: str,
 ) -> str:
     """Odzyskuje adres podpisującego z podpisu (checksummed)."""
     return Account.recover_message(encode(primary_type, domain, message), signature=signature)
+
+
+def sign_station_certificate(
+    domain: Eip712Domain, message: StationCertificateMessage, private_key: int
+) -> SignedTypedData:
+    """Podpis wystawcy certyfikatu (DEC-13); domenę buduje `certificate.py`."""
+    return sign("StationCertificate", domain, message, private_key)
+
+
+def recover_certificate_issuer(
+    domain: Eip712Domain, message: StationCertificateMessage, signature: str
+) -> str:
+    """Odzyskuje adres wystawcy certyfikatu (checksummed)."""
+    return recover_signer("StationCertificate", domain, message, signature)

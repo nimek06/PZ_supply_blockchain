@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.2"]
+dev = ["jsonschema>=4.21", "pytest>=8.2"]
 
 [project.scripts]
 supply-chain-simulator = "supply_chain_simulator.cli:main"

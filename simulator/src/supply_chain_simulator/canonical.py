@@ -39,6 +39,15 @@ def keccak256_hex(data: bytes) -> str:
     return "0x" + bytes(keccak(data)).hex()
 
 
+def keccak256_text(text: str) -> str:
+    """Keccak-256 tekstu UTF-8: `batchId`, `stationId` i serial certyfikatu.
+
+    Ta sama reguła co `keccak256(batchNumber)` w kontrakcie (V2-11, DEC-12)
+    oraz `keccak256("ST-001")` w testach kontraktu.
+    """
+    return keccak256_hex(text.encode("utf-8"))
+
+
 def report_hash(report: Report) -> str:
     """`reportHash` = Keccak-256 kanonicznych bajtów raportu."""
     return keccak256_hex(canonical_bytes(report_payload(report)))
