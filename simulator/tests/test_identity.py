@@ -13,6 +13,7 @@ import stat
 from pathlib import Path
 
 import pytest
+from eth_account import Account
 from supply_chain_simulator.certificate import certificate_id, station_id
 from supply_chain_simulator.cli import EXIT_FAILURE, EXIT_OK, EXIT_USAGE, main
 from supply_chain_simulator.identity import (
@@ -57,6 +58,31 @@ def test_generate_station_key_returns_matching_pair() -> None:
     assert address == address_for_key(private_key)
     assert address.startswith("0x") and len(address) == 42
     assert address != ANVIL_ADDRESS_1
+
+
+def test_key_with_leading_zero_byte_is_saved_and_loaded(tmp_path: Path) -> None:
+    """Klucz z zerem wiodącym nie może stracić bajtu (regresja).
+
+    `eth-account` skraca `int` do `HexBytes` o minimalnej długości, więc adres
+    liczymy niezależnie z 32 bajtów i porównujemy z `address_for_key`.
+    """
+    private_key = int("0x00" + "11" * 31, 16)
+    path = tmp_path / "station-key.json"
+
+    saved = save_station_key(path, private_key)
+    assert saved.address == Account.from_key(bytes.fromhex("00" + "11" * 31)).address
+
+    loaded = load_station_key(path)
+    assert loaded.private_key == private_key
+    assert loaded.address == saved.address
+
+
+def test_save_rejects_invalid_key_without_leaving_a_file(tmp_path: Path) -> None:
+    path = tmp_path / "station-key.json"
+
+    with pytest.raises(ValueError):
+        save_station_key(path, 0)
+    assert path.exists() is False
 
 
 def test_save_and_load_station_key_round_trip(tmp_path: Path) -> None:

@@ -26,6 +26,7 @@ from eth_account import Account
 
 from supply_chain_simulator.certificate import CertificateError, verify_certificate
 from supply_chain_simulator.models import StationCertificate
+from supply_chain_simulator.signing import private_key_hex
 
 #: Uprawnienia pliku klucza: tylko właściciel.
 KEY_FILE_MODE: Final = 0o600
@@ -70,8 +71,13 @@ def is_allowed_secret_path(path: Path) -> bool:
 
 
 def address_for_key(private_key: int) -> str:
-    """Adres (checksummed) dla klucza prywatnego."""
-    return Account.from_key(private_key).address
+    """Adres (checksummed) dla klucza prywatnego.
+
+    Klucz przekazujemy jako pełne 32 bajty (`private_key_hex`), bo `eth-account`
+    skraca liczbę całkowitą do `HexBytes` o minimalnej długości i klucz z zerem
+    wiodącym przestałby być poprawnym kluczem.
+    """
+    return Account.from_key(private_key_hex(private_key)).address
 
 
 def generate_station_key() -> tuple[str, int]:
@@ -84,7 +90,7 @@ def key_file_payload(private_key: int) -> dict[str, str]:
     """Treść pliku klucza: adres i klucz zapisany tylko w tym pliku."""
     return {
         "address": address_for_key(private_key),
-        "privateKey": "0x" + format(private_key, "064x"),
+        "privateKey": private_key_hex(private_key),
     }
 
 
@@ -102,10 +108,13 @@ def save_station_key(path: Path, private_key: int) -> StationKeyFile:
     if target.exists():
         raise IdentityError(f"plik klucza już istnieje: {target}")
 
+    # Treść liczymy przed utworzeniem pliku: niepoprawny klucz nie może zostawić
+    # pustego pliku 0600, który zablokowałby ponowną próbę.
+    payload = key_file_payload(private_key)
     target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, KEY_FILE_MODE)
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-        json.dump(key_file_payload(private_key), handle, indent=2, ensure_ascii=False)
+        json.dump(payload, handle, indent=2, ensure_ascii=False)
         handle.write("\n")
     return StationKeyFile(
         address=address_for_key(private_key), private_key=private_key, path=target

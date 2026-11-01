@@ -123,6 +123,19 @@ def digest(
     return message_digest(encode(primary_type, domain, message))
 
 
+def private_key_hex(private_key: int) -> str:
+    """Klucz prywatny jako `0x` + 64 znaki hex.
+
+    `eth-account` przyjmuje `int`, ale zamienia go na `HexBytes` o minimalnej
+    długości, więc klucz z zerem wiodącym (średnio 1 na 256 generowanych kluczy)
+    kończył się błędem „expected 32 bytes, got 31”. Dlatego zawsze przekazujemy
+    pełne 32 bajty, tak samo jak zapisujemy klucz w pliku stacji.
+    """
+    if not 0 < private_key < 2**256:
+        raise ValueError("klucz prywatny musi być liczbą z zakresu 1..2**256-1")
+    return "0x" + format(private_key, "064x")
+
+
 @dataclass(frozen=True)
 class SignedTypedData:
     """Wynik podpisu: digest, podpis i adres podpisującego."""
@@ -153,13 +166,14 @@ def sign(
 ) -> SignedTypedData:
     """Podpisuje struktury kluczem prywatnym (deterministycznie, RFC 6979)."""
     encoded = encode(primary_type, domain, message)
-    signed = Account.sign_message(encoded, private_key=private_key)
+    key_hex = private_key_hex(private_key)
+    signed = Account.sign_message(encoded, private_key=key_hex)
     return SignedTypedData(
         primaryType=primary_type,
         message=message_payload(message),
         digest=message_digest(encoded),
         signature="0x" + bytes(signed.signature).hex(),
-        signer=Account.from_key(private_key).address,
+        signer=Account.from_key(key_hex).address,
     )
 
 

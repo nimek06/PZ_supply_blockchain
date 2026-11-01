@@ -8,6 +8,7 @@ odtworzy, to znaczy, że kodowanie EIP-712 rozjeżdża się z kontraktem.
 from __future__ import annotations
 
 import pytest
+from eth_account import Account
 from supply_chain_simulator.canonical import keccak256_hex
 from supply_chain_simulator.models import (
     Eip712Domain,
@@ -17,6 +18,7 @@ from supply_chain_simulator.models import (
 from supply_chain_simulator.signing import (
     digest,
     eip712_types,
+    private_key_hex,
     recover_signer,
     sign_stage_approval,
     sign_stage_completion,
@@ -119,6 +121,32 @@ def test_approval_matches_solidity_vector() -> None:
 def test_station_and_operator_are_different_accounts() -> None:
     assert ANVIL_ADDRESS_1 != ANVIL_ADDRESS_2
     assert ANVIL_KEY_1 != ANVIL_KEY_2
+
+
+def test_key_with_leading_zero_byte_signs_and_recovers() -> None:
+    """Klucz z zerem wiodącym nie może stracić jednego bajtu (regresja).
+
+    `eth-account` zamienia `int` na `HexBytes` o minimalnej długości, więc bez
+    normalizacji do 32 bajtów podpis kończył się błędem 31 bajtów. Klucz
+    o długości 32 bajtów sprawdzamy niezależnie, przez bajty.
+    """
+    private_key = int("0x00" + "11" * 31, 16)
+    expected_address = Account.from_key(bytes.fromhex("00" + "11" * 31)).address
+
+    domain = vector_domain()
+    message = completion_message()
+    signed = sign_stage_completion(domain, message, private_key)
+
+    assert signed.signer == expected_address
+    assert len(signed.signature) == 132
+    assert recover_signer("StageCompletion", domain, message, signed.signature) == expected_address
+
+
+def test_invalid_private_key_is_rejected() -> None:
+    with pytest.raises(ValueError):
+        private_key_hex(0)
+    with pytest.raises(ValueError):
+        private_key_hex(2**256)
 
 
 def test_completion_and_approval_digests_differ() -> None:
