@@ -1,0 +1,132 @@
+{
+  "vectorVersion": 1,
+  "description": "Wspólny wektor podpisu v1 (T008): raport JCS, reportHash oraz podpisy EIP-712 StageCompletion (stacja) i StageApproval (operator zmiany). Klucze to publiczne klucze deweloperskie Anvil #1 i #2 - nie zasilaj tych adresów na Amoy. Wartości pomiarów są testowe, nie są progami (DEC-02 otwarte).",
+  "domainTypeString": "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+  "domain": {
+    "name": "SupplyChain",
+    "version": "1",
+    "chainId": 31337,
+    "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+  },
+  "batchNumber": "B-2026-0001",
+  "report": {
+    "schemaVersion": 1,
+    "batchId": "0x79709e7401c7c94e8c6439dd2cd3729509c3c33d6b80b2df940e9c435df582f1",
+    "stageId": 2,
+    "stationAddress": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "timestamp": 1800000000,
+    "measurements": {
+      "temperatureMilliC": 21500,
+      "torqueMilliNm": 45000,
+      "pressurePa": 620000
+    },
+    "qaPassed": true
+  },
+  "canonicalReportJcs": "{\"batchId\":\"0x79709e7401c7c94e8c6439dd2cd3729509c3c33d6b80b2df940e9c435df582f1\",\"measurements\":{\"pressurePa\":620000,\"temperatureMilliC\":21500,\"torqueMilliNm\":45000},\"qaPassed\":true,\"schemaVersion\":1,\"stageId\":2,\"stationAddress\":\"0x70997970c51812dc3a010c7d01b50e0d17dc79c8\",\"timestamp\":1800000000}",
+  "reportHash": "0x4707421ac9d17015745b8d29d2684f271eb6d37cc2a22f7f01456b88a894e97d",
+  "stageCompletion": {
+    "typeString": "StageCompletion(bytes32 batchId,uint32 stageId,bytes32 reportHash,bool qaPassed,uint256 deadline)",
+    "types": {
+      "EIP712Domain": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "version",
+          "type": "string"
+        },
+        {
+          "name": "chainId",
+          "type": "uint256"
+        },
+        {
+          "name": "verifyingContract",
+          "type": "address"
+        }
+      ],
+      "StageCompletion": [
+        {
+          "name": "batchId",
+          "type": "bytes32"
+        },
+        {
+          "name": "stageId",
+          "type": "uint32"
+        },
+        {
+          "name": "reportHash",
+          "type": "bytes32"
+        },
+        {
+          "name": "qaPassed",
+          "type": "bool"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256"
+        }
+      ]
+    },
+    "message": {
+      "batchId": "0x79709e7401c7c94e8c6439dd2cd3729509c3c33d6b80b2df940e9c435df582f1",
+      "stageId": 2,
+      "reportHash": "0x4707421ac9d17015745b8d29d2684f271eb6d37cc2a22f7f01456b88a894e97d",
+      "qaPassed": true,
+      "deadline": 1800000600
+    },
+    "digest": "0x96c4c1d58acf1b8156059b534750b8d9b2d2bc11d8b2d4f387f481bacdc9ae17",
+    "signature": "0x7880116253ade2d83a7c2fa1569c4899553a9fc21909e0891a4afd3a5f6ac75a4b51abd1b1da05b615b2399abd28d3f6d0f1396d130f34aff952b02e186c40131b",
+    "signer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+  },
+  "stageApproval": {
+    "typeString": "StageApproval(bytes32 batchId,uint32 stageId,bytes32 reportHash,uint256 deadline)",
+    "types": {
+      "EIP712Domain": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "version",
+          "type": "string"
+        },
+        {
+          "name": "chainId",
+          "type": "uint256"
+        },
+        {
+          "name": "verifyingContract",
+          "type": "address"
+        }
+      ],
+      "StageApproval": [
+        {
+          "name": "batchId",
+          "type": "bytes32"
+        },
+        {
+          "name": "stageId",
+          "type": "uint32"
+        },
+        {
+          "name": "reportHash",
+          "type": "bytes32"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256"
+        }
+      ]
+    },
+    "message": {
+      "batchId": "0x79709e7401c7c94e8c6439dd2cd3729509c3c33d6b80b2df940e9c435df582f1",
+      "stageId": 2,
+      "reportHash": "0x4707421ac9d17015745b8d29d2684f271eb6d37cc2a22f7f01456b88a894e97d",
+      "deadline": 1800000600
+    },
+    "digest": "0xe32704d4070e49c070a61d2543b69f3ba4ef9327fb127363268c77b6bf5c894f",
+    "signature": "0xa3974d606bf7a287a0d9d0d8bbd72bdaa3caa5d33f4594e72aa62396721674db1895dccffd8137fef4fa82275b70be8ddb66396e3d40324a66fc287748509c041b",
+    "signer": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+  }
+}
