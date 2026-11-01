@@ -3,7 +3,7 @@
 **Język:** Python 3.11-3.12, kod z adnotacjami typów.
 
 Moduły pakietu (stan 2026-10-31 - gotowe: `__init__`, `__main__`, `cli`, `models`,
-`canonical`, `signing`, `vector`, `certificate`; pozostałe planowane):
+`canonical`, `signing`, `vector`, `certificate`; szkic: `client`; pozostałe planowane):
 | Plik | Zakres |
 |---|---|
 | `__init__.py` | pakiet, bez efektów ubocznych |
@@ -36,6 +36,17 @@ Runner po `202` czeka na status (`CONFIRMED`, `outcome`) przed nowym krokiem; `R
 Timeout wymaga ponowienia identycznego żądania, nie losowania nowego raportu.
 Wstrzykuj zegar/seed/klienta do testów; zakończenie pętli zamyka klienta HTTP.
 Logi podają stację, commandId i status, nigdy klucz prywatny.
+
+Klient HTTP (szkic, `client.py`): `submit_stage` wysyła `report`, `stationCertificateId`,
+`reportHash`, `deadline` i `signature`; `get_command` czyta status polecenia.
+Zgłoszenie buduje `build_stage_submission`, który porównuje każdą podpisaną wartość
+z raportem i certyfikatem (`StageCompletion` innego typu niż `StageApproval`,
+adres podpisującego, etap w `allowedStageIds`) - treść, która nie jest tym, co
+podpisano, nie wychodzi na sieć. Retry powtarza identyczne bajty i dotyczy tylko
+`429`, `5xx` oraz timeoutów (z poszanowaniem `Retry-After`); `4xx` nie są ponawiane.
+Modele żądań są ścisłe (`extra="forbid"`), a modele odpowiedzi przyjmują dodatkowe
+pola, bo odpowiedź należy do backendu. Nazwy pól odpowiedzi (`commandId`,
+`statusUrl`, `outcome`, `retryAllowedAfter`) czekają na potwierdzenie w `openapi.yaml`.
 
 Żądanie przekazuje stationCertificateId poza raportem. Certyfikat i para
 kluczy są przypisane konkretnej stacji. Nie używaj jednego konta jako stacji
