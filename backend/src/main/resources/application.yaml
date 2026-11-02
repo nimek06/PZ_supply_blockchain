@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: supply-blockchain-backend
+  datasource:
+    url: ${DB_URL:}
+    username: ${DB_USER:}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+      accept-float-as-int: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+supplychain:
+  chain:
+    chain-id: ${CHAIN_ID:31337}
+    contract-address: ${CONTRACT_ADDRESS:}
+    domain-name: ${CHAIN_DOMAIN_NAME:SupplyChain}
+    domain-version: ${CHAIN_DOMAIN_VERSION:1}
+    max-deadline-window-seconds: ${MAX_DEADLINE_WINDOW_SECONDS:3600}
+  auth:
+    domain: ${AUTH_DOMAIN:localhost}
+    uri: ${AUTH_URI:http://localhost:5173}
+    statement: ${AUTH_STATEMENT:Sign in to PZ Supply Blockchain.}
+    challenge-ttl-seconds: ${AUTH_CHALLENGE_TTL_SECONDS:300}
+    token-ttl-seconds: ${AUTH_TOKEN_TTL_SECONDS:28800}
+    idle-timeout-seconds: ${AUTH_IDLE_TIMEOUT_SECONDS:1800}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  clock:
+    fixed-now: ${FIXED_NOW:}
