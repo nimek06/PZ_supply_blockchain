@@ -1,7 +1,6 @@
 openapi: 3.1.0
 # JSON Schema 2020-12, tak samo jak w telemetry.schema.json.
-# Szkic T002 do przeglądu przez osobę 2. Źródła: protocol, data-model, access-control,
-# quality-approval, changes-v2 (docs/). "PROPOZYCJA" = nie wynika z protokołu, do potwierdzenia.
+# Na podstawie docs/: protocol, data-model, access-control, quality-approval, changes-v2.
 info:
   title: PZ Supply Blockchain API
   version: 0.1.0-draft
@@ -88,7 +87,7 @@ paths:
     get:
       tags: [auth]
       operationId: getCurrentSession
-      summary: Kontekst bieżącej sesji (PROPOZYCJA - docs/access-control.md wymaga ujęcia go w tym schemacie)
+      summary: Kontekst bieżącej sesji
       description: Adres, aktualne role (odczyt z łańcucha) i wygaśnięcie. Frontend używa tego do wykrycia zmiany konta w portfelu.
       responses:
         '200':
@@ -383,11 +382,9 @@ paths:
     post:
       tags: [certificates]
       operationId: registerStationCertificate
-      summary: PROPOZYCJA - rejestracja certyfikatu stacji (Admin)
+      summary: Rejestracja certyfikatu stacji (Admin)
       description: |
-        PROPOZYCJA do potwierdzenia na spotkaniu startowym. docs/protocol.md wymaga, by
-        `stationCertificateId` wskazywał uprzednio zarejestrowany i zweryfikowany certyfikat,
-        ale nie definiuje endpointu rejestracji. Backend weryfikuje wystawcę (allowlista), ważność,
+        `stationCertificateId` w raporcie musi wskazywać wcześniej zarejestrowany certyfikat. Backend weryfikuje wystawcę (allowlista), ważność,
         unikalność serialu i zgodność z rejestrem on-chain. Rejestracja identycznego poświadczenia
         jest idempotentna; ten sam `certificateId` z innym payloadem to `409 CERTIFICATE_CONFLICT`.
         Wystawianie certyfikatów to narzędzie administracyjne (CLI), nie ten endpoint.
@@ -421,7 +418,7 @@ paths:
     get:
       tags: [certificates]
       operationId: getStationCertificate
-      summary: PROPOZYCJA - stan certyfikatu stacji (Admin lub stacja-właściciel)
+      summary: Stan certyfikatu stacji (Admin lub stacja-właściciel)
       description: Poświadczenie nie jest publiczne (może zawierać metadane zakładu).
       parameters:
         - name: certificateId
@@ -547,7 +544,7 @@ components:
         code:
           type: string
           description: |
-            Stabilny kod domenowy (PROPOZYCJA listy - do zatwierdzenia z osobą 2):
+            Stabilny kod domenowy:
             INVALID_REQUEST, SCHEMA_VIOLATION, PROFILE_VIOLATION, UNAUTHENTICATED, FORBIDDEN,
             INVALID_SIGNATURE, SIGNER_MISMATCH, STATION_NOT_ACTIVE, STAGE_NOT_ALLOWED,
             CERTIFICATE_INVALID, REGISTRY_MISMATCH, ROLE_MISSING, NOT_FOUND, UNEXPECTED_STAGE,
@@ -814,7 +811,7 @@ components:
           allOf: [{ $ref: '#/components/schemas/Signature' }]
           description: EIP-712 `StageApproval(batchId, stageId, reportHash, deadline=approvalDeadline)`
 
-    # ------------------------------------------------------------ certyfikaty (PROPOZYCJA)
+    # ------------------------------------------------------------ certyfikaty
     StationCertificatePayload:
       type: object
       additionalProperties: false
@@ -838,7 +835,7 @@ components:
     StationCertificateEnvelope:
       type: object
       additionalProperties: false
-      description: Zgodne z `shared/schemas/station-certificate.schema.json` (osoba 4, propozycja DEC-13).
+      description: Zgodne z `shared/schemas/station-certificate.schema.json`.
       required: [certificateVersion, payload, payloadHash, signature]
       properties:
         certificateVersion: { const: 1 }
