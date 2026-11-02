@@ -14,8 +14,9 @@ Po analizie z 2026-10-27 wprowadzono zmiany opisane w [changes-v2.md](changes-v2
 
 Zakres wybrany przez użytkownika 2026-10-27: **pierwszych pięć obszarów
 z tabeli**, nie pięć późniejszych rezultatów (schema, makiety, demo).
-Zachowujemy ogólną linię bez konkretnego produktu; recovery (DEC-09) jest
-zamknięte w wariancie C uproszczonym.
+Architektura pozostaje ogólna (niezależna od produktu); scenariuszem referencyjnym
+MVP jest montaż roweru elektrycznego: [product-scenario.md](product-scenario.md).
+Recovery (DEC-09) jest zamknięte w wariancie C uproszczonym.
 
 | Obszar | Dokument | Co jest rozpisane |
 |---|---|---|
@@ -41,7 +42,7 @@ technologiach. Poglądowe skróty z opisu stosu nie definiują ABI ani finalnoś
 6. [data-model.md](data-model.md): relacje, źródła prawdy i statusy.
 7. [station-identity.md](station-identity.md): klucze i certyfikaty stacji.
 8. [decisions.md](decisions.md): rejestr decyzji.
-9. [plan.md](plan.md): 12 tygodni, [team-split.md](team-split.md) i [week1-plan.md](weekly_plans/week1/week1-plan.md).
+9. [plan.md](plan.md): 12 tygodni, [team-split.md](team-split.md), [week1-plan.md](weekly_plans/week1/week1-plan.md) i [week2-plan.md](weekly_plans/week2/week2-plan.md).
 
 ## Instrukcje wykonawcze
 

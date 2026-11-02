@@ -19,7 +19,7 @@ do zatwierdzenia przez zespół w wyznaczonym terminie, nie zgodę na zmianę w 
 
 | ID / status | Decyzja | Właściciel | Co blokuje |
 |---|---|---|---|
-| DEC-01 / USTALONA | Ogólna marszruta przygotowanie -> montaż -> kontrola -> pakowanie, stageId 0..3, bramka dwóch kluczy na etapie 2. Bez konkretnego produktu i norm fabrycznych | cały zespół | [reguły produkcji](production-rules.md) |
+| DEC-01 / USTALONA | Ogólna marszruta przygotowanie -> montaż -> kontrola -> pakowanie, stageId 0..3, bramka dwóch kluczy na etapie 2. Architektura i kontrakt niezależne od produktu, bez norm fabrycznych. Scenariusz referencyjny MVP: montaż roweru elektrycznego (e-bike), z możliwością rozszerzenia na inne produkty (propozycja do potwierdzenia, [scenariusz](product-scenario.md)) | cały zespół | [reguły produkcji](production-rules.md), [scenariusz e-bike](product-scenario.md) |
 | DEC-02 / DO POTWIERDZENIA (piątek tyg. 1) | Całkowite jednostki; jeden zamrożony zestaw profili demonstracyjnych v1 dla etapów 0..3. Szkic przygotowują osoby 2 + 4 do środy tyg. 1 | 2 + 4, konsultacja 1 | schema, walidacja, generatory |
 | DEC-03 / USTALONA | JCS + Keccak + EIP-712 `StageCompletion` **bez nonce**; CID jest osobnym wskazaniem relayera. Ręczna implementacja EIP-712 w Javie, wspólny wektor w 4 językach (V2-01, V2-10) | 1 + 2 + 4 | wektory podpisów |
 | DEC-04 / USTALONA | Dwa klucze: EIP-712 stacji + **podpis EIP-712 `StageApproval` operatora poza łańcuchem**, weryfikowane razem w `completeStage`. Adresy różne, aktualna rola QA. Brak `approveStage` on-chain (V2-03) | 1 + 2 + 3 | [dwa klucze](quality-approval.md) |
