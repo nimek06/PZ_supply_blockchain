@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StationCertificate",
+  "description": "Certyfikat aplikacyjny stacji (DEC-13, V2-04): payload kanonizowany JCS i podpisany przez wystawcę osobnym typem EIP-712. To NIE jest certyfikat X.509 ani TLS. Rejestr on-chain (registerStation: adres, stationId, expiresAt, stageMask) jest źródłem egzekucji, a certyfikat jest poświadczeniem audytowym, które musi się z nim zgadzać. Format jest propozycją: nazwa domeny SupplyChainStationRegistry i typ StationCertificate wymagają potwierdzenia przez osoby 1-3. Adresy i hashe zapisujemy małymi literami (kanoniczna forma bajtowa, niezależna od checksum/case). Ten schemat waliduje format; zgodność payloadHash z payloadem, podpis wystawcy, allowlistę wystawców, okno ważności i stan rejestru sprawdza aplikacja (symulator: certificate.py, backend: weryfikator Javy).",
+  "$defs": {
+    "address": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{40}$",
+      "description": "Adres EVM małymi literami, niezerowy."
+    },
+    "bytes32": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{64}$",
+      "description": "bytes32 jako 0x + 64 znaki hex małymi literami."
+    },
+    "signature65": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{130}$",
+      "description": "Podpis 65 bajtów jako 0x + 130 znaków hex."
+    },
+    "unixSeconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Unix seconds, nie milisekundy; bezpieczna liczba całkowita JSON."
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "certificateId",
+        "stationId",
+        "stationAddress",
+        "issuerAddress",
+        "chainId",
+        "verifyingContract",
+        "issuedAt",
+        "expiresAt",
+        "allowedStageIds"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1,
+          "description": "Wersja formatu aplikacyjnego; w v1 stała 1."
+        },
+        "certificateId": {
+          "$ref": "#/$defs/bytes32",
+          "description": "Serial nadany przez wystawcę; unikalny w rejestrze wystawcy. Odnowienie tworzy nowy serial, stary pozostaje do audytu."
+        },
+        "stationId": {
+          "$ref": "#/$defs/bytes32",
+          "description": "Techniczny identyfikator stanowiska (np. keccak256(\"ST-001\")); musi zgadzać się z rejestrem on-chain."
+        },
+        "stationAddress": {
+          "$ref": "#/$defs/address",
+          "description": "Adres EVM uprawniony do podpisywania raportów tej stacji; inny niż operator zmiany i relayer."
+        },
+        "issuerAddress": {
+          "$ref": "#/$defs/address",
+          "description": "Adres wystawcy z zaufanej allowlisty wdrożenia; klucz wystawcy nie jest kluczem relayera."
+        },
+        "chainId": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "description": "Sieć, w której certyfikat obowiązuje: 31337 lokalnie, 80002 Amoy."
+        },
+        "verifyingContract": {
+          "$ref": "#/$defs/address",
+          "description": "Adres wdrożonego SupplyChain; certyfikat nie przenosi prawa na inne wdrożenie."
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/unixSeconds",
+          "description": "Początek ważności; warunek issuedAt <= now."
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/unixSeconds",
+          "description": "Koniec ważności (wyłączny): now < expiresAt. Warunek expiresAt > issuedAt sprawdza walidacja aplikacji."
+        },
+        "allowedStageIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "description": "Dozwolone etapy 0..3, bez powtórzeń; aplikacja utrzymuje kolejność rosnącą i musi ona odpowiadać stageMask w rejestrze on-chain."
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["certificateVersion", "payload", "payloadHash", "signature"],
+  "properties": {
+    "certificateVersion": {
+      "const": 1,
+      "description": "Wersja obwiedni: payload + podpis wystawcy."
+    },
+    "payload": {
+      "$ref": "#/$defs/payload"
+    },
+    "payloadHash": {
+      "$ref": "#/$defs/bytes32",
+      "description": "Keccak-256 kanonicznych bajtów payloadu (JCS, RFC 8785). Podpis i data odbioru w backendzie nie należą do payloadu."
+    },
+    "signature": {
+      "$ref": "#/$defs/signature65",
+      "description": "Podpis EIP-712 wystawcy: domena SupplyChainStationRegistry/1 z chainId i verifyingContract z certyfikatu, typ StationCertificate(bytes32 payloadHash)."
+    }
+  }
+}

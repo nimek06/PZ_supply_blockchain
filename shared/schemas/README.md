@@ -7,9 +7,11 @@ Planowane pliki:
 - `telemetry.schema.json`: wersja raportu, wymagane pola, typy, limity, jednostki.
 - `eip712.json`: domena demonstracyjna, typy `StageCompletion` (bez nonce) i `StageApproval`
   oraz uporządkowane definicje pól.
-- `station-certificate.schema.json`: format poświadczenia stacji, wystawca,
+- `station-certificate.schema.json` (**gotowe 2026-10-31**): format poświadczenia stacji, wystawca,
   adres, serial, ważność i `stageMask`; certyfikat jest poświadczeniem audytowym i musi zgadzać się
   z rejestrem on-chain (wariant certyfikatu wg DEC-13; sprawdź [decisions](../../docs/decisions.md)).
+  Draft 2020-12, adresy i hashe małymi literami; obok schematu leży przykład
+  `../fixtures/station-certificate.json`, a walidację robi symulator (`jsonschema` w extra `dev`).
 
 OpenAPI obejmuje też chronioną kolejkę raportów WAITING_FOR_QA i uzgodniony
 login SIWE (wydanie tokenu). Podpis stacji i podpis operatora zmiany dotyczą tej samej partii,
@@ -23,14 +25,16 @@ Przed tworzeniem tych plików zatwierdź pięć rozwinięć:
 [format certyfikatu](../../docs/station-identity.md)
 i [login i autoryzacja](../../docs/access-control.md).
 Zmiany v2 ([changes-v2](../../docs/changes-v2.md)) są wiążące: brak nonce, brak cookie/CSRF.
-W bieżącym etapie rozpisano dokumentację tych obszarów, nie gotowe schematy.
+Z tych plików istnieje obecnie tylko `station-certificate.schema.json` (draft 2020-12); `openapi.yaml`,
+`telemetry.schema.json` i `eip712.json` mają na razie dokumentację w `docs/`, nie schematy.
 
 Zacznij od [protokołu](../../docs/protocol.md). Zabroń nieznanych pól raportu.
 JSON Schema waliduje format; spójność path/body, stan kontraktu i kryptografia
 to osobna walidacja aplikacji. Domena z `eip712.json` nie może zastępować
 rzeczywistej konfiguracji sieci i adresu wdrożenia.
 
-Wybierz i zapisz dialekt JSON Schema i wersję OpenAPI wspieraną przez generator.
+Wybierz i zapisz dialekt JSON Schema i wersję OpenAPI wspieraną przez generator
+(wybrany dla certyfikatu: JSON Schema draft 2020-12, `station-certificate.schema.json`).
 Nie utrzymuj sprzecznych definicji w kilku plikach; używaj referencji lub
 testów zgodności, jeśli narzędzia wymagają osobnej reprezentacji.
 Po zmianie regeneruj klientów i odpal testy wszystkich konsumentów.

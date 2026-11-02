@@ -1,0 +1,93 @@
+# Szkielet CI (T010, osoba 4) - joby: contracts, simulator, backend.
+# Do przekazania osobie 1, która rozwija workflow od tygodnia 2.
+#
+# Zasady z docs/testing.md: CI nie wymaga dostępu do Amoy ani Pinaty, testy
+# Pythona nie używają sieci, a job backendu startuje dopiero po inicjalizacji
+# Mavena (bez pom.xml job przechodzi z komunikatem, nie udaje zielonych testów).
+# Job frontendu dochodzi w tygodniu 2 razem z T005/T032.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Minimalne uprawnienia: workflow tylko czyta repozytorium.
+permissions:
+  contents: read
+
+# Zbędne przebiegi dla tego samego ref anulujemy, żeby nie blokowały runnerów.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: contracts (forge)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - name: Checkout z submodułami (OpenZeppelin, forge-std)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Instalacja Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Formatowanie
+        run: forge fmt --check
+      - name: Kompilacja
+        run: forge build
+      - name: Testy kontraktów
+        run: forge test -vv
+
+  simulator:
+    name: simulator (pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: simulator
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Python 3.12 z zakresu pyproject (>=3.11,<3.13)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: simulator/pyproject.toml
+      - name: Instalacja pakietu z narzędziami testowymi
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Smoke CLI (kryterium tygodnia 1)
+        run: python -m supply_chain_simulator --version
+      - name: Testy symulatora
+        run: python -m pytest -q
+
+  backend:
+    name: backend (maven)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      # Do czasu inicjalizacji backendu (Mikołaj, tydzień 1) nie ma czego
+      # budować: bez tego kroku job świeciłby na czerwono bez powodu.
+      - name: Backend jeszcze nie istnieje
+        if: hashFiles('backend/pom.xml') == ''
+        run: |
+          echo "::notice title=Backend::Brak backend/pom.xml - moduł nie jest jeszcze zainicjalizowany; job przechodzi bez testów."
+      - name: Java 21 (temurin)
+        if: hashFiles('backend/pom.xml') != ''
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Testy backendu
+        if: hashFiles('backend/pom.xml') != ''
+        run: ./mvnw -B -ntp verify
