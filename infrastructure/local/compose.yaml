@@ -1,0 +1,61 @@
+# Lokalnie: Postgres, Anvil, Kubo. Backend, Vite i symulator odpalamy osobno.
+# Porty tylko na 127.0.0.1.
+# Start: cp .env.example .env, ustaw hasło, docker compose up -d
+name: pz-supply
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-supplychain}
+      POSTGRES_USER: ${POSTGRES_USER:-supplychain}
+      # bez hasła ma się wywalić, a nie startować
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ustaw POSTGRES_PASSWORD w infrastructure/local/.env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  anvil:
+    # wersja jak w contracts/; obraz ma domyślnie entrypoint z shellem, stąd override
+    image: ghcr.io/foundry-rs/foundry:v1.8.6
+    restart: unless-stopped
+    entrypoint: ["anvil"]
+    command: ["--host", "0.0.0.0", "--port", "8545", "--chain-id", "${ANVIL_CHAIN_ID:-31337}"]
+    ports:
+      - "127.0.0.1:${ANVIL_PORT:-8545}:8545"
+    # bez wolumenu - po restarcie łańcuch jest pusty (patrz README, reset)
+    healthcheck:
+      test: ["CMD-SHELL", "cast chain-id --rpc-url http://127.0.0.1:8545 | grep -qx ${ANVIL_CHAIN_ID:-31337}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 3s
+
+  kubo:
+    image: ipfs/kubo:v0.32.1
+    restart: unless-stopped
+    # --offline: bez DHT, testy nie potrzebują internetu (Pinata tylko na demo)
+    command: ["daemon", "--migrate=true", "--offline"]
+    ports:
+      - "127.0.0.1:${KUBO_API_PORT:-5001}:5001"       # API bez auth, tylko localhost
+      - "127.0.0.1:${KUBO_GATEWAY_PORT:-8081}:8080"   # gateway (8080 ma backend)
+    volumes:
+      - kubo-data:/data/ipfs
+    healthcheck:
+      test: ["CMD", "ipfs", "id"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  postgres-data:
+  kubo-data:

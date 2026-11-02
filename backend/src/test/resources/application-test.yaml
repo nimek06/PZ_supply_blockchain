@@ -14,7 +14,8 @@ spring:
 supplychain:
   chain:
     chain-id: 31337
-    contract-address: 0x5fbdb2315678afecb367f032d93f642f64180aa3
+    # w cudzysłowie: bez niego YAML czyta 0x... jako liczbę szesnastkową
+    contract-address: "0x5fbdb2315678afecb367f032d93f642f64180aa3"
     domain-name: SupplyChain
     domain-version: "1"
     max-deadline-window-seconds: 3600
