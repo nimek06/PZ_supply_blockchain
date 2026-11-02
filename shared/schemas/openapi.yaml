@@ -554,7 +554,7 @@ components:
             STAGE_ALREADY_PENDING, STAGE_ALREADY_COMPLETED, DEADLINE_EXPIRED, DEADLINE_TOO_FAR,
             APPROVAL_CONFLICT, NOT_WAITING_FOR_QA, CANDIDATE_EXPIRED, SAME_STATION_AND_OPERATOR,
             IDEMPOTENCY_CONFLICT, CERTIFICATE_CONFLICT, CHALLENGE_USED_OR_EXPIRED, CURSOR_STALE,
-            PAYLOAD_TOO_LARGE, RATE_LIMITED, DEPENDENCY_UNAVAILABLE
+            PAYLOAD_TOO_LARGE, RATE_LIMITED, DEPENDENCY_UNAVAILABLE, INTERNAL_ERROR
         correlationId: { type: string }
         retryAllowedAfter:
           allOf: [{ $ref: '#/components/schemas/UnixSeconds' }]
@@ -838,12 +838,17 @@ components:
     StationCertificateEnvelope:
       type: object
       additionalProperties: false
-      required: [payload, signature]
+      description: Zgodne z `shared/schemas/station-certificate.schema.json` (osoba 4, propozycja DEC-13).
+      required: [certificateVersion, payload, payloadHash, signature]
       properties:
+        certificateVersion: { const: 1 }
         payload: { $ref: '#/components/schemas/StationCertificatePayload' }
+        payloadHash:
+          allOf: [{ $ref: '#/components/schemas/Bytes32' }]
+          description: Keccak-256(JCS(payload)); backend liczy go ponownie i odrzuca niezgodny
         signature:
           allOf: [{ $ref: '#/components/schemas/Signature' }]
-          description: 'EIP-712 `StationCertificate(bytes32 payloadHash)` wystawcy; payloadHash = Keccak-256(JCS(payload))'
+          description: 'EIP-712 `StationCertificate(bytes32 payloadHash)` wystawcy, domena `SupplyChainStationRegistry`/`1`'
     StationCertificateStatus:
       type: object
       required: [certificateId, stationAddress, status]

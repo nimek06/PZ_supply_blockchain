@@ -43,6 +43,20 @@ docker compose down             # zatrzymuje usługi, ZACHOWUJE dane (wolumeny)
 Health checki: PostgreSQL (`pg_isready`), Anvil (`cast chain-id` = 31337), Kubo (`ipfs id`).
 Ręcznie: `cast chain-id --rpc-url http://127.0.0.1:8545`, `curl -X POST http://127.0.0.1:5001/api/v0/id`.
 
+### Testy integracyjne backendu na tej bazie
+
+Testy `*IT` w `backend/` uruchamiają się tylko z ustawionym `TEST_DB_URL` i mogą czyścić bazę
+(`flyway.clean-disabled: false`), więc używaj **osobnej bazy** `supplychain_test`, nie roboczej:
+
+```bash
+cd infrastructure/local && set -a && . ./.env && set +a
+docker exec pz-supply-postgres-1 psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "CREATE DATABASE supplychain_test OWNER $POSTGRES_USER"      # tylko za pierwszym razem
+cd ../../backend
+TEST_DB_URL=jdbc:postgresql://127.0.0.1:$POSTGRES_PORT/supplychain_test \
+TEST_DB_USER=$POSTGRES_USER TEST_DB_PASSWORD=$POSTGRES_PASSWORD ./mvnw verify
+```
+
 ### Reset środowiska - tylko świadomie
 
 **Anvil nie ma wolumenu**: każdy restart (`down`/`up`, restart kontenera, restart Dockera) daje czysty
