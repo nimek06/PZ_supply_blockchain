@@ -7,7 +7,7 @@ name = "supply-chain-simulator"
 version = "0.1.0"
 description = "Symulator stacji montażowych i gniazd produkcyjnych (PZ supply blockchain)"
 readme = "README.md"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.11"
 dependencies = [
     "eth-account>=0.14",
     "eth-utils>=6.0",

@@ -137,3 +137,23 @@ def test_signatures_are_not_interchangeable(vector: dict) -> None:
         "StageCompletion", domain, message, vector["stageApproval"]["signature"]
     )
     assert recovered.lower() != ANVIL_ADDRESS_1.lower()
+
+
+TELEMETRY_SCHEMA_PATH = (
+    Path(__file__).resolve().parents[2] / "shared" / "schemas" / "telemetry.schema.json"
+)
+
+
+def test_report_matches_the_ebike_quality_control_profile(vector: dict) -> None:
+    """Wektor musi przechodzić profil etapu 2 (DEC-02), inaczej backend odrzuci go z `422`."""
+    jsonschema = pytest.importorskip("jsonschema")
+    schema = json.loads(TELEMETRY_SCHEMA_PATH.read_text(encoding="utf-8"))
+    validator = jsonschema.Draft202012Validator(schema)
+    validator.validate(vector["report"])
+
+    measurements = vector["report"]["measurements"]
+    assert measurements["defectsFound"] == 0
+    assert measurements["checklistItemsPassed"] == measurements["checklistItemsTotal"]
+
+    foreign = {**vector["report"], "measurements": {"pressurePa": 620_000}}
+    assert not validator.is_valid(foreign)

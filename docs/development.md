@@ -5,7 +5,7 @@
 - Git; JDK 21; Foundry (`forge`, `cast`, `anvil`) - zainstaluj przez `foundryup`.
 - Wspierana wersja Node.js zgodna z wybraną wersją Vite, npm (sprawdź, czy Twoja
   wersja Node jest wspierana przez Vite).
-- Python 3.11-3.12 w venv (nowsze wersje sprawdź pod kątem zgodności `eth-account`);
+- Python 3.11+ w venv (suita testów symulatora, w tym `eth-account`, przechodzi na 3.12, 3.13 i 3.14);
   Docker z Compose do PostgreSQL, Anvil i Kubo.
 - Konto Pinaty i RPC Amoy: smoke deploy na Amoy już w tygodniu 1, pełna
   integracja w tygodniu 5 ([plan tygodnia 1](weekly_plans/week1/week1-plan.md)).
@@ -89,8 +89,9 @@ Przed pisaniem reguł przeczytajcie [zmiany v2](changes-v2.md) i pięć rozwini�
 [produkcja](production-rules.md), [poprawki](corrections.md),
 [dwa klucze](quality-approval.md), [certyfikaty](station-identity.md)
 i [uprawnienia/logowanie](access-control.md).
-Ogólna marszruta jest wybrana, ale brak produktu oznacza brak uzasadnionych
-fizycznych progów pomiarowych (DEC-02). Recovery jest wybrane (DEC-09).
+Ogólna marszruta jest wybrana, a scenariuszem referencyjnym jest e-bike
+([scenariusz](product-scenario.md)); progi pomiarowe są demonstracyjne (DEC-02, profile v1).
+Recovery jest wybrane (DEC-09).
 Podział zadań: [team-split](team-split.md); pierwszy tydzień: [week1-plan](weekly_plans/week1/week1-plan.md).
 
 1. Przeczytajcie [mapę zgodności z PDF](source-alignment.md) i

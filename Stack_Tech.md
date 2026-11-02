@@ -29,7 +29,7 @@ Centralny punkt logiki biznesowej, bezpieczny relayer transakcji blockchainowych
   - Dlaczego: jeden relayer musi wysyłać transakcje z kolejnymi numerami nonce konta relayera (nie stacji; `StageCompletion` nie ma nonce) i przetrwać restart.
 ### 3. Symulator IoT i Stacji Montażowych
 Samodzielny skrypt/serwis udający fizyczne gniazda produkcyjne i sterowniki maszyn (PLC/sensory).
-- Język: Python 3.11-3.12 (venv)
+- Język: Python 3.11+ (venv; testy przechodzą na 3.12-3.14)
 - Biblioteki kluczowe:
   - eth-account: Generowanie par kluczy kryptograficznych (adres Ethereum + klucz prywatny) dla każdego stanowiska oraz podpisywanie `StageCompletion` zgodnie z EIP-712. Drugi, niezależny klucz (operator QA) podpisuje `StageApproval` przy kontroli.
   - pydantic: Definiowanie ścisłych modeli danych telemetrycznych (np. temperature: float, torque_nm: float, qa_passed: bool, timestamp: int).

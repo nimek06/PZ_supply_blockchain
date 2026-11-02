@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://pz-supply-blockchain.local/schemas/telemetry.schema.json",
   "title": "TelemetryReport",
-  "description": "Raport stacji v1 (docs/protocol.md). To są bajty hashowane przez JCS + Keccak-256 i zapisywane w IPFS. Obwiednia podpisu NIE jest częścią raportu. JSON Schema waliduje wyłącznie format; spójność path/body, qaPassed względem pomiarów, stan kontraktu i kryptografia to osobna walidacja aplikacji. SZKIC T002: profile pomiarów w $defs są DEMONSTRACYJNE (nie normy fizyczne) i czekają na zatwierdzenie DEC-02.",
+  "description": "Raport stacji v1 (docs/protocol.md). To są bajty hashowane przez JCS + Keccak-256 i zapisywane w IPFS. Obwiednia podpisu NIE jest częścią raportu. JSON Schema waliduje wyłącznie format; spójność path/body, qaPassed względem pomiarów, stan kontraktu i kryptografia to osobna walidacja aplikacji. Profile pomiarów w $defs to zatwierdzony zestaw roboczy v1 dla roweru elektrycznego (DEC-02, 2026-11-02, docs/product-scenario.md); wartości są DEMONSTRACYJNE, nie normy fizyczne.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "batchId", "stageId", "stationAddress", "timestamp", "measurements", "qaPassed"],
@@ -38,7 +38,7 @@
     "bytes32": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" },
     "count": { "type": "integer", "minimum": 0, "maximum": 10000 },
     "profilePreparationV1": {
-      "description": "DRAFT profil etapu 0 (PREPARATION): lista sprawdzeń przygotowania. Reguła aplikacji: qaPassed=true tylko gdy checklistItemsPassed == checklistItemsTotal.",
+      "description": "Profil e-bike etapu 0 (PREPARATION): lista sprawdzeń przygotowania (komplet części, narzędzia). Reguła aplikacji: qaPassed=true tylko gdy checklistItemsPassed == checklistItemsTotal.",
       "type": "object",
       "additionalProperties": false,
       "required": ["checklistItemsTotal", "checklistItemsPassed"],
@@ -48,7 +48,7 @@
       }
     },
     "profileAssemblyV1": {
-      "description": "DRAFT profil etapu 1 (ASSEMBLY). Reguła aplikacji: qaPassed=true tylko gdy operationsCompleted == operationsTotal.",
+      "description": "Profil e-bike etapu 1 (ASSEMBLY): operacje montażowe (silnik, bateria, koła, hamulce, dokręcenia) i czas cyklu. Reguła aplikacji: qaPassed=true tylko gdy operationsCompleted == operationsTotal.",
       "type": "object",
       "additionalProperties": false,
       "required": ["operationsTotal", "operationsCompleted", "cycleTimeMs"],
@@ -59,7 +59,7 @@
       }
     },
     "profileQualityControlV1": {
-      "description": "DRAFT profil etapu 2 (QUALITY_CONTROL). Reguła aplikacji: qaPassed=true tylko gdy defectsFound == 0 i checklistItemsPassed == checklistItemsTotal. Ten etap wymaga dodatkowo StageApproval operatora.",
+      "description": "Profil e-bike etapu 2 (QUALITY_CONTROL): kontrola końcowa (hamulce, napęd, elektryka, ocena wizualna). Reguła aplikacji: qaPassed=true tylko gdy defectsFound == 0 i checklistItemsPassed == checklistItemsTotal. Ten etap wymaga dodatkowo StageApproval operatora.",
       "type": "object",
       "additionalProperties": false,
       "required": ["inspectedUnits", "defectsFound", "checklistItemsTotal", "checklistItemsPassed"],
@@ -71,7 +71,7 @@
       }
     },
     "profilePackagingV1": {
-      "description": "DRAFT profil etapu 3 (PACKAGING). Reguła aplikacji: qaPassed=true tylko gdy labelsApplied == unitsPacked.",
+      "description": "Profil e-bike etapu 3 (PACKAGING): pakowanie i etykiety. Reguła aplikacji: qaPassed=true tylko gdy labelsApplied == unitsPacked.",
       "type": "object",
       "additionalProperties": false,
       "required": ["unitsPacked", "labelsApplied"],

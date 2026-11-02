@@ -6,7 +6,7 @@
 (inicjalizacja, HTTPS, skaner QR) startują w poniedziałek tygodnia 2. Osoba 3
 w tym tygodniu wspiera backend, schematy i infrastrukturę, dzięki czemu frontend
 ruszy z gotowym OpenAPI, profilami i środowiskiem lokalnym.
-Pozycje to zadania do wykonania, nie raport ukończenia.
+Pozycje to zadarobert/week1-simulator-vectornia do wykonania, nie raport ukończenia.
 
 ## Plany osobiste (po ludzku)
 

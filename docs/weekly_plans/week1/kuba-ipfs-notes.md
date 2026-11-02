@@ -3,6 +3,10 @@
 **Data:** 2026-11-02. **Kubo:** `ipfs/kubo:v0.32.1` z `infrastructure/local/compose.yaml` (tryb `--offline`).
 **Dane:** dokładne bajty JCS raportu z `signature-vector.json` (296 bajtów),
 `reportHash` = `0x4707421ac9d17015745b8d29d2684f271eb6d37cc2a22f7f01456b88a894e97d`.
+Uwaga (2026-11-02, później): wektor przegenerowano pod profil e-bike (nowy `reportHash`
+`0x388322c4e5f9429a457ab80640548381b4cb000d14e933561f40db7f2b017ffe`); wartości w tej notatce
+(rozmiar, CID, hash) dotyczą poprzedniej wersji wektora. Wnioski o CIDv0/CIDv1 i zgodności
+Keccak pobranych bajtów z `reportHash` nie zależą od treści raportu.
 
 ## Kubo - wyniki
 

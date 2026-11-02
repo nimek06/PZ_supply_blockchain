@@ -26,9 +26,10 @@ Recovery (DEC-09) jest zamknięte w wariancie C uproszczonym.
 | 4. Certyfikaty | [station-identity.md](station-identity.md) | rejestr stacji on-chain, payload/podpis certyfikatu, aktywacja, odwołanie, rotacja i kompromitacja |
 | 5. Uprawnienia i login | [access-control.md](access-control.md) | macierz ról, owner, SIWE -> token Bearer i logowanie stacji |
 
-Parametry fizyczne produktu nie są wymyślone. Profile pomiarów (DEC-02)
-i wartości czasowe (DEC-07/11) wymagają potwierdzenia
-w [decisions](decisions.md). Dokumenty nie zastępują istniejącego
+Parametry fizyczne produktu nie są wymyślone. Profile pomiarów e-bike (DEC-02,
+zatwierdzone 2026-11-02, wartości demonstracyjne) i wartości czasowe (DEC-11) są
+potwierdzone w [decisions](decisions.md); DEC-07 (potwierdzenia) czeka na pomiary z Amoy.
+Dokumenty nie zastępują istniejącego
 [Stack_Tech.md](../Stack_Tech.md): uszczegóławiają reguły wykonania w jego
 technologiach. Poglądowe skróty z opisu stosu nie definiują ABI ani finalności.
 

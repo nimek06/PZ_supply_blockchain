@@ -17,7 +17,7 @@ class CompleteStageCallEncoderTest {
         CompleteStageCall call = new CompleteStageCall(
                 "0x79709e7401c7c94e8c6439dd2cd3729509c3c33d6b80b2df940e9c435df582f1",
                 2,
-                "0x4707421ac9d17015745b8d29d2684f271eb6d37cc2a22f7f01456b88a894e97d",
+                "0x388322c4e5f9429a457ab80640548381b4cb000d14e933561f40db7f2b017ffe",
                 true,
                 1800000600,
                 "bafyexample",

@@ -8,7 +8,7 @@ i nie wolno go do niego dopisywać.
 
 Modele odrzucają nieznane pola (`extra="forbid"`) i niejawne konwersje
 (`strict=True`), np. `"true"` zamiast `true` albo `1.0` zamiast `1`.
-Zakresy pomiarów (progi) nie są tu ustalane - zależą od DEC-02.
+Zakresy pomiarów (profile e-bike, DEC-02) są w shared/schemas/telemetry.schema.json.
 
 Certyfikat stacji (DEC-13) ma osobne modele: `CertificatePayload` (pola z
 `docs/station-identity.md`) i obwiednię `StationCertificate` z podpisem wystawcy.

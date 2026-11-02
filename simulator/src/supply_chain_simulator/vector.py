@@ -9,7 +9,7 @@ Dwa pliki, oba deterministyczne (te same dane wejściowe dają identyczny plik):
 
 Klucze to publiczne, znane klucze deweloperskie Anvil (konta #0-#2) - nie ma
 ich w plikach JSON i nigdy nie wolno zasilać tych adresów na Amoy.
-Wartości pomiarów są danymi testowymi, nie progami (DEC-02 jest otwarte).
+Wartości pomiarów są demonstracyjne (profil e-bike, DEC-02), nie normami.
 """
 
 from __future__ import annotations
@@ -56,18 +56,22 @@ VECTOR_BATCH_NUMBER = "B-2026-0001"
 VECTOR_STAGE_ID = 2
 VECTOR_TIMESTAMP = 1_800_000_000
 VECTOR_DEADLINE = 1_800_000_600
+# Etap kontroli e-bike wg profilu profileQualityControlV1 (shared/schemas/telemetry.schema.json):
+# 10 sprawdzonych rowerów z partii, brak wad, 12 z 12 punktów listy kontrolnej.
 VECTOR_MEASUREMENTS: dict[str, int] = {
-    "temperatureMilliC": 21_500,
-    "torqueMilliNm": 45_000,
-    "pressurePa": 620_000,
+    "inspectedUnits": 10,
+    "defectsFound": 0,
+    "checklistItemsTotal": 12,
+    "checklistItemsPassed": 12,
 }
 
 VECTOR_VERSION = 1
 VECTOR_DESCRIPTION = (
     "Wspólny wektor podpisu v1 (T008): raport JCS, reportHash oraz podpisy EIP-712 "
-    "StageCompletion (stacja) i StageApproval (operator zmiany). Klucze to publiczne "
-    "klucze deweloperskie Anvil #1 i #2 - nie zasilaj tych adresów na Amoy. "
-    "Wartości pomiarów są testowe, nie są progami (DEC-02 otwarte)."
+    "StageCompletion (stacja) i StageApproval (operator zmiany). Scenariusz: kontrola "
+    "jakości roweru elektrycznego (etap 2, profileQualityControlV1, DEC-02). Klucze to "
+    "publiczne klucze deweloperskie Anvil #1 i #2 - nie zasilaj tych adresów na Amoy. "
+    "Wartości pomiarów są demonstracyjne, nie normy."
 )
 
 CERTIFICATE_FIXTURE_VERSION = 1

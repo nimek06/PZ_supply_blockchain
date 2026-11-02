@@ -1,6 +1,6 @@
 # Symulator IoT - osoba 4
 
-**Język:** Python 3.11-3.12 (venv). **Biblioteki:** eth-account, Pydantic v2, httpx;
+**Język:** Python 3.11+ (venv; testy przechodzą na 3.12-3.14). **Biblioteki:** eth-account, Pydantic v2, httpx;
 standardowy `random` lub Faker do danych; pytest do testów.
 
 Osoba 4 odpowiada również za testy integracyjne/systemowe oraz dokumentację.
@@ -61,7 +61,7 @@ Pętle scenariuszy z Pinatą: najpierw sprawdź limity planu (lokalnie/CI używa
 
 ## Uruchomienie i testy po inicjalizacji
 
-Utwórz i aktywuj `.venv` (Python 3.11-3.12), zainstaluj `python -m pip install -e ".[dev]"`.
+Utwórz i aktywuj `.venv` (Python 3.11+), zainstaluj `python -m pip install -e ".[dev]"`.
 Planowane CLI: `python -m supply_chain_simulator --help`; ma opisywać tryb,
 scenariusz, backend URL, sieć/kontrakt, seed i konfigurację stacji.
 Testy: `python -m pytest`. Zakończ CLI niezerowym kodem przy błędzie, nie tylko

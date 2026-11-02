@@ -49,8 +49,8 @@ class StageControllerTest {
                 "measurements": { "temp": 21500 },
                 "qaPassed": true
               },
-              "stationCertificateId": "0xcert",
-              "reportHash": "0x4707421ac9d17015745b8d29d2684f271eb6d37cc2a22f7f01456b88a894e97d",
+              "stationCertificateId": "0xd6337752b30f2464c72077439190dafc2d68d9f20fe3bdf436d6e9b2c1c3fd3e",
+              "reportHash": "0x388322c4e5f9429a457ab80640548381b4cb000d14e933561f40db7f2b017ffe",
               "deadline": 1800000600,
               "signature": "0xsig"
             }
@@ -62,7 +62,7 @@ class StageControllerTest {
         StageCommand command = new StageCommand(
                 commandId, CommandType.STAGE, "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
                 batchId, null, 2, "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-                "0xcert", "0x4707421ac9d17015745b8d29d2684f271eb6d37cc2a22f7f01456b88a894e97d",
+                "0xd6337752b30f2464c72077439190dafc2d68d9f20fe3bdf436d6e9b2c1c3fd3e", "0x388322c4e5f9429a457ab80640548381b4cb000d14e933561f40db7f2b017ffe",
                 "0xdigest", 1800000600L, true, CommandStatus.ACCEPTED, null, null, null, null, null,
                 Instant.ofEpochSecond(1800000000L), Instant.ofEpochSecond(1800000000L));
 

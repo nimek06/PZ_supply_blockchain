@@ -1,57 +1,52 @@
-# Tydzień 1 - podsumowanie stanu (2026-11-02)
+# Tydzień 1 - podsumowanie stanu (aktualizacja 2026-11-02, po mergach)
 
-Zebrane z `main`, `adam`, `kuba/week1-schemas-compose` i `robert/week1-simulator-vector`
-(stan na commity: `24ae561`, `510e8e5`, `94cc32b`, `92fd48d`). Odniesienie:
+Zebrane z `main` po scaleniu PR #1 (Adam), #2 (Mikołaj), #3 (Kuba) i #4 (Robert),
+a następnie zmian z 2026-11-02 (DEC-02/11, profil e-bike, nowy wektor). Odniesienie:
 [week1-plan.md](week1-plan.md) i jego "Definicja ukończenia tygodnia".
 
 ## Stan gałęzi
 
-| Gałąź | Status |
-|---|---|
-| `adam` | zmergowana do `main` (PR #1) |
-| `main` (Mikołaj, backend) | zmergowane bezpośrednio (PR #2) |
-| `kuba/week1-schemas-compose` | **niescalona** - PR do zrobienia |
-| `robert/week1-simulator-vector` | **niescalona** - PR do zrobienia |
-
-Dopóki te dwie gałęzie nie trafią do `main`, w `main` brakuje OpenAPI, schematów,
-symulatora, wektora w `shared/fixtures/` i szkieletu CI, mimo że praca jest gotowa.
+Wszystkie cztery gałęzie tygodnia 1 są w `main`: `adam` (PR #1), backend Mikołaja (PR #2),
+`kuba/week1-schemas-compose` (PR #3), `robert/week1-simulator-vector` (PR #4). W `main` są już
+OpenAPI, schematy, Compose, symulator, wektor w `shared/fixtures/` i szkielet CI.
+CI (`.github/`) zostaje bez zmian i nie jest rozwijane (decyzja 2026-11-02: niepotrzebne).
 
 ## Definicja ukończenia tygodnia - punkt po punkcie
 
-- [ ] **Decyzje v2 potwierdzone i wpisane z datą w `docs/decisions.md`.**
-  Niezrobione formalnie: tylko DEC-09 ma datę `(2026-10-27)` z poprzedniej analizy.
-  Reszta (DEC-01, 03-08, 10, 12-16) ma status `USTALONA` bez daty/inicjałów zespołu
-  ze spotkania startowego; DEC-02 i DEC-11 nadal `DO POTWIERDZENIA`.
+- [x] **Decyzje v2 potwierdzone i wpisane z datą w `docs/decisions.md`.**
+  Wpis zespołu z 2026-11-02 w nagłówku [decisions.md](../../decisions.md); DEC-02 (profil e-bike)
+  i DEC-11 (wartości czasu) zamknięte jako `USTALONA`. Otwarta pozostaje DEC-07 (liczba
+  potwierdzeń na Amoy, po pomiarach).
 - [x] **Wektor `signature-vector.json` przechodzi w Pythonie, Javie i Solidity.**
-  Zweryfikowane: `forge test --match-contract SignatureVectorTest` przechodzi na
-  pliku Roberta (`test_SharedVector`, PASS); plik w `backend/src/test/resources/fixtures/`
-  jest bajt w bajt identyczny z wektorem Roberta. Nie zmergowane do `shared/fixtures/`
-  w `main` - plik istnieje tylko na gałęzi Roberta.
+  Wektor jest w `shared/fixtures/` i w `backend/src/test/resources/fixtures/` (identyczne
+  pliki). 2026-11-02 przegenerowany pod profil e-bike etapu 2 (`inspectedUnits`,
+  `defectsFound`, `checklistItemsTotal`, `checklistItemsPassed`), nowy `reportHash`
+  `0x388322c4...7ffe`. `test_SharedVector` (Solidity), testy Javy i pytest przechodzą.
 - [x] **`forge test`, `./mvnw verify` i `python -m pytest` działają lokalnie.**
-  `forge test`: 54 passed (+1 skip do mergu wektora). `./mvnw verify` (Kuba, na Compose):
-  47 unit + 3 integracyjne, zielone. `pytest` (Robert): 205 passed, 1 skipped.
+  `forge test`: 55 passed. Backend: 48 testów jednostkowych zielonych; 3 testy `*IT` wymagają
+  `TEST_DB_URL` (PostgreSQL z Compose) i nie były uruchamiane po zmianie wektora. `pytest`:
+  206 passed, 1 skipped (Python 3.14).
 - [x] **`docker compose up` podnosi PostgreSQL, Anvil i Kubo; health checki zielone.**
-  Potwierdzone przez Kubę 2026-11-02 (status `healthy` po ok. 10 s), ale plik
-  `compose.yaml` jest na niescalonej gałęzi.
+  Potwierdzone przez Kubę 2026-11-02 (status `healthy` po ok. 10 s); `compose.yaml` jest w `main`.
 - [x] **Kontrakt: 0 -> 3 oraz `StageRejected`; zdeployowany na Anvil i (smoke) na Amoy.**
   Lokalnie w pełni zrobione i przetestowane (`test_FullRouteZeroToThree`, 52+ testów
   negatywnych). **Smoke na Amoy NIE wykonany realnie** - tylko symulacja bez portfela
   (`evm_version=cancun` działa, tip ≈30 gwei, limity `eth_getLogs` zmierzone). Brakuje
-  prawdziwej transakcji z faucetowym POL; `shared/deployments/amoy.json` nie istnieje.
+  prawdziwej transakcji z faucetowym POL; `shared/deployments/amoy.json` nie istnieje
+  (przechodzi na tydzień 2, poniedziałek).
 - [x] **`POST /stages` zapisuje polecenie i zwraca `202`; challenge SIWE wydaje token.**
   `StageController` zwraca `202 Accepted` + `Location`; `AuthController` ma
   `/auth/challenges` i `/auth/sessions`. Reguła zastępowania (V2-02) zaimplementowana
-  zgodnie z tabelą z `corrections.md`.
-- [ ] **`openapi.yaml`, `telemetry.schema.json`, `eip712.json` i profile pomiarów zatwierdzone.**
-  Pliki istnieją i są technicznie spójne z kontraktem, ale **nie są zatwierdzone** (DEC-02
-  czeka na piątek) i mają znaną niezgodność: wektor Roberta mierzy
-  `temperatureMilliC`/`torqueMilliNm`/`pressurePa` dla etapu 2, a szkic profilu w
-  `telemetry.schema.json` wymaga innych kluczy (`inspectedUnits`, `defectsFound`, ...).
-  Do rozstrzygnięcia: zmienić profil albo wydać nowy wektor.
+  zgodnie z tabelą z `corrections.md`. Od 2026-11-02 backend wymaga też, by
+  `stationCertificateId` było bytes32 (jak w OpenAPI i symulatorze).
+- [x] **`openapi.yaml`, `telemetry.schema.json`, `eip712.json` i profile pomiarów zatwierdzone.**
+  Profile e-bike v1 zatwierdzone w DEC-02 (2026-11-02), wektor dostosowany do profilu etapu 2
+  (niezgodność wykryta wcześniej usunięta; test w `simulator/tests/test_signature_vector.py`
+  pilnuje zgodności z schematem). OpenAPI nadal wymaga przeglądu szczegółów w tygodniu 2.
 - [x] **Notatki: limity Pinaty, tip gazu Amoy, limity RPC, wersje zależności.**
   Tip i limity RPC Amoy: [adam-amoy-notes.md](adam-amoy-notes.md). Kubo: zbadane,
   notatka Kuby ([kuba-ipfs-notes.md](kuba-ipfs-notes.md)). **Pinata: niezbadana**
-  (czeka na token Mikołaja, celowo odłożone).
+  (czeka na token Mikołaja, przechodzi na tydzień 2).
 - [x] **Żadnych sekretów w repozytorium.** Nie znaleziono kluczy prywatnych ani
   tokenów w sprawdzonych commitach; `.env` wszędzie w `.gitignore`.
 
@@ -70,21 +65,26 @@ Inicjalizacja Spring Boot 4.1.2 + Web3j 6.1.0. Ręczny moduł krypto EIP-712 w J
 9 argumentów, podpisywanie transakcji EIP-1559 bez `.send()`/`DefaultGasProvider`.
 `POST /stages` z pełną walidacją i regułą zastępowania. SIWE challenge/session (start).
 
-**Kuba - schematy, krypto Javy (recenzja), infrastruktura** (niescalone)
+**Kuba - schematy, krypto Javy (recenzja), infrastruktura**
 `openapi.yaml`, `telemetry.schema.json`, `eip712.json`, `compose.yaml` (potwierdzone
 jako działające), port `ReportStorage`, testy mutacji podpisu, badanie Kubo (IPFS).
 Znalazł i zgłosił dwa realne błędy w backendzie Mikołaja (Flyway, cudzysłów adresu
 kontraktu w YAML) - do przeglądu przez Mikołaja.
 
-**Robert - symulator, integracja, dokumentacja** (niescalone)
-Modele raportu, JCS, podpisy, **wspólny wektor podpisu** (opublikowany, zweryfikowany
-w 3 implementacjach), klient HTTP symulatora, szkielet CI (joby contracts/simulator/backend).
+**Robert - symulator, integracja, dokumentacja**
+Modele raportu, JCS, podpisy, **wspólny wektor podpisu** (zweryfikowany w 3 implementacjach,
+od 2026-11-02 w wersji e-bike), klient HTTP symulatora, certyfikat stacji, szkielet CI
+(joby contracts/simulator/backend; nie rozwijany dalej).
 
-## Główne braki względem planu
+## Główne braki względem planu (po aktualizacji 2026-11-02)
 
-1. Gałęzie Kuby i Roberta nie są jeszcze w `main` - brak PR-ów.
-2. Prawdziwy smoke deploy na Amoy nie wykonany (tylko symulacja offline).
-3. `docs/decisions.md` nie ma dat/inicjałów z poniedziałkowego spotkania; DEC-02 i DEC-11
-   formalnie otwarte.
-4. Niezgodność wektora podpisu ze szkicem profili pomiarów etapu 2 (do DEC-02 w piątek).
-5. Badanie Pinaty nie wykonane (celowo, brak tokenu).
+1. Prawdziwy smoke deploy na Amoy nie wykonany (tylko symulacja offline; wymaga POL z faucetu
+   i klucza testowego poza repozytorium) - tydzień 2, poniedziałek.
+2. Badanie Pinaty nie wykonane (brak tokenu) - tydzień 2.
+3. Testy `*IT` backendu wymagają `TEST_DB_URL`; po zmianie wektora i walidacji
+   `stationCertificateId` nie były uruchamiane (Docker niedostępny w chwili zmiany).
+4. Backend jeszcze nie waliduje profili pomiarów (`422`) - tydzień 2 (Mikołaj).
+
+Rozstrzygnięte: merge gałęzi Kuby i Roberta, wpis decyzji (DEC-02 e-bike, DEC-11),
+niezgodność wektora z profilem etapu 2, zakres wersji Pythona (`>=3.11`, testy przechodzą
+na 3.12-3.14; wcześniejsza uwaga "eth-account nie działa na 3.14" nie potwierdziła się).

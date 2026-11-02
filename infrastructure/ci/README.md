@@ -15,7 +15,7 @@ Po inicjalizacji modułów dodaj niezależne joby:
    (`forge inspect`); `evm_version` ustawiony jawnie w `foundry.toml`.
 2. Backend: JDK 21, Maven Wrapper, `verify`, testowa baza/stuby.
 3. Frontend: właściwy Node, `npm ci`, lint, test w trybie jednorazowym, build/type-check.
-4. Symulator: Python 3.11-3.12 (venv), odtworzone zależności, pytest.
+4. Symulator: Python 3.11+ (venv), odtworzone zależności, pytest.
 5. Integracja: Anvil, PostgreSQL, Kubo, deployment i jeden pełny przepływ (w tym test reorg
    przez `evm_snapshot`/`evm_revert`).
 6. Dokumentacja: sprawdzenie lokalnych odnośników i walidacja schematów/fixture'ów.

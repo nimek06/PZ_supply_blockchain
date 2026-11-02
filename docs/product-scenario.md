@@ -1,9 +1,9 @@
 # Scenariusz referencyjny MVP: stacja montażowa roweru elektrycznego (e-bike)
 
-**Status:** propozycja do potwierdzenia przez zespół w PR (zmienia sformułowanie DEC-01
-"bez konkretnego produktu", patrz [decisions](decisions.md)). Nie zmienia protokołu,
-kontraktu ani podpisów: to scenariusz wypełniający istniejącą, ogólną marszrutę 0..3.
-Wartości pomiarów są **demonstracyjne**, nie normy (DEC-02 nadal wymaga zatwierdzenia).
+**Status:** zatwierdzony 2026-11-02 (DEC-01 uzupełnione o scenariusz e-bike, DEC-02: profil
+e-bike v1, patrz [decisions](decisions.md)). Nie zmienia protokołu, kontraktu ani
+podpisów: to scenariusz wypełniający ogólną marszrutę 0..3. Wartości pomiarów są
+**demonstracyjne**, nie normy.
 
 ## 1. Cel
 
@@ -23,20 +23,36 @@ elektrycznie jest EN 15194; scenariusz **nie deklaruje zgodności** z żadną no
 
 Etapy, numeracja i reguły przejść pozostają zgodne z [production-rules](production-rules.md).
 
-| stageId / kod | Stacja (przykład) | Co poświadcza raport | Przykładowe pomiary (jednostki całkowite) |
+| stageId / kod | Stacja (przykład) | Co poświadcza raport | Klucze pomiarów (profil v1, liczby całkowite) |
 |---|---|---|---|
-| 0 / PREPARATION | Stacja przygotowania | komplet części (rama, widelec, koła, silnik, bateria, osprzęt) i sprawdzenie narzędzi | `checklistItemsTotal`, `checklistItemsPassed`, `batteryRestVoltageMilliV` |
-| 1 / ASSEMBLY | Stacja montażu | montaż silnika, baterii, kół, hamulców, dokręcenie połączeń | `torqueMilliNm` (połączenia krytyczne), `temperatureMilliC`, `cycleTimeMs` |
-| 2 / QUALITY_CONTROL | Stanowisko kontroli | test hamulców, test układu napędowego i elektryki, ocena wizualna; **podpis operatora zmiany (`StageApproval`)** | `pressurePa` (ogumienie), `brakeTestPassed` (0/1), `motorCurrentMilliA`, `defectsFound` |
-| 3 / PACKAGING | Stacja pakowania | zabezpieczenie do transportu, etykieta z numerem partii | `unitsPacked`, `labelVerified` (0/1) |
+| 0 / PREPARATION | Stacja przygotowania | komplet części (rama, widelec, koła, silnik, bateria, osprzęt) i sprawdzenie narzędzi | `checklistItemsTotal`, `checklistItemsPassed` |
+| 1 / ASSEMBLY | Stacja montażu | montaż silnika, baterii, kół, hamulców, dokręcenie połączeń | `operationsTotal`, `operationsCompleted`, `cycleTimeMs` |
+| 2 / QUALITY_CONTROL | Stanowisko kontroli | test hamulców, napędu i elektryki, ocena wizualna; **podpis operatora zmiany (`StageApproval`)** | `inspectedUnits`, `defectsFound`, `checklistItemsTotal`, `checklistItemsPassed` |
+| 3 / PACKAGING | Stacja pakowania | zabezpieczenie do transportu, etykieta z numerem partii | `unitsPacked`, `labelsApplied` |
 
-`qaPassed=false` na dowolnym etapie nie przesuwa partii i kończy się `StageRejected`
-(DEC-15). Przykład: moment dokręcenia poza oknem tolerancji na etapie 1 -> odrzucenie,
-poprawka i nowy raport według [reguły zastępowania](corrections.md).
+Profile (zakresy, klucze wymagane, `additionalProperties: false`) są w
+[telemetry.schema.json](../shared/schemas/telemetry.schema.json) (`profile*V1`) i są
+źródłem prawdy; ta tabela tylko je opisuje. Reguły oceny `qaPassed`:
 
-Dokładny zestaw kluczy i zakresów ustala DEC-02 (piątek tyg. 1); ten dokument jest dla
-niego materiałem wyjściowym. Wspólny wektor podpisu (`temperatureMilliC`, `torqueMilliNm`,
-`pressurePa` dla etapu 2) jest zgodny z tym zestawem kluczy.
+| Etap | `qaPassed=true` tylko gdy |
+|---|---|
+| 0 | `checklistItemsPassed == checklistItemsTotal` |
+| 1 | `operationsCompleted == operationsTotal` |
+| 2 | `defectsFound == 0` i `checklistItemsPassed == checklistItemsTotal` |
+| 3 | `labelsApplied == unitsPacked` |
+
+Przykład na etapie 2: kontrola 10 rowerów z partii, 12 punktów listy (hamulce, napęd,
+elektryka, oświetlenie, wygląd), 0 wad, 12/12 zaliczonych -> `qaPassed=true` i wymagany drugi podpis.
+Wada lub niezaliczony punkt -> `qaPassed=false` -> `StageRejected` bez przesunięcia partii
+(DEC-15); poprawka i nowy raport według [reguły zastępowania](corrections.md).
+
+**DEC-02 zatwierdzone 2026-11-02:** profil e-bike z powyższymi kluczami jest zamrożonym
+zestawem v1; wartości są demonstracyjne, nie normy. Wspólny wektor podpisu
+(`shared/fixtures/signature-vector.json`, etap 2) używa dokładnie tych kluczy i przechodzi
+schemat (test w `simulator/tests/test_signature_vector.py`).
+
+Pomiary fizyczne (moment dokręcenia, ciśnienie ogumienia, napięcie baterii itp.) są
+naturalnym rozszerzeniem profilu w przyszłej wersji (pkt 4.3), a nie częścią v1.
 
 ## 3. Mapowanie na elementy systemu
 
@@ -102,10 +118,11 @@ w profilu pomiarów i scenariuszach symulatora, a nie w logice kontraktu, kolejk
 ## 5. Wpływ na prace tygodnia 1-2
 
 - **Robert:** scenariusz YAML "e-bike" jako pierwszy scenariusz symulatora; generatory
-  pomiarów wokół wartości nominalnych z okazjonalnym wyjściem poza tolerancję.
-- **Kuba, Robert (DEC-02):** profile pomiarów etapów 0..3 oprzeć na tabeli z pkt 2 i
-  uzgodnić z wektorem podpisu (wykryta niezgodność etapu 2).
-- **Adam, Mikołaj:** bez zmian w kodzie; kontrakt i API pozostają ogólne.
+  pomiarów zgodne z profilami v1 (np. etap 2: wada lub niezaliczony punkt -> `qaPassed=false`).
+- **Kuba:** profile w `telemetry.schema.json` są źródłem prawdy; zmiana wymaga ogłoszenia
+  i nowego wektora (właściciel: Robert).
+- **Adam, Mikołaj:** bez zmian w kontrakcie; backend (Mikołaj) dopisuje walidator profilu
+  wg tabeli reguł `qaPassed` z pkt 2.
 - **Frontend (tyg. 2+):** etykiety etapów i jednostek z profilu, nazwa produktu w nagłówku
   paszportu z konfiguracji.
 

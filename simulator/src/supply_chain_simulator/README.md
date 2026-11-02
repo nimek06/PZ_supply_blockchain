@@ -1,6 +1,6 @@
 # Pakiet symulatora
 
-**Język:** Python 3.11-3.12, kod z adnotacjami typów.
+**Język:** Python 3.11+, kod z adnotacjami typów.
 
 Moduły pakietu (stan 2026-10-31 - gotowe: `__init__`, `__main__`, `cli`, `models`,
 `canonical`, `signing`, `vector`, `certificate`; szkic: `client`; pozostałe planowane):

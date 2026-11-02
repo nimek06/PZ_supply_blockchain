@@ -49,9 +49,9 @@ Przed zadaniem dotyczącym niezatwierdzonego formatu należy sprawdzić odpowied
 decyzję. Wymagań dwóch kluczy i certyfikatów nie można usunąć przez głosowanie
 nad technologią. Brak decyzji jest blokadą zadania, nie zgodą na cichy default.
 Aktualizacja 2026-10-27: DEC-03..06, 08..10, 12..16 ustalone z użytkownikiem
-(zmiany v2); DEC-09 zamknięta jako wariant C uproszczony. Do potwierdzenia przez
-zespół w tygodniu 1: DEC-02 (profile pomiarów), DEC-07 i DEC-11 (wartości
-czasu i potwierdzeń). T026 jest zadaniem wykonawczym bez blokady decyzyjnej.
+(zmiany v2); DEC-09 zamknięta jako wariant C uproszczony. DEC-02 (profile e-bike) i
+DEC-11 (wartości czasu) potwierdzone 2026-11-02; DEC-07 (liczba potwierdzeń) czeka na
+pomiary z Amoy. T026 jest zadaniem wykonawczym bez blokady decyzyjnej.
 
 ## 2. Harmonogram i punkty odbioru
 

@@ -45,8 +45,9 @@ class SubmitStageServiceTest {
 
     private final String batchId = "0x79709e7401c7c94e8c6439dd2cd3729509c3c33d6b80b2df940e9c435df582f1";
     private final String stationAddress = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
-    private final String reportHash = "0x4707421ac9d17015745b8d29d2684f271eb6d37cc2a22f7f01456b88a894e97d";
+    private final String reportHash = "0x388322c4e5f9429a457ab80640548381b4cb000d14e933561f40db7f2b017ffe";
     private final String digest = "0xa1b2c3d4e5f60000000000000000000000000000000000000000000000000000";
+    private final String certificateId = "0xd6337752b30f2464c72077439190dafc2d68d9f20fe3bdf436d6e9b2c1c3fd3e";
 
     @BeforeEach
     void setUp() {
@@ -61,7 +62,17 @@ class SubmitStageServiceTest {
 
     private SubmitStageCommand sampleCommand(long deadline) {
         return new SubmitStageCommand(
-                batchId, sampleReport(), "0xcert", reportHash, deadline, "0xsig", Optional.empty());
+                batchId, sampleReport(), certificateId, reportHash, deadline, "0xsig", Optional.empty());
+    }
+
+    @Test
+    void submitRejectsCertificateIdThatIsNotBytes32() {
+        SubmitStageCommand command = new SubmitStageCommand(
+                batchId, sampleReport(), "0xcert", reportHash, 1800000600L, "0xsig", Optional.empty());
+
+        assertThatThrownBy(() -> service.submit(command))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(ErrorCode.SCHEMA_VIOLATION));
     }
 
     @Test

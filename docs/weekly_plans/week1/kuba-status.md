@@ -81,20 +81,19 @@ Nie zmieniano `~/.bashrc` ani ustawień systemu. Żeby z nich korzystać, w term
 
 ## Do rozstrzygnięcia na DEC-02 (piątek)
 
-**Wspólny wektor nie pasuje do szkicu profili.** Raport w `signature-vector.json` (etap 2) ma pomiary
-`temperatureMilliC`, `torqueMilliNm`, `pressurePa`, a profil etapu 2 w `telemetry.schema.json` wymaga
-`inspectedUnits`, `defectsFound`, `checklistItemsTotal`, `checklistItemsPassed`. Kryptografia jest poprawna
-(wektor sam w sobie przechodzi), ale gdy backend zacznie walidować profile, ten raport zostanie odrzucony.
-Trzeba wybrać jeden zestaw kluczy i albo zmienić profil, albo **Robert** wyda nowy wektor. Nie zmieniano
-żadnego z tych plików samodzielnie.
+**Rozstrzygnięte 2026-11-02 (DEC-02: e-bike).** Zachowano profil z `telemetry.schema.json`, a wektor
+podpisu przegenerowano pod profil etapu 2 (`inspectedUnits`, `defectsFound`, `checklistItemsTotal`,
+`checklistItemsPassed`); backend i Solidity przechodzą na nowym wektorze. Opis pierwotnego problemu:
+wektor Roberta miał pomiary `temperatureMilliC`, `torqueMilliNm`, `pressurePa`, a profil etapu 2
+wymagał innych kluczy, więc backend z walidacją profilu odrzuciłby taki raport.
 
 ## Czeka na innych albo na dostęp - celowo nie ruszone
 
 | Co | Na kogo / co czeka |
 |---|---|
 | Badanie Pinaty (CID, limity darmowego planu) | Konto i token Pinata ma **Mikołaj**. Tokenu nie należy wpisywać do repozytorium. |
-| Zatwierdzenie OpenAPI, schematów i profili pomiarów | Spotkanie zespołu w piątek (DEC-02), razem z Robertem. |
-| Merge gałęzi Roberta (`robert/week1-simulator-vector`) | Przegląd PR; wektor w `backend/src/test/resources/fixtures/` jest identyczny z jego `shared/fixtures/`. |
+| Zatwierdzenie OpenAPI i schematów | Przegląd w tygodniu 2 (profile pomiarów zatwierdzone w DEC-02, 2026-11-02). |
+| Merge gałęzi Roberta (`robert/week1-simulator-vector`) | Zrobione (PR #4); wektor w `backend/src/test/resources/fixtures/` jest identyczny z `shared/fixtures/`. |
 
 ## Do potwierdzenia przez zespół
 

@@ -42,7 +42,7 @@ class StageSubmissionIT {
         String body = objectMapper.writeValueAsString(objectMapper.createObjectNode()
                 .setAll(java.util.Map.of(
                         "report", report,
-                        "stationCertificateId", objectMapper.getNodeFactory().textNode("0xcert000000000000000000000000000000000000000000000000000000000001"),
+                        "stationCertificateId", objectMapper.getNodeFactory().textNode("0xd6337752b30f2464c72077439190dafc2d68d9f20fe3bdf436d6e9b2c1c3fd3e"),
                         "reportHash", objectMapper.getNodeFactory().textNode(vector.get("reportHash").asString()),
                         "deadline", objectMapper.getNodeFactory().numberNode(vector.get("stageCompletion").get("message").get("deadline").asLong()),
                         "signature", objectMapper.getNodeFactory().textNode(vector.get("stageCompletion").get("signature").asString())
@@ -82,7 +82,7 @@ class StageSubmissionIT {
         String body = objectMapper.writeValueAsString(objectMapper.createObjectNode()
                 .setAll(java.util.Map.of(
                         "report", report,
-                        "stationCertificateId", objectMapper.getNodeFactory().textNode("0xcert000000000000000000000000000000000000000000000000000000000001"),
+                        "stationCertificateId", objectMapper.getNodeFactory().textNode("0xd6337752b30f2464c72077439190dafc2d68d9f20fe3bdf436d6e9b2c1c3fd3e"),
                         "reportHash", objectMapper.getNodeFactory().textNode(vector.get("reportHash").asString()),
                         "deadline", objectMapper.getNodeFactory().numberNode(vector.get("stageApproval").get("message").get("deadline").asLong()),
                         "signature", objectMapper.getNodeFactory().textNode(vector.get("stageApproval").get("signature").asString())

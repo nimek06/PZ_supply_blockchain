@@ -188,8 +188,9 @@ public class SubmitStageService {
         if (request.report() == null) {
             throw new DomainException(ErrorCode.SCHEMA_VIOLATION, "report is required");
         }
-        if (request.stationCertificateId() == null || request.stationCertificateId().isBlank()) {
-            throw new DomainException(ErrorCode.SCHEMA_VIOLATION, "stationCertificateId is required");
+        if (request.stationCertificateId() == null || !BYTES32.matcher(request.stationCertificateId()).matches()) {
+            throw new DomainException(ErrorCode.SCHEMA_VIOLATION,
+                    "stationCertificateId must be a bytes32 hex value");
         }
         if (request.reportHash() == null || !BYTES32.matcher(request.reportHash()).matches()) {
             throw new DomainException(ErrorCode.SCHEMA_VIOLATION, "reportHash must be a bytes32 hex value");

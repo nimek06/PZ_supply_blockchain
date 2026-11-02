@@ -9,8 +9,10 @@ Wymagane są certyfikat stacji i dwa niezależne klucze do zamknięcia kontroli:
 stacji (`StageCompletion`) i operatora zmiany (`StageApproval`).
 Wybrana ogólna marszruta to przygotowanie -> montaż -> kontrola -> pakowanie,
 opisana w [regułach produkcji](production-rules.md) jako stageId 0..3.
-Do zatwierdzenia pozostają profile pomiarów (DEC-02) oraz wartości czasu i
-potwierdzeń (DEC-07/11). Nie stosuj fikcyjnych progów ani ukrytego domyślnego PASS.
+Profile pomiarów (DEC-02, e-bike, zatwierdzone 2026-11-02) są w
+[telemetry.schema.json](../shared/schemas/telemetry.schema.json), a wartości czasu (DEC-11)
+w [decisions](decisions.md); do potwierdzenia pozostaje liczba potwierdzeń (DEC-07).
+Nie stosuj fikcyjnych progów ani ukrytego domyślnego PASS.
 
 Zapisz implementowalne schematy w [shared/schemas](../shared/schemas/README.md).
 Identyczny testowy raport ma dać identyczny hash w Pythonie, Javie i TypeScript.
