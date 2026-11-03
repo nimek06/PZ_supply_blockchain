@@ -117,15 +117,35 @@ zweryfikowany w Javie -> przegląd OpenAPI. Następnie retrospektywa i plan tygo
 - [ ] OpenAPI zatwierdzone, test zgodności odpowiedzi przechodzi lokalnie.
 - [ ] Żadnych sekretów w repozytorium (`.env`, tokeny Pinaty, klucze Amoy).
 
-## Zależności między osobami w tygodniu 2
+## Zależności i praca równoległa w tygodniu 2
 
-```text
-Pon: osoba 4 dopisuje wektor negatywny -> osoba 2 używa go w walidatorze profilu
-Wt:  osoba 1 oddaje test ABI -> osoba 2 poprawia encoder przy różnicy; osoba 3 oddaje OpenAPI -> osoba 2 poprawia DTO
-Śr:  osoba 4 oddaje końcowy certyfikat -> osoba 1 (T010)
-Czw: osoba 2 oddaje walidator profilu -> osoba 4 uruchamia scenariusz qa-fail
-Pt:  osoba 3 oddaje Compose z kontraktem -> osoba 4 lokalny przebieg e2e
-```
+Zależność dotyczy konkretnego artefaktu lub integracji, nie całego dnia pracy. Osoba
+czekająca na kontrakt, fixture albo środowisko może równolegle przygotować szkielet,
+testy jednostkowe i niezależną część zadania; nie powinna jednak oznaczać integracji
+ani kryterium odbioru jako ukończonego przed otrzymaniem wejścia.
+
+| Osoba | Co może robić równolegle | Na co czeka / co blokuje odbiór |
+|---|---|---|
+| **1** | Poniedziałkowy smoke Amoy jest niezależny od prac pozostałych osób. We wtorek test ABI można prowadzić równolegle z T011 osoby 2 i T009 osoby 4. Skrypt deploy na Anvil można pisać w czwartek równolegle z walidatorem profilu. | Test ABI korzysta ze wspólnego fixture/wektora; różnicę w encoderze przekazuje osobie 2 od razu, ale nie blokuje jej auth. T010 można zacząć od szkieletu w środę, natomiast testy końcowe wymagają certyfikatu i fixture osoby 4. Recenzja T010 należy do osoby 2. Integracja skryptu deploy z Compose czeka na konfigurację osoby 3. |
+| **2** | Potwierdzenie testów backendu i T011 są niezależne od smoke Amoy, adaptera Kubo i generatorów osoby 4. Endpointy partii można rozwijać w środę równolegle z adapterem `ReportStorage`; walidator profilu można pisać równolegle z przygotowaniem scenariuszy osoby 4. | T002/OpenAPI wymaga przekazania uwag do osoby 3 na początku tygodnia, a końcowa zgodność DTO — uzgodnienia schematu. Walidator musi użyć zatwierdzonego profilu i wektorów/negatywnych przykładów osoby 4. Spike Pinaty w piątek wykonuje z osobą 3; osoba 3 potrzebuje tokenu przekazanego przez osobę 2 poza repozytorium. |
+| **3** | Przykłady schematów i OpenAPI można przygotować równolegle z T011/T009. Adapter Kubo można rozwijać równolegle z endpointami partii, używając istniejącego lokalnego Kubo. Compose można konfigurować równolegle z pisaniem skryptu deploy przez osobę 1. | Poprawki OpenAPI czekają na konkretne uwagi osoby 2; przed odbiorem muszą odpowiadać rzeczywistym DTO i odpowiedziom backendu. Adapter `ReportStorage` wymaga przeglądu osoby 2. Spike Pinaty wymaga tokenu osoby 2. Pełny start Compose z kontraktem w piątek wymaga skryptu Anvil osoby 1. |
+| **4** | Wektor negatywny i generatory T009 można rozwijać niezależnie od backendu, ABI i Kubo, przy niezmienionym profilu e-bike. Scenariusze YAML i runner można przygotować, gdy osoba 2 implementuje walidator. | Wektor negatywny z poniedziałku jest wejściem dla testów osób 1 i 2. T010 osoby 1 czeka na schemat/fixture certyfikatu ze środy. Wykonanie `ebike-qa-fail` wymaga działającego endpointu i walidatora osoby 2. Pełny przebieg E2E w piątek wymaga lokalnego środowiska osoby 3 oraz deployu osoby 1. |
+
+### Przekazania, które wyznaczają kolejność
+
+| Kiedy | Przekazanie | Co może ruszyć wcześniej, a co czeka |
+|---|---|---|
+| **Poniedziałek** | Osoba 4 publikuje negatywny wektor i przykłady w `shared/fixtures/` dla osób 1 i 2. Osoba 3 publikuje przykłady profilu. | Osoby 1 i 2 mogą pracować nad szkieletem testów wcześniej; testy zgodności profilu kończą po otrzymaniu wspólnego wektora. Smoke Amoy i testy backendu nie czekają na te fixture'y. |
+| **Wtorek** | Osoba 2 przekazuje osobie 3 uwagi do OpenAPI; osoba 1 publikuje wynik porównania ABI i zgłasza ewentualną różnicę osobie 2. | Osoba 3 może równolegle walidować pozostałe schematy; poprawki DTO/encoderów zależne od uwag zaczynają się po ich przekazaniu. Auth i T009 nie czekają na wynik ABI. |
+| **Środa** | Osoba 4 przekazuje osobie 1 zatwierdzony `station-certificate.schema.json` i `station-certificate.json`; osoba 2 przegląda adapter osoby 3. | Osoba 1 może wcześniej przygotować interfejs i testy weryfikatora, ale testy poprawnego/odwołanego/wygasłego certyfikatu wymagają fixture'u. Adapter Kubo może być implementowany bez czekania na endpointy partii, lecz przed scaleniem wymaga przeglądu. |
+| **Czwartek** | Osoba 2 udostępnia działający walidator profilu i kontrakt endpointu; osoba 3 przekazuje osobie 2 wyniki spike'u Pinaty. | Osoba 4 może pisać runner i YAML wcześniej, ale wykonanie negatywnego scenariusza czeka na walidator/backend. Spike Pinaty czeka na token od osoby 2, nie blokuje adaptera Kubo dla Compose. |
+| **Piątek** | Osoba 1 przekazuje skrypt deploy Anvil, a osoba 3 uruchamialny Compose z PostgreSQL, Anvil i Kubo; osoba 2 udostępnia endpointy i walidację; osoba 4 spina symulator. | Demo E2E jest wspólną bramką: kolejno potrzebne są działające usługi, wdrożony kontrakt, backend z walidacją i runner. Brak POL blokuje wyłącznie smoke Amoy, nie lokalny przebieg. |
+
+**Równolegle przez większość tygodnia:** prace on-chain/Amoy osoby 1, auth i partie osoby
+2, schematy/Kubo osoby 3 oraz modele i fixture'y osoby 4. Wspólnymi punktami synchronizacji
+są formaty OpenAPI/DTO, wektory i fixture'y, certyfikat oraz piątkowa integracja. Zmiana
+profilu lub podpisanych pól w trakcie tygodnia wstrzymuje zależne testy osób 1, 2 i 4 do
+ogłoszenia zmiany i opublikowania nowego wektora.
 
 ## Czego w tym tygodniu NIE robimy
 
