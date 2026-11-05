@@ -1,7 +1,8 @@
 """Punkt wejścia CLI symulatora.
 
 CLI obsługuje ``--help``, ``--version``, ``--export-signature-vector``,
-``--export-certificate-fixture``, ``--station-key-out`` (generowanie klucza
+``--export-certificate-fixture``, ``--export-profile-violation-fixture``
+(negatywny wektor profilu), ``--station-key-out`` (generowanie klucza
 stacji) i ``--issue-certificate`` (wystawienie certyfikatu kluczem wystawcy
 z ``--issuer-key-env``). Opcje trybu, scenariusza, adresu backendu, seeda
 i klienta API dochodzą w kolejnych zadaniach. Uruchomienie bez argumentów jest
@@ -61,6 +62,17 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "zapisz przykładowy certyfikat stacji z podpisem wystawcy "
             "(domyślnie shared/fixtures/station-certificate.json) i zakończ"
+        ),
+    )
+    parser.add_argument(
+        "--export-profile-violation-fixture",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="PATH",
+        help=(
+            "zapisz negatywny wektor profilu (defectsFound>0 przy qaPassed=true) "
+            "(domyślnie shared/fixtures/report-profile-violation.json) i zakończ"
         ),
     )
     parser.add_argument(
@@ -257,22 +269,33 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if args.export_signature_vector is not None or args.export_certificate_fixture is not None:
+    if (
+        args.export_signature_vector is not None
+        or args.export_certificate_fixture is not None
+        or args.export_profile_violation_fixture is not None
+    ):
         # Import lokalny: pakiet nie ładuje eth-account przy samym imporcie.
         from pathlib import Path
 
         from supply_chain_simulator.vector import (
             write_certificate_fixture,
+            write_profile_violation_fixture,
             write_signature_vector,
         )
 
         if args.export_signature_vector is not None:
             raw, writer, label = args.export_signature_vector, write_signature_vector, "wektor"
-        else:
+        elif args.export_certificate_fixture is not None:
             raw, writer, label = (
                 args.export_certificate_fixture,
                 write_certificate_fixture,
                 "certyfikat",
+            )
+        else:
+            raw, writer, label = (
+                args.export_profile_violation_fixture,
+                write_profile_violation_fixture,
+                "wektor negatywny",
             )
 
         target = Path(raw) if raw else None

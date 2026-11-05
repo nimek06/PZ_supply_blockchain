@@ -74,6 +74,30 @@ VECTOR_DESCRIPTION = (
     "Wartości pomiarów są demonstracyjne, nie normy."
 )
 
+# Wektor negatywny (tydzień 2): ten sam etap kontroli co wektor podpisu, ale raport
+# łamie regułę aplikacji profilu profileQualityControlV1 - przy `qaPassed=true`
+# `defectsFound` musi być 0 (shared/schemas/telemetry.schema.json). Podpis stacji
+# jest poprawny, więc backend ma odrzucić raport kodem `PROFILE_VIOLATION` i statusem
+# `422`, a nie `403`. Inna partia niż wektor podpisu, żeby testy się nie kolidowały.
+PROFILE_VIOLATION_VECTOR_VERSION = 1
+PROFILE_VIOLATION_BATCH_NUMBER = "B-2026-0002"
+PROFILE_VIOLATION_MEASUREMENTS: dict[str, int] = {
+    "inspectedUnits": 10,
+    "defectsFound": 1,
+    "checklistItemsTotal": 12,
+    "checklistItemsPassed": 12,
+}
+PROFILE_VIOLATION_DESCRIPTION = (
+    "Wektor negatywny v1 (tydzień 2): raport etapu 2 (profileQualityControlV1, DEC-02) "
+    "niezgodny z regułą `qaPassed` - przy `qaPassed=true` wymagane jest "
+    "`defectsFound == 0`, a raport ma `defectsFound = 1`. Format JSON Schema jest "
+    "poprawny, a podpis EIP-712 stacji (Anvil #1) jest ważny, więc backend musi "
+    "odrzucić raport przez walidację profilu: `422` z kodem `PROFILE_VIOLATION`. "
+    "Blok `submission` to gotowe ciało `POST /api/v1/batches/{batchId}/stages`. "
+    "Inna partia niż wektor podpisu. Klucze to publiczne klucze deweloperskie Anvil #1 "
+    "- nie zasilaj tego adresu na Amoy."
+)
+
 CERTIFICATE_FIXTURE_VERSION = 1
 CERTIFICATE_STATION_REFERENCE = "ST-001"
 CERTIFICATE_SERIAL = "CERT-2026-0001"
@@ -196,6 +220,79 @@ def write_signature_vector(path: Path | None = None) -> Path:
     target = path if path is not None else default_vector_path()
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(signature_vector_text(), encoding="utf-8")
+    return target
+
+
+def profile_violation_report() -> Report:
+    """Raport etapu 2 łamiący regułę `qaPassed` (defectsFound > 0 przy qaPassed=true)."""
+    return Report(
+        schemaVersion=1,
+        batchId=batch_id(PROFILE_VIOLATION_BATCH_NUMBER),
+        stageId=VECTOR_STAGE_ID,
+        stationAddress=ANVIL_ADDRESS_1,
+        timestamp=VECTOR_TIMESTAMP,
+        measurements=dict(PROFILE_VIOLATION_MEASUREMENTS),
+        qaPassed=True,
+    )
+
+
+def build_profile_violation_fixture() -> dict[str, object]:
+    """Buduje treść wektora negatywnego (dict gotowy do zapisu jako JSON).
+
+    Obok raportu i podpisu dodaje blok `submission` (ciało żądania `POST stages`)
+    oraz `expectedViolation` z kodem i statusem, którego oczekuje osoba 2.
+    """
+    domain = vector_domain()
+    report = profile_violation_report()
+    payload = report_payload(report)
+    block = _stage_block(signed_station_completion(domain, report))
+    report_hash_value = report_hash(report)
+
+    return {
+        "vectorVersion": PROFILE_VIOLATION_VECTOR_VERSION,
+        "description": PROFILE_VIOLATION_DESCRIPTION,
+        "domainTypeString": EIP712_DOMAIN_TYPE_STRING,
+        "domain": domain.model_dump(mode="json"),
+        "batchNumber": PROFILE_VIOLATION_BATCH_NUMBER,
+        "report": payload,
+        "canonicalReportJcs": canonical_text(payload),
+        "reportHash": report_hash_value,
+        "stageCompletion": block,
+        "submission": {
+            "stationCertificateId": certificate_id(CERTIFICATE_SERIAL),
+            "reportHash": report_hash_value,
+            "deadline": VECTOR_DEADLINE,
+            "signature": block["signature"],
+        },
+        "expectedViolation": {
+            "profile": "profileQualityControlV1",
+            "code": "PROFILE_VIOLATION",
+            "status": 422,
+            "reason": "qaPassed=true wymaga defectsFound==0; raport ma defectsFound=1",
+        },
+    }
+
+
+def profile_violation_fixture_text() -> str:
+    """Serializowany wektor negatywny (2 spacje wcięcia, końcowa nowa linia)."""
+    return json.dumps(build_profile_violation_fixture(), indent=2, ensure_ascii=False) + "\n"
+
+
+def default_profile_violation_fixture_path() -> Path:
+    """Ścieżka `shared/fixtures/report-profile-violation.json` w tym repozytorium."""
+    return (
+        Path(__file__).resolve().parents[3]
+        / "shared"
+        / "fixtures"
+        / "report-profile-violation.json"
+    )
+
+
+def write_profile_violation_fixture(path: Path | None = None) -> Path:
+    """Zapisuje wektor negatywny i zwraca ścieżkę pliku."""
+    target = path if path is not None else default_profile_violation_fixture_path()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(profile_violation_fixture_text(), encoding="utf-8")
     return target
 
 
