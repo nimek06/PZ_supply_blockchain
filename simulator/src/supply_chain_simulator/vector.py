@@ -74,6 +74,57 @@ VECTOR_DESCRIPTION = (
     "Wartości pomiarów są demonstracyjne, nie normy."
 )
 
+# --- Wektory negatywne (tydzień 2) ------------------------------------------
+# Rodzina fixture'ów dla walidatora profilu (osoba 2) i scenariuszy (osoba 4):
+# - report-profile-violation-stageN.json (N=0..3): raport z `qaPassed=true`, który
+#   łamie regułę `qaPassed` swojego etapu -> backend ma zwrócić `422` PROFILE_VIOLATION;
+# - report-qa-fail.json: etap 1, `qaPassed=false` spójne z regułą -> `202` z
+#   `outcome=REJECTED` (kontrola, że walidator nie odrzuca zgodnego wyniku negatywnego).
+# Format JSON Schema i podpis StageCompletion (Anvil #1) są poprawne, żeby odrzucenie
+# wynikało z reguły profilu, a nie z formatu (400) czy podpisu (403). Każdy plik ma
+# własną partię, żeby testy się nie kolidowały. Klucze to publiczne klucze Anvil #1.
+NEGATIVE_FIXTURE_VECTOR_VERSION = 1
+PROFILE_VIOLATION_STAGES: tuple[int, ...] = (0, 1, 2, 3)
+# Nazwa profilu per stage (shared/schemas/telemetry.schema.json) do `expectedViolation`.
+PROFILE_VIOLATION_PROFILES: dict[int, str] = {
+    0: "profilePreparationV1",
+    1: "profileAssemblyV1",
+    2: "profileQualityControlV1",
+    3: "profilePackagingV1",
+}
+# Partie: etap 2 zachowuje B-2026-0002 (plik opublikowany wcześniej), reszta obok.
+PROFILE_VIOLATION_BATCH_NUMBERS: dict[int, str] = {
+    0: "B-2026-0003",
+    1: "B-2026-0004",
+    2: "B-2026-0002",
+    3: "B-2026-0005",
+}
+# Pomiary łamiące regułę `qaPassed` swojego etapu (przy `qaPassed=true`).
+PROFILE_VIOLATION_MEASUREMENTS: dict[int, dict[str, int]] = {
+    0: {"checklistItemsTotal": 12, "checklistItemsPassed": 11},
+    1: {"operationsTotal": 8, "operationsCompleted": 7, "cycleTimeMs": 420_000},
+    2: {
+        "inspectedUnits": 10,
+        "defectsFound": 1,
+        "checklistItemsTotal": 12,
+        "checklistItemsPassed": 12,
+    },
+    3: {"unitsPacked": 10, "labelsApplied": 9},
+}
+PROFILE_VIOLATION_REASONS: dict[int, str] = {
+    0: "qaPassed=true wymaga checklistItemsPassed==checklistItemsTotal; jest 11/12",
+    1: "qaPassed=true wymaga operationsCompleted==operationsTotal; jest 7/8",
+    2: "qaPassed=true wymaga defectsFound==0 i checklistItemsPassed==checklistItemsTotal; defectsFound=1",
+    3: "qaPassed=true wymaga labelsApplied==unitsPacked; jest 9/10",
+}
+# Zgodny wynik negatywny (etap 1): poprawny raport, outcome=REJECTED, nie 422.
+QA_FAIL_BATCH_NUMBER = "B-2026-0006"
+QA_FAIL_MEASUREMENTS: dict[str, int] = {
+    "operationsTotal": 8,
+    "operationsCompleted": 7,
+    "cycleTimeMs": 420_000,
+}
+
 CERTIFICATE_FIXTURE_VERSION = 1
 CERTIFICATE_STATION_REFERENCE = "ST-001"
 CERTIFICATE_SERIAL = "CERT-2026-0001"
@@ -197,6 +248,164 @@ def write_signature_vector(path: Path | None = None) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(signature_vector_text(), encoding="utf-8")
     return target
+
+
+def _negative_report(
+    stage_id: int, batch_number: str, measurements: dict[str, int], qa_passed: bool
+) -> Report:
+    """Raport etapu z podanymi pomiarami i wynikiem `qaPassed` (wspólny mianownik)."""
+    return Report(
+        schemaVersion=1,
+        batchId=batch_id(batch_number),
+        stageId=stage_id,
+        stationAddress=ANVIL_ADDRESS_1,
+        timestamp=VECTOR_TIMESTAMP,
+        measurements=dict(measurements),
+        qaPassed=qa_passed,
+    )
+
+
+def _negative_fixture(
+    batch_number: str, report: Report, description: str, tail: dict[str, object]
+) -> dict[str, object]:
+    """Buduje fixture negatywny: raport, podpis stacji, blok `submission` i `tail`."""
+    domain = vector_domain()
+    payload = report_payload(report)
+    block = _stage_block(signed_station_completion(domain, report))
+    report_hash_value = report_hash(report)
+
+    fixture: dict[str, object] = {
+        "vectorVersion": NEGATIVE_FIXTURE_VECTOR_VERSION,
+        "description": description,
+        "domainTypeString": EIP712_DOMAIN_TYPE_STRING,
+        "domain": domain.model_dump(mode="json"),
+        "batchNumber": batch_number,
+        "report": payload,
+        "canonicalReportJcs": canonical_text(payload),
+        "reportHash": report_hash_value,
+        "stageCompletion": block,
+        "submission": {
+            "stationCertificateId": certificate_id(CERTIFICATE_SERIAL),
+            "reportHash": report_hash_value,
+            "deadline": VECTOR_DEADLINE,
+            "signature": block["signature"],
+        },
+    }
+    fixture.update(tail)
+    return fixture
+
+
+def _profile_violation_description(stage_id: int) -> str:
+    return (
+        f"Wektor negatywny v1 (tydzień 2): raport etapu {stage_id} "
+        f"({PROFILE_VIOLATION_PROFILES[stage_id]}, DEC-02) niezgodny z regułą `qaPassed` "
+        f"- {PROFILE_VIOLATION_REASONS[stage_id]}. Format JSON Schema jest poprawny, a podpis "
+        "EIP-712 stacji (Anvil #1) jest ważny, więc backend musi odrzucić raport przez "
+        "walidację profilu: `422` z kodem `PROFILE_VIOLATION`. Blok `submission` to gotowe "
+        "ciało `POST /api/v1/batches/{batchId}/stages`. Klucze to publiczne klucze "
+        "deweloperskie Anvil #1 - nie zasilaj tego adresu na Amoy."
+    )
+
+
+QA_FAIL_DESCRIPTION = (
+    "Wektor negatywny v1 (tydzień 2): etap 1 (profileAssemblyV1, DEC-02) z `qaPassed=false` "
+    "ZGODNYM z regułą (operationsCompleted 7 < operationsTotal 8) - to nie naruszenie profilu, "
+    "lecz poprawny raport z wynikiem negatywnym. Backend ma zwrócić `202` i zakończyć polecenie "
+    "`outcome=REJECTED` po `StageRejected` (docs/corrections.md), a nie `422`. Kontrola, że "
+    "walidator profilu nie odrzuca zgodnego wyniku negatywnego. Blok `submission` to gotowe "
+    "ciało `POST /api/v1/batches/{batchId}/stages`. Klucze to publiczne klucze deweloperskie "
+    "Anvil #1 - nie zasilaj tego adresu na Amoy."
+)
+
+
+def profile_violation_report(stage_id: int) -> Report:
+    """Raport etapu `stage_id` łamiący regułę `qaPassed` (przy `qaPassed=true`)."""
+    return _negative_report(
+        stage_id,
+        PROFILE_VIOLATION_BATCH_NUMBERS[stage_id],
+        PROFILE_VIOLATION_MEASUREMENTS[stage_id],
+        qa_passed=True,
+    )
+
+
+def build_profile_violation_fixture(stage_id: int) -> dict[str, object]:
+    """Buduje treść negatywnego wektora dla etapu `stage_id` (dict do zapisu jako JSON)."""
+    tail: dict[str, object] = {
+        "expectedViolation": {
+            "profile": PROFILE_VIOLATION_PROFILES[stage_id],
+            "code": "PROFILE_VIOLATION",
+            "status": 422,
+            "reason": PROFILE_VIOLATION_REASONS[stage_id],
+        }
+    }
+    return _negative_fixture(
+        PROFILE_VIOLATION_BATCH_NUMBERS[stage_id],
+        profile_violation_report(stage_id),
+        _profile_violation_description(stage_id),
+        tail,
+    )
+
+
+def profile_violation_fixture_name(stage_id: int) -> str:
+    """Nazwa pliku negatywnego wektora etapu `stage_id`."""
+    return f"report-profile-violation-stage{stage_id}.json"
+
+
+def profile_violation_fixture_text(stage_id: int) -> str:
+    """Serializowany negatywny wektor etapu `stage_id` (2 spacje, końcowa nowa linia)."""
+    return (
+        json.dumps(build_profile_violation_fixture(stage_id), indent=2, ensure_ascii=False)
+        + "\n"
+    )
+
+
+def qa_fail_report() -> Report:
+    """Raport etapu 1 z `qaPassed=false` zgodnym z regułą (poprawny wynik negatywny)."""
+    return _negative_report(1, QA_FAIL_BATCH_NUMBER, QA_FAIL_MEASUREMENTS, qa_passed=False)
+
+
+def build_qa_fail_fixture() -> dict[str, object]:
+    """Buduje fixture `report-qa-fail.json` (poprawny raport, outcome=REJECTED)."""
+    tail: dict[str, object] = {
+        "expectedOutcome": {"status": 202, "outcome": "REJECTED", "event": "StageRejected"}
+    }
+    return _negative_fixture(QA_FAIL_BATCH_NUMBER, qa_fail_report(), QA_FAIL_DESCRIPTION, tail)
+
+
+QA_FAIL_FIXTURE_NAME = "report-qa-fail.json"
+
+
+def qa_fail_fixture_text() -> str:
+    """Serializowany fixture `report-qa-fail.json`."""
+    return json.dumps(build_qa_fail_fixture(), indent=2, ensure_ascii=False) + "\n"
+
+
+def default_negative_fixture_directory() -> Path:
+    """Katalog `shared/fixtures/` w tym repozytorium."""
+    return Path(__file__).resolve().parents[3] / "shared" / "fixtures"
+
+
+def negative_fixture_names() -> list[str]:
+    """Nazwy wszystkich plików negatywnych (4 naruszenia profilu + zgodny negatyw)."""
+    return [
+        *(profile_violation_fixture_name(stage_id) for stage_id in PROFILE_VIOLATION_STAGES),
+        QA_FAIL_FIXTURE_NAME,
+    ]
+
+
+def write_negative_fixtures(directory: Path | None = None) -> list[Path]:
+    """Zapisuje wszystkie negatywne fixture'y do katalogu i zwraca ścieżki plików."""
+    target = directory if directory is not None else default_negative_fixture_directory()
+    target.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for stage_id in PROFILE_VIOLATION_STAGES:
+        path = target / profile_violation_fixture_name(stage_id)
+        path.write_text(profile_violation_fixture_text(stage_id), encoding="utf-8")
+        written.append(path)
+    qa_fail_path = target / QA_FAIL_FIXTURE_NAME
+    qa_fail_path.write_text(qa_fail_fixture_text(), encoding="utf-8")
+    written.append(qa_fail_path)
+    return written
 
 
 def certificate_payload() -> CertificatePayload:
