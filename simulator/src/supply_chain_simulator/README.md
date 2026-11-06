@@ -2,8 +2,9 @@
 
 **Język:** Python 3.11+, kod z adnotacjami typów.
 
-Moduły pakietu (stan 2026-10-31 - gotowe: `__init__`, `__main__`, `cli`, `models`,
-`canonical`, `signing`, `vector`, `certificate`; szkic: `client`; pozostałe planowane):
+Moduły pakietu (stan 2026-11-05 - gotowe: `__init__`, `__main__`, `cli`, `models`,
+`canonical`, `signing`, `vector`, `certificate`, `profiles`, `telemetry`; szkic: `client`;
+pozostałe planowane):
 | Plik | Zakres |
 |---|---|
 | `__init__.py` | pakiet, bez efektów ubocznych |
@@ -15,7 +16,8 @@ Moduły pakietu (stan 2026-10-31 - gotowe: `__init__`, `__main__`, `cli`, `model
 | `signing.py` | typed data EIP-712 `StageCompletion` (bez nonce), `StageApproval`, `StationCertificate` i eth-account |
 | `certificate.py` | payload certyfikatu, hash JCS, domena wystawcy, weryfikacja i `stageMask` |
 | `vector.py` | deterministyczna budowa `shared/fixtures/signature-vector.json` i `station-certificate.json` |
-| `telemetry.py` | deterministyczne pomiary i kontrolowane anomalie |
+| `profiles.py` | profile pomiarów 0..3 jako dane ze schematu (klucze, zakresy, `$ref`) |
+| `telemetry.py` | deterministyczne pomiary etapów 0..3; reguły `qaPassed`, tryb `force_qa_fail` |
 | `client.py` | HTTP, timeout, idempotentne retry, status polecenia |
 | `runner.py` | kolejność kroków i tryb auto/interaktywny |
 
