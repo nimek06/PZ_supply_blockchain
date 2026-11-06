@@ -1,6 +1,6 @@
 {
   "vectorVersion": 1,
-  "description": "Wektor negatywny v1 (tydzień 2): raport etapu 2 (profileQualityControlV1, DEC-02) niezgodny z regułą `qaPassed` - przy `qaPassed=true` wymagane jest `defectsFound == 0`, a raport ma `defectsFound = 1`. Format JSON Schema jest poprawny, a podpis EIP-712 stacji (Anvil #1) jest ważny, więc backend musi odrzucić raport przez walidację profilu: `422` z kodem `PROFILE_VIOLATION`. Blok `submission` to gotowe ciało `POST /api/v1/batches/{batchId}/stages`. Inna partia niż wektor podpisu. Klucze to publiczne klucze deweloperskie Anvil #1 - nie zasilaj tego adresu na Amoy.",
+  "description": "Wektor negatywny v1 (tydzień 2): raport etapu 2 (profileQualityControlV1, DEC-02) niezgodny z regułą `qaPassed` - qaPassed=true wymaga defectsFound==0 i checklistItemsPassed==checklistItemsTotal; defectsFound=1. Format JSON Schema jest poprawny, a podpis EIP-712 stacji (Anvil #1) jest ważny, więc backend musi odrzucić raport przez walidację profilu: `422` z kodem `PROFILE_VIOLATION`. Blok `submission` to gotowe ciało `POST /api/v1/batches/{batchId}/stages`. Klucze to publiczne klucze deweloperskie Anvil #1 - nie zasilaj tego adresu na Amoy.",
   "domainTypeString": "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
   "domain": {
     "name": "SupplyChain",
@@ -90,6 +90,6 @@
     "profile": "profileQualityControlV1",
     "code": "PROFILE_VIOLATION",
     "status": 422,
-    "reason": "qaPassed=true wymaga defectsFound==0; raport ma defectsFound=1"
+    "reason": "qaPassed=true wymaga defectsFound==0 i checklistItemsPassed==checklistItemsTotal; defectsFound=1"
   }
 }

@@ -1,0 +1,93 @@
+{
+  "vectorVersion": 1,
+  "description": "Wektor negatywny v1 (tydzień 2): raport etapu 3 (profilePackagingV1, DEC-02) niezgodny z regułą `qaPassed` - qaPassed=true wymaga labelsApplied==unitsPacked; jest 9/10. Format JSON Schema jest poprawny, a podpis EIP-712 stacji (Anvil #1) jest ważny, więc backend musi odrzucić raport przez walidację profilu: `422` z kodem `PROFILE_VIOLATION`. Blok `submission` to gotowe ciało `POST /api/v1/batches/{batchId}/stages`. Klucze to publiczne klucze deweloperskie Anvil #1 - nie zasilaj tego adresu na Amoy.",
+  "domainTypeString": "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+  "domain": {
+    "name": "SupplyChain",
+    "version": "1",
+    "chainId": 31337,
+    "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+  },
+  "batchNumber": "B-2026-0005",
+  "report": {
+    "schemaVersion": 1,
+    "batchId": "0x893b48696b11919ffc1b4c615494b667c2648aa08e93c34c5cb51b0cf77daee3",
+    "stageId": 3,
+    "stationAddress": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "timestamp": 1800000000,
+    "measurements": {
+      "unitsPacked": 10,
+      "labelsApplied": 9
+    },
+    "qaPassed": true
+  },
+  "canonicalReportJcs": "{\"batchId\":\"0x893b48696b11919ffc1b4c615494b667c2648aa08e93c34c5cb51b0cf77daee3\",\"measurements\":{\"labelsApplied\":9,\"unitsPacked\":10},\"qaPassed\":true,\"schemaVersion\":1,\"stageId\":3,\"stationAddress\":\"0x70997970c51812dc3a010c7d01b50e0d17dc79c8\",\"timestamp\":1800000000}",
+  "reportHash": "0x6af90fe161c8f9fb501501070b073a45f261b49eed42c5b96ed6a6ef7ad58a43",
+  "stageCompletion": {
+    "typeString": "StageCompletion(bytes32 batchId,uint32 stageId,bytes32 reportHash,bool qaPassed,uint256 deadline)",
+    "types": {
+      "EIP712Domain": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "version",
+          "type": "string"
+        },
+        {
+          "name": "chainId",
+          "type": "uint256"
+        },
+        {
+          "name": "verifyingContract",
+          "type": "address"
+        }
+      ],
+      "StageCompletion": [
+        {
+          "name": "batchId",
+          "type": "bytes32"
+        },
+        {
+          "name": "stageId",
+          "type": "uint32"
+        },
+        {
+          "name": "reportHash",
+          "type": "bytes32"
+        },
+        {
+          "name": "qaPassed",
+          "type": "bool"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256"
+        }
+      ]
+    },
+    "message": {
+      "batchId": "0x893b48696b11919ffc1b4c615494b667c2648aa08e93c34c5cb51b0cf77daee3",
+      "stageId": 3,
+      "reportHash": "0x6af90fe161c8f9fb501501070b073a45f261b49eed42c5b96ed6a6ef7ad58a43",
+      "qaPassed": true,
+      "deadline": 1800000600
+    },
+    "digest": "0xd83496043dbe29eec064a1c9c2cdfc17f4427b15101d4981f64053e820074b01",
+    "signature": "0xc0825c7bcb544c55721eaf8930ad408564157972781e7c4af1668c46a47266463a548886fdec3a198f53a0e38170ef206414a7396d267a48749372b8827afcb01b",
+    "signer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+  },
+  "submission": {
+    "stationCertificateId": "0xd6337752b30f2464c72077439190dafc2d68d9f20fe3bdf436d6e9b2c1c3fd3e",
+    "reportHash": "0x6af90fe161c8f9fb501501070b073a45f261b49eed42c5b96ed6a6ef7ad58a43",
+    "deadline": 1800000600,
+    "signature": "0xc0825c7bcb544c55721eaf8930ad408564157972781e7c4af1668c46a47266463a548886fdec3a198f53a0e38170ef206414a7396d267a48749372b8827afcb01b"
+  },
+  "expectedViolation": {
+    "profile": "profilePackagingV1",
+    "code": "PROFILE_VIOLATION",
+    "status": 422,
+    "reason": "qaPassed=true wymaga labelsApplied==unitsPacked; jest 9/10"
+  }
+}

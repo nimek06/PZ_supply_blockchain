@@ -2,7 +2,7 @@
 
 **Język:** JSON; kanoniczny raport jako bajty UTF-8 zapisane w pliku tekstowym.
 
-Plan: `report-valid.json`, `report-qa-fail.json`, `report-profile-violation.json`, `signature-vector.json`
+Plan: `report-valid.json`, `report-qa-fail.json`, `report-profile-violation-stage0..3.json`, `signature-vector.json`
 (`StageCompletion` bez nonce, `StageApproval`; wektor wspólny dla Python, Java, TS/viem i Solidity),
 `station-certificate.json` (certyfikat stacji: payload, `payloadHash`, podpis wystawcy i `registryCall`)
 oraz przykładowe odpowiedzi partii/historii/polecenia zgodne z OpenAPI.
@@ -29,12 +29,19 @@ i brakujący/odwołany certyfikat oraz niezgodność z rejestrem stacji. Nie wym
 i podpisów ręcznie - generuje je `python -m supply_chain_simulator --export-certificate-fixture`
 (wektor podpisu: `--export-signature-vector`).
 
-**Stan 2026-11-05:** `report-profile-violation.json` to wektor **negatywny** dla walidatora profilu
-(tydzień 2): raport etapu 2 z `defectsFound = 1` przy `qaPassed = true`. Format JSON Schema jest
-poprawny, a podpis `StageCompletion` stacji jest ważny, więc backend ma odrzucić raport kodem
-`PROFILE_VIOLATION` i statusem `422` (patrz `docs/corrections.md`), a nie `403`. Blok `submission`
-to gotowe ciało `POST /api/v1/batches/{batchId}/stages` (pola: `stationCertificateId`, `reportHash`,
-`deadline`, `signature`), a `expectedViolation` opisuje oczekiwany kod i status. Partia `B-2026-0002`
-(inna niż wektor podpisu, żeby testy się nie kolidowały). Generuje go
-`python -m supply_chain_simulator --export-profile-violation-fixture`; plik musi zostać odtwarzalny
-bajt w bajt (`tests/test_profile_violation_fixture.py`).
+**Stan 2026-11-05:** negatywne wektory dla walidatora profilu (tydzień 2), dwie rodziny:
+
+- `report-profile-violation-stage0.json` … `-stage3.json` — raport etapu z `qaPassed = true`,
+  który łamie regułę swojego etapu (po jednym na regułę `qaPassed` z `docs/product-scenario.md`).
+  Format JSON Schema jest poprawny, a podpis `StageCompletion` stacji jest ważny, więc backend
+  ma odrzucić raport kodem `PROFILE_VIOLATION` i statusem `422` (patrz `docs/corrections.md`),
+  a nie `403`. Blok `expectedViolation` opisuje oczekiwany kod, status i profil.
+- `report-qa-fail.json` — etap 1 z `qaPassed = false` **zgodnym** z regułą: poprawny raport
+  z wynikiem negatywnym, nie naruszenie profilu. Oczekiwane `202` i `outcome=REJECTED`
+  (blok `expectedOutcome`). To kontrola, że walidator nie odrzuca zgodnego negatywu.
+
+Każdy plik ma blok `submission` = gotowe ciało `POST /api/v1/batches/{batchId}/stages`
+(`stationCertificateId`, `reportHash`, `deadline`, `signature`) i własną partię (`B-2026-0002`…`0006`),
+żeby testy się nie kolidowały. Generuje je `python -m supply_chain_simulator --export-negative-fixtures`
+(katalog docelowy opcjonalnie); pliki muszą zostać odtwarzalne bajt w bajt
+(`tests/test_negative_fixtures.py`).
