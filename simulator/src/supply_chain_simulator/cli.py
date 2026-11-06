@@ -2,7 +2,8 @@
 
 CLI obsługuje ``--help``, ``--version``, ``--export-signature-vector``,
 ``--export-certificate-fixture``, ``--export-negative-fixtures``
-(negatywne wektory profilu i zgodny negatyw), ``--station-key-out`` (generowanie
+(negatywne wektory profilu i zgodny negatyw), ``--export-certificate-negatives``
+(wygasły i niezaufany wystawca), ``--station-key-out`` (generowanie
 klucza stacji) i ``--issue-certificate`` (wystawienie certyfikatu kluczem
 wystawcy z ``--issuer-key-env``). Opcje trybu, scenariusza, adresu backendu, seeda
 i klienta API dochodzą w kolejnych zadaniach. Uruchomienie bez argumentów jest
@@ -72,6 +73,17 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="DIR",
         help=(
             "zapisz negatywne fixture'y (naruszenia profilu etapów 0-3 + report-qa-fail.json) "
+            "(domyślnie katalog shared/fixtures) i zakończ"
+        ),
+    )
+    parser.add_argument(
+        "--export-certificate-negatives",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="DIR",
+        help=(
+            "zapisz negatywne warianty certyfikatu (wygasły, niezaufany wystawca) "
             "(domyślnie katalog shared/fixtures) i zakończ"
         ),
     )
@@ -283,6 +295,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             return EXIT_FAILURE
         for path in paths:
             print(f"zapisano wektor negatywny: {path}")
+        return EXIT_OK
+
+    if args.export_certificate_negatives is not None:
+        # Import lokalny: pakiet nie ładuje eth-account przy samym imporcie.
+        from pathlib import Path
+
+        from supply_chain_simulator.vector import write_certificate_negative_fixtures
+
+        directory = (
+            Path(args.export_certificate_negatives)
+            if args.export_certificate_negatives
+            else None
+        )
+        try:
+            paths = write_certificate_negative_fixtures(directory)
+        except OSError as exc:
+            print(f"error: nie udało się zapisać wariantów certyfikatu: {exc}", file=sys.stderr)
+            return EXIT_FAILURE
+        for path in paths:
+            print(f"zapisano certyfikat negatywny: {path}")
         return EXIT_OK
 
     if args.export_signature_vector is not None or args.export_certificate_fixture is not None:

@@ -142,8 +142,8 @@ SignedMessage = StageCompletionMessage | StageApprovalMessage | StationCertifica
 class CertificatePayload(StrictModel):
     """Payload certyfikatu stacji - dokładnie te pola są kanonizowane i podpisywane.
 
-    Nazwy i kolejność pól pochodzą z `docs/station-identity.md` (propozycja
-    DEC-13). Adresy i identyfikatory zapisujemy małymi literami; `allowedStageIds`
+    Nazwy i kolejność pól pochodzą z `docs/station-identity.md` (DEC-13,
+    ustalona 2026-11-02). Adresy i identyfikatory zapisujemy małymi literami; `allowedStageIds`
     musi odpowiadać `stageMask` w rejestrze on-chain, a zgodność z rejestrem
     sprawdza backend, nie ten model. Danych organizacyjnych, daty odbioru
     w backendzie i klucza prywatnego nie ma w payloadzie.

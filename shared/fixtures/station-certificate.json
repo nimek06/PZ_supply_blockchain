@@ -1,6 +1,6 @@
 {
   "fixtureVersion": 1,
-  "description": "Przykładowy certyfikat stacji (DEC-13): payload + podpis EIP-712 wystawcy w osobnej domenie SupplyChainStationRegistry i typie StationCertificate. Wystawcą jest publiczny klucz deweloperski Anvil #0 (lokalny admin, DEFAULT_ADMIN_ROLE) - nie zasilaj tego adresu na Amoy. stationId = keccak256(\"ST-001\"), expiresAt = issuedAt + 365 dni i stageMask 0x0F odpowiadają rejestracji w contracts/test/SupplyChain.t.sol. Podpis certyfikatu nie jest podpisem StageCompletion i nie zastępuje rejestracji on-chain. Typ i nazwa domeny są nadal propozycją DEC-13.",
+  "description": "Przykładowy certyfikat stacji (DEC-13): payload + podpis EIP-712 wystawcy w osobnej domenie SupplyChainStationRegistry i typie StationCertificate. Wystawcą jest publiczny klucz deweloperski Anvil #0 (lokalny admin, DEFAULT_ADMIN_ROLE) - nie zasilaj tego adresu na Amoy. stationId = keccak256(\"ST-001\"), expiresAt = issuedAt + 365 dni i stageMask 0x0F odpowiadają rejestracji w contracts/test/SupplyChain.t.sol. Podpis certyfikatu nie jest podpisem StageCompletion i nie zastępuje rejestracji on-chain. Format DEC-13 jest ustalony (2026-11-02); zmiana typu lub domeny wymaga nowej wersji.",
   "domainTypeString": "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
   "domain": {
     "name": "SupplyChainStationRegistry",
