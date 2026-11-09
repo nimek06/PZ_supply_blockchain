@@ -1,0 +1,36 @@
+{
+  "profileId": "ebike-v1",
+  "profiles": {
+    "0": {
+      "fields": {
+        "checklistItemsTotal": { "min": 1, "max": 100 },
+        "checklistItemsPassed": { "min": 0, "max": 100 }
+      },
+      "qaRule": "CHECKLIST_COMPLETE"
+    },
+    "1": {
+      "fields": {
+        "operationsTotal": { "min": 1, "max": 100 },
+        "operationsCompleted": { "min": 0, "max": 100 },
+        "cycleTimeMs": { "min": 0, "max": 3600000 }
+      },
+      "qaRule": "OPERATIONS_COMPLETE"
+    },
+    "2": {
+      "fields": {
+        "inspectedUnits": { "min": 1, "max": 10000 },
+        "defectsFound": { "min": 0, "max": 10000 },
+        "checklistItemsTotal": { "min": 1, "max": 100 },
+        "checklistItemsPassed": { "min": 0, "max": 100 }
+      },
+      "qaRule": "QUALITY_CONTROL"
+    },
+    "3": {
+      "fields": {
+        "unitsPacked": { "min": 1, "max": 10000 },
+        "labelsApplied": { "min": 0, "max": 10000 }
+      },
+      "qaRule": "LABELS_COMPLETE"
+    }
+  }
+}

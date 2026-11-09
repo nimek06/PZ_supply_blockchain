@@ -137,7 +137,7 @@ public class AuthService {
     }
 
     @Transactional
-    public Optional<String> authenticateOptional(String authorizationHeader) {
+    public Optional<AuthSession> authenticateSessionOptional(String authorizationHeader) {
         if (authorizationHeader == null || authorizationHeader.isBlank()) {
             return Optional.empty();
         }
@@ -151,12 +151,20 @@ public class AuthService {
             throw new DomainException(ErrorCode.UNAUTHENTICATED, "invalid or expired bearer token");
         }
         sessionRepository.touch(session.id(), now);
-        return Optional.of(session.address());
+        return Optional.of(session);
+    }
+
+    public Optional<String> authenticateOptional(String authorizationHeader) {
+        return authenticateSessionOptional(authorizationHeader).map(AuthSession::address);
+    }
+
+    public AuthSession authenticateSession(String authorizationHeader) {
+        return authenticateSessionOptional(authorizationHeader)
+                .orElseThrow(() -> new DomainException(ErrorCode.UNAUTHENTICATED, "bearer token is required"));
     }
 
     public String authenticateRequired(String authorizationHeader) {
-        return authenticateOptional(authorizationHeader)
-                .orElseThrow(() -> new DomainException(ErrorCode.UNAUTHENTICATED, "bearer token is required"));
+        return authenticateSession(authorizationHeader).address();
     }
 
     @Transactional

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
@@ -98,16 +99,72 @@ class AuthServiceTest {
     @Test
     void authenticateOptionalValidToken() {
         String token = "test-bearer-token";
-        String tokenHash = tokenHasher.sha256Hex(token);
-        AuthSession session = new AuthSession(
-                UUID.randomUUID(), tokenHash, address, 31337,
-                Instant.ofEpochSecond(1800000000L), Instant.ofEpochSecond(1800028800L), 1800,
-                Instant.ofEpochSecond(1800000000L), null);
+        AuthSession session = session(token, Instant.ofEpochSecond(1800028800L), null);
 
-        when(sessionRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(session));
+        when(sessionRepository.findByTokenHash(tokenHasher.sha256Hex(token))).thenReturn(Optional.of(session));
 
         Optional<String> authenticated = authService.authenticateOptional("Bearer " + token);
 
         assertThat(authenticated).contains(address);
+        assertThat(authService.authenticateSession("Bearer " + token).id()).isEqualTo(session.id());
+    }
+
+    @Test
+    void expiredTokenIsRejected() {
+        String token = "expired-token";
+        AuthSession session = session(token, Instant.ofEpochSecond(1799999999L), null);
+
+        when(sessionRepository.findByTokenHash(tokenHasher.sha256Hex(token))).thenReturn(Optional.of(session));
+
+        assertThatThrownBy(() -> authService.authenticateRequired("Bearer " + token))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(ErrorCode.UNAUTHENTICATED));
+    }
+
+    @Test
+    void idleTokenIsRejected() {
+        String token = "idle-token";
+        AuthSession session = new AuthSession(
+                UUID.randomUUID(), tokenHasher.sha256Hex(token), address, 31337,
+                Instant.ofEpochSecond(1800000000L), Instant.ofEpochSecond(1800028800L), 1800,
+                Instant.ofEpochSecond(1799998199L), null);
+
+        when(sessionRepository.findByTokenHash(tokenHasher.sha256Hex(token))).thenReturn(Optional.of(session));
+
+        assertThatThrownBy(() -> authService.authenticateRequired("Bearer " + token))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(ErrorCode.UNAUTHENTICATED));
+    }
+
+    @Test
+    void revokedTokenIsRejected() {
+        String token = "revoked-token";
+        AuthSession session = session(token, Instant.ofEpochSecond(1800028800L), Instant.ofEpochSecond(1800000001L));
+
+        when(sessionRepository.findByTokenHash(tokenHasher.sha256Hex(token))).thenReturn(Optional.of(session));
+
+        assertThatThrownBy(() -> authService.authenticateRequired("Bearer " + token))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(ErrorCode.UNAUTHENTICATED));
+    }
+
+    @Test
+    void logoutRevokesTheToken() {
+        String token = "logout-token";
+        AuthSession session = session(token, Instant.ofEpochSecond(1800028800L), null);
+
+        when(sessionRepository.findByTokenHash(tokenHasher.sha256Hex(token))).thenReturn(Optional.of(session));
+        when(sessionRepository.revoke(any(), any())).thenReturn(true);
+
+        authService.revoke("Bearer " + token);
+
+        verify(sessionRepository).revoke(any(), any());
+    }
+
+    private AuthSession session(String token, Instant expiresAt, Instant revokedAt) {
+        return new AuthSession(
+                UUID.randomUUID(), tokenHasher.sha256Hex(token), address, 31337,
+                Instant.ofEpochSecond(1800000000L), expiresAt, 1800,
+                Instant.ofEpochSecond(1800000000L), revokedAt);
     }
 }

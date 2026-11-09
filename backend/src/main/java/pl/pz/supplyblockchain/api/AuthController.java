@@ -3,6 +3,7 @@ package pl.pz.supplyblockchain.api;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -12,8 +13,11 @@ import pl.pz.supplyblockchain.api.dto.AuthChallengeRequest;
 import pl.pz.supplyblockchain.api.dto.AuthChallengeResponse;
 import pl.pz.supplyblockchain.api.dto.AuthSessionRequest;
 import pl.pz.supplyblockchain.api.dto.AuthSessionResponse;
+import pl.pz.supplyblockchain.api.dto.SessionContextResponse;
 import pl.pz.supplyblockchain.application.AuthService;
+import pl.pz.supplyblockchain.application.SessionContextService;
 import pl.pz.supplyblockchain.application.auth.NewAuthSession;
+import pl.pz.supplyblockchain.application.session.SessionContext;
 import pl.pz.supplyblockchain.domain.AuthChallenge;
 import pl.pz.supplyblockchain.domain.DomainException;
 import pl.pz.supplyblockchain.domain.ErrorCode;
@@ -23,9 +27,11 @@ import pl.pz.supplyblockchain.domain.ErrorCode;
 public class AuthController {
 
     private final AuthService authService;
+    private final SessionContextService sessionContextService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, SessionContextService sessionContextService) {
         this.authService = authService;
+        this.sessionContextService = sessionContextService;
     }
 
     @PostMapping("/challenges")
@@ -61,6 +67,20 @@ public class AuthController {
                         created.session().address(),
                         created.session().expiresAt().getEpochSecond(),
                         created.session().idleTimeoutSeconds()));
+    }
+
+    @GetMapping("/sessions/current")
+    public ResponseEntity<SessionContextResponse> current(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        SessionContext context = sessionContextService.current(authorization);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(new SessionContextResponse(
+                        context.address(),
+                        context.roles().stream().map(Enum::name).toList(),
+                        context.expiresAt(),
+                        context.chainId(),
+                        context.verifyingContract()));
     }
 
     @DeleteMapping("/sessions/current")
