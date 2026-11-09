@@ -39,7 +39,7 @@ services:
       retries: 12
       start_period: 3s
 
-  # jednorazowo: wdraża SupplyChain na Anvila i się kończy (status "exited (0)" jest ok)
+  # jednorazowo: wdraża SupplyChain, rejestruje stację testową i się kończy (status "exited (0)" jest ok)
   deploy:
     image: ghcr.io/foundry-rs/foundry:v1.8.6
     depends_on:
@@ -62,6 +62,7 @@ services:
     volumes:
       - ../../contracts:/contracts:ro
       - ./deploy-contract.sh:/deploy-contract.sh:ro
+      - ../../shared/fixtures:/fixtures:ro
       - foundry-data:/foundry
 
   kubo:
