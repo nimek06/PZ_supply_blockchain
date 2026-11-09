@@ -91,8 +91,9 @@ public class ApiExceptionHandler {
     private static HttpStatus statusFor(ErrorCode code) {
         return switch (code) {
             case INVALID_REQUEST, SCHEMA_VIOLATION, DEADLINE_EXPIRED, DEADLINE_TOO_FAR,
-                    UNEXPECTED_STAGE, PROFILE_VIOLATION -> HttpStatus.BAD_REQUEST;
-            case INVALID_SIGNATURE, SIGNER_MISMATCH, FORBIDDEN -> HttpStatus.FORBIDDEN;
+                    UNEXPECTED_STAGE -> HttpStatus.BAD_REQUEST;
+            case PROFILE_VIOLATION -> HttpStatus.UNPROCESSABLE_ENTITY;
+            case INVALID_SIGNATURE, SIGNER_MISMATCH, FORBIDDEN, ROLE_MISSING -> HttpStatus.FORBIDDEN;
             case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED;
             case STAGE_ALREADY_PENDING, STAGE_ALREADY_COMPLETED, CHALLENGE_USED_OR_EXPIRED,
                     IDEMPOTENCY_CONFLICT -> HttpStatus.CONFLICT;

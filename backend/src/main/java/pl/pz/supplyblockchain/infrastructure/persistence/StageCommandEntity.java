@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
+import pl.pz.supplyblockchain.application.ports.NewCreateBatchCommand;
 import pl.pz.supplyblockchain.application.ports.NewStageCommand;
 import pl.pz.supplyblockchain.domain.CommandOutcome;
 import pl.pz.supplyblockchain.domain.CommandStatus;
@@ -60,17 +61,23 @@ class StageCommandEntity {
     @Column(name = "report_jcs")
     private byte[] reportJcs;
 
-    @Column(name = "station_signature", nullable = false)
+    @Column(name = "station_signature")
     private String stationSignature;
 
-    @Column(name = "signed_payload_digest", nullable = false, length = 66)
+    @Column(name = "signed_payload_digest", length = 66)
     private String signedPayloadDigest;
 
-    @Column(name = "deadline", nullable = false)
-    private long deadline;
+    @Column(name = "deadline")
+    private Long deadline;
 
     @Column(name = "qa_passed", nullable = false)
-    private boolean qaPassed;
+    private Boolean qaPassed;
+
+    @Column(name = "idempotency_key", length = 128)
+    private String idempotencyKey;
+
+    @Column(name = "request_hash", length = 66)
+    private String requestHash;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)
@@ -112,8 +119,23 @@ class StageCommandEntity {
     }
 
     static StageCommandEntity from(NewStageCommand newCommand) {
-        StageCommand command = newCommand.command();
-        DeploymentId deploymentId = newCommand.deploymentId();
+        StageCommandEntity entity = common(
+                newCommand.command(), newCommand.deploymentId());
+        entity.reportJson = newCommand.reportJson();
+        entity.reportJcs = newCommand.canonicalReportJcs();
+        entity.stationSignature = newCommand.stationSignature();
+        return entity;
+    }
+
+    static StageCommandEntity from(NewCreateBatchCommand newCommand) {
+        StageCommandEntity entity = common(
+                newCommand.command(), newCommand.deploymentId());
+        entity.idempotencyKey = newCommand.idempotencyKey();
+        entity.requestHash = newCommand.requestHash();
+        return entity;
+    }
+
+    private static StageCommandEntity common(StageCommand command, DeploymentId deploymentId) {
         StageCommandEntity entity = new StageCommandEntity();
         entity.id = command.id();
         entity.chainId = deploymentId.chainId();
@@ -126,12 +148,9 @@ class StageCommandEntity {
         entity.stationAddress = command.stationAddress();
         entity.stationCertificateId = command.stationCertificateId();
         entity.reportHash = command.reportHash();
-        entity.reportJson = newCommand.reportJson();
-        entity.reportJcs = newCommand.canonicalReportJcs();
-        entity.stationSignature = newCommand.stationSignature();
         entity.signedPayloadDigest = command.signedPayloadDigest();
         entity.deadline = command.deadline();
-        entity.qaPassed = command.qaPassed();
+        entity.qaPassed = command.qaPassed() == null ? Boolean.FALSE : command.qaPassed();
         entity.status = command.status();
         entity.outcome = command.outcome();
         entity.cid = command.cid();
@@ -165,5 +184,9 @@ class StageCommandEntity {
                 retryAllowedAfter,
                 createdAt,
                 updatedAt);
+    }
+
+    String requestHash() {
+        return requestHash;
     }
 }

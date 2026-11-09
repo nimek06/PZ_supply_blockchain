@@ -37,6 +37,7 @@ class SubmitStageServiceTest {
     private final CommandRepository commandRepository = mock(CommandRepository.class);
     private final ReportCanonicalizer reportCanonicalizer = mock(ReportCanonicalizer.class);
     private final StageCompletionVerifier signatureVerifier = mock(StageCompletionVerifier.class);
+    private final ProfileValidator profileValidator = mock(ProfileValidator.class);
     private final ChainProperties chainProperties = new ChainProperties(
             31337, "0x5fbdb2315678afecb367f032d93f642f64180aa3", "SupplyChain", "1", 3600);
     private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1800000000L), ZoneOffset.UTC);
@@ -52,7 +53,7 @@ class SubmitStageServiceTest {
     @BeforeEach
     void setUp() {
         service = new SubmitStageService(
-                commandRepository, reportCanonicalizer, signatureVerifier, chainProperties, clock);
+                commandRepository, reportCanonicalizer, signatureVerifier, profileValidator, chainProperties, clock);
     }
 
     private TelemetryReport sampleReport() {
@@ -102,6 +103,10 @@ class SubmitStageServiceTest {
     @Test
     void submitExpiredDeadline() {
         SubmitStageCommand command = sampleCommand(1799999999L);
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(
+                new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(
+                new SignatureVerification(stationAddress, digest));
 
         assertThatThrownBy(() -> service.submit(command))
                 .isInstanceOf(DomainException.class)
@@ -111,6 +116,10 @@ class SubmitStageServiceTest {
     @Test
     void submitDeadlineTooFar() {
         SubmitStageCommand command = sampleCommand(1800003601L);
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(
+                new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(
+                new SignatureVerification(stationAddress, digest));
 
         assertThatThrownBy(() -> service.submit(command))
                 .isInstanceOf(DomainException.class)

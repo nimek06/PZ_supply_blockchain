@@ -43,6 +43,10 @@ supplychain:
     domain-name: ${CHAIN_DOMAIN_NAME:SupplyChain}
     domain-version: ${CHAIN_DOMAIN_VERSION:1}
     max-deadline-window-seconds: ${MAX_DEADLINE_WINDOW_SECONDS:3600}
+  rpc:
+    url: ${CHAIN_RPC_URL:http://127.0.0.1:8545}
+  relayer:
+    min-tip-gwei: ${RELAYER_MIN_TIP_GWEI:30}
   auth:
     domain: ${AUTH_DOMAIN:localhost}
     uri: ${AUTH_URI:http://localhost:5173}
