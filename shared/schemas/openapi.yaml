@@ -242,6 +242,11 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
+        '401':
+          description: Token Bearer podany, ale nieważny (`UNAUTHENTICATED`). Bez tokenu wystarczy sam podpis
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
         '403':
           description: Zły podpis, stacja nieaktywna/wygasła/poza `stageMask`, niezgodność z certyfikatem lub rejestrem
           content:
