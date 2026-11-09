@@ -1,0 +1,20 @@
+scenarioVersion: 1
+name: ebike-qa-fail
+description: >-
+  Etap 0 przechodzi, a montaż (etap 1) kończy się brakiem (operationsCompleted <
+  operationsTotal). Raport ma qaPassed=false zgodne z profilem, więc backend
+  przyjmuje polecenie (202) i partia się nie przesuwa. `outcome=REJECTED`
+  (StageRejected) staje się obserwowalny, gdy będzie worker i relayer; teraz
+  wystarcza `202`.
+batchNumber: B-2026-0001
+station:
+  reference: ST-001
+seed: 20261105
+steps:
+  - stageId: 0
+    expect:
+      httpStatus: 202
+  - stageId: 1
+    forceQaFail: true
+    expect:
+      httpStatus: 202

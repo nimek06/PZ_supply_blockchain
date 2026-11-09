@@ -1,0 +1,76 @@
+{
+  "fixtureVersion": 1,
+  "description": "Certyfikat negatywny v1 (T010): poprawnie podpisany i spójny (issuerAddress = odzyskany podpisujący = Anvil #2), ale wystawca nie jest na allowliście wdrożenia (allowlista = Anvil #0, administrator). Weryfikator ma go odrzucić jako niezaufanego wystawcę, mimo poprawnej kryptografii. Blok expectedVerification podaje powód i trustedIssuers. Klucze to publiczne klucze deweloperskie Anvil #2 - nie zasilaj tego adresu na Amoy.",
+  "domainTypeString": "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+  "domain": {
+    "name": "SupplyChainStationRegistry",
+    "version": "1",
+    "chainId": 31337,
+    "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+  },
+  "certificate": {
+    "certificateVersion": 1,
+    "payload": {
+      "schemaVersion": 1,
+      "certificateId": "0x54619ca6a3b79c8190e116900a4c0098c5c62e834f5c21de28f0aa5d5eba7c38",
+      "stationId": "0x071dc5a525d6ea42c4b169703ea5c1776b953512942daac912791c213858f46c",
+      "stationAddress": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+      "issuerAddress": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+      "chainId": 31337,
+      "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "issuedAt": 1800000000,
+      "expiresAt": 1831536000,
+      "allowedStageIds": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "payloadHash": "0x07d39884b6c68123cd72bbfe08f7343106c17b4995104ebb13e4743152f29a0f",
+    "signature": "0x26d07fdb7be0db7c438708d66c48894761719bb77983171729f689dc14d87191595bbbd0b5c3fcea7835ed3ae5250b84817f5b1851c522c8e3a38274de79789b1c"
+  },
+  "canonicalPayloadJcs": "{\"allowedStageIds\":[0,1,2,3],\"certificateId\":\"0x54619ca6a3b79c8190e116900a4c0098c5c62e834f5c21de28f0aa5d5eba7c38\",\"chainId\":31337,\"expiresAt\":1831536000,\"issuedAt\":1800000000,\"issuerAddress\":\"0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc\",\"schemaVersion\":1,\"stationAddress\":\"0x70997970c51812dc3a010c7d01b50e0d17dc79c8\",\"stationId\":\"0x071dc5a525d6ea42c4b169703ea5c1776b953512942daac912791c213858f46c\",\"verifyingContract\":\"0x5fbdb2315678afecb367f032d93f642f64180aa3\"}",
+  "certificateSignature": {
+    "typeString": "StationCertificate(bytes32 payloadHash)",
+    "types": {
+      "EIP712Domain": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "version",
+          "type": "string"
+        },
+        {
+          "name": "chainId",
+          "type": "uint256"
+        },
+        {
+          "name": "verifyingContract",
+          "type": "address"
+        }
+      ],
+      "StationCertificate": [
+        {
+          "name": "payloadHash",
+          "type": "bytes32"
+        }
+      ]
+    },
+    "message": {
+      "payloadHash": "0x07d39884b6c68123cd72bbfe08f7343106c17b4995104ebb13e4743152f29a0f"
+    },
+    "digest": "0x1734bd29e2df3d4326215e1ec50133ba96b987d61b6f03c1ab3ae257ad6a6a88",
+    "signature": "0x26d07fdb7be0db7c438708d66c48894761719bb77983171729f689dc14d87191595bbbd0b5c3fcea7835ed3ae5250b84817f5b1851c522c8e3a38274de79789b1c",
+    "signer": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+  },
+  "expectedVerification": {
+    "accepted": false,
+    "reason": "untrusted_issuer",
+    "trustedIssuers": [
+      "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+    ]
+  }
+}

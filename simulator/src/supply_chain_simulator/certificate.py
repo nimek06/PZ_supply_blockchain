@@ -9,7 +9,8 @@ jako `StageCompletion` ani odwrotnie - różne type hashes (`docs/protocol.md`).
 Ten moduł sprawdza kryptografię i ważność poświadczenia. Zgodność z rejestrem
 on-chain (`registerStation`: adres, `stationId`, `expiresAt`, `stageMask`) oraz
 stany REVOKED/BLOCKED należą do kontraktu i backendu - nie są tu deklarowane.
-Nazwa domeny i typ są nadal **propozycją** DEC-13 (zmiana wymaga zgody osób 1-3).
+Nazwa domeny i typ są ustalone w DEC-13 (2026-11-02); zmiana wymaga nowej
+wersji i zgody osób 1-3.
 """
 
 from __future__ import annotations
