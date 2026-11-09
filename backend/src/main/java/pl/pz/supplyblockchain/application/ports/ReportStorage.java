@@ -1,8 +1,8 @@
 package pl.pz.supplyblockchain.application.ports;
 
 /**
- * Report storage port (DEC-14). SKETCH for week 1: no adapter yet; Kubo (local, CI) and Pinata (demo)
- * adapters arrive in week 4.
+ * Report storage port (DEC-14). Kubo adapter: {@code KuboReportStorage} (local and tests); Pinata for the demo
+ * comes later.
  *
  * <p>Contract:
  * <ul>

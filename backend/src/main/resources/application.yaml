@@ -54,3 +54,9 @@ supplychain:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}
   clock:
     fixed-now: ${FIXED_NOW:}
+  ipfs:
+    kubo:
+      api-url: ${KUBO_API_URL:http://127.0.0.1:5001}
+      connect-timeout: ${KUBO_CONNECT_TIMEOUT:2s}
+      read-timeout: ${KUBO_READ_TIMEOUT:10s}
+      max-report-bytes: ${KUBO_MAX_REPORT_BYTES:65536}
