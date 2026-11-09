@@ -16,7 +16,11 @@ czy operacja może być ponowiona i co oznacza brak receipt.
 Implementacje należą do infrastructure; konfiguracja łączy beany.
 Test fake nie powinien być produkcyjnym fallbackiem przy braku adaptera.
 
-Weryfikacja certyfikowanej tożsamości wymaga portu weryfikatora certyfikatów
-(osoba 1) przy pierwszym użyciu; nie łącz jej z klientem IPFS.
-Wynik ma odróżniać nieznany certyfikat, zły podpis wystawcy, wygaśnięcie,
-odwołanie, adres niezgodny z podpisem raportu oraz niezgodność z rejestrem on-chain.
+Weryfikację certyfikowanej tożsamości (T010, osoba 1) opisują `StationCertificateVerifier`
+i `StationRegistry` (odczyt `getStation`); nie łącz jej z klientem IPFS.
+Wynik `StationIdentityVerification` odróżnia: zły format, niezgodny `payloadHash`,
+zły podpis wystawcy, niezaufanego wystawcę, inne wdrożenie, ważność (`NOT_YET_VALID`, `EXPIRED`),
+brak rejestracji (`PENDING_ACTIVATION`), odwołanie, niezgodność z rejestrem on-chain,
+adres niezgodny z podpisem raportu i etap spoza `allowedStageIds`.
+Nieznany certyfikat (brak zapisanego certyfikatu dla adresu) rozpoznaje wywołujący przed weryfikacją.
+Błąd odczytu rejestru to `StationRegistryException` (`DEPENDENCY_UNAVAILABLE`), a nie werdykt o stacji.

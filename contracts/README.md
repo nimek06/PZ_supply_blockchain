@@ -9,7 +9,7 @@ stacji oraz operatora zmiany. Nazwa roli QA nie oznacza trzeciego podpisu.
 ## Zakres i katalogi
 
 - [src](src/README.md): stan partii, role, weryfikacja podpisów i QA.
-- [test](test/README.md): testy jednostkowe, negatywne i fuzz.
+- [test](test/README.md): testy jednostkowe, negatywne, fuzz, inwariant, zgodność ABI i scenariusz gazu.
 - [script](script/README.md): wdrożenie i konfiguracja środowiska.
 
 Planowane pliki w korzeniu: `foundry.toml` (z jawnie ustawionym `evm_version`) i deklaracje zależności.
@@ -101,6 +101,10 @@ script/export-deployment.sh 31337 local.example             # ABI + shared/deplo
 
 Pierwsze wdrożenie kontem Anvil #0 trafia zawsze pod `0x5FbDB2315678afecb367f032d93F642f64180aa3`
 - to ten sam adres, którego używa domena EIP-712 we wspólnym wektorze podpisu.
+Od tygodnia 2 wystarczy jedno polecenie: `script/deploy-local.sh`. Wykonuje deploy,
+nadaje role, rejestruje stację ST-001 i eksportuje dane do `shared/deployments/local.json`.
+Ponowne uruchomienie jest bezpieczne
+([opis](script/README.md#lokalny-deploy-jednym-poleceniem)).
 Rejestracja stacji: `script/RegisterStation.s.sol`; partia + etap 0: `script/SmokeStage.s.sol`
 (zmienne opisane w nagłówkach skryptów i w [.env.example](.env.example)).
 Wyniki smoke testu Amoy: [notatka](../docs/weekly_plans/week1/adam-amoy-notes.md).

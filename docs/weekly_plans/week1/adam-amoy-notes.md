@@ -16,19 +16,18 @@
 ## Do wykonania z portfelem (wymaga POL z faucetu)
 
 Prawdziwe transakcje wymagają testowego konta z POL; klucz nie może trafić do repozytorium
-ani do czatu. Kroki (z `contracts/`, zmienne w `contracts/.env`, wzór: [.env.example](../../../contracts/.env.example)):
+ani do czatu. Uzupełnij `contracts/.env` według [.env.example](../../../contracts/.env.example),
+w tym klucz deployera i osobny testowy klucz stacji. Następnie z katalogu głównego repozytorium:
 
 ```bash
-# 1. Deploy (admin = relayer = konto testowe z POL)
-forge script script/DeploySupplyChain.s.sol --rpc-url amoy --broadcast --slow \
-  --priority-gas-price 30gwei
-# 2. Rejestracja stacji (adres testowego klucza stacji, bez środków)
-forge script script/RegisterStation.s.sol --rpc-url amoy --broadcast --slow --priority-gas-price 30gwei
-# 3. Partia + completeStage etapu 0
-forge script script/SmokeStage.s.sol --rpc-url amoy --broadcast --slow --priority-gas-price 30gwei
-# 4. Publiczne dane wdrożenia
-script/export-deployment.sh 80002 amoy
+contracts/script/amoy-smoke.sh --dry-run  # bez transakcji; symuluje pierwszy potrzebny krok
+contracts/script/amoy-smoke.sh            # prawdziwy smoke na Amoy
 ```
+
+Szczegóły, wznawianie i wymagane saldo: [opis skryptu](../../../contracts/script/README.md#smoke-na-amoy-jednym-poleceniem).
+W poprzednich ręcznych poleceniach brakowało ustawienia `SUPPLY_CHAIN_ADDRESS` po deployu.
+Ponadto samo `--priority-gas-price` może dać tip wyższy niż wyliczone przez Forge
+`maxFeePerGas`; wrapper ustawia obie wartości.
 
 Po wykonaniu uzupełnij: adres kontraktu, hash transakcji `completeStage` (link do
 `https://amoy.polygonscan.com/tx/<hash>`), ilość POL z faucetu, rzeczywisty tip w receipt.
@@ -37,5 +36,7 @@ Po wykonaniu uzupełnij: adres kontraktu, hash transakcji `completeStage` (link 
 |---|---|
 | Faucet (np. faucet.polygon.technology) | _do uzupełnienia_ |
 | Adres kontraktu | _do uzupełnienia_ |
+| Tx wdrożenia | _do uzupełnienia_ |
 | Tx `completeStage` | _do uzupełnienia_ |
-| Liczba potwierdzeń (DEC-11) | _do ustalenia po smoke_ |
+| Tip i koszt | _do uzupełnienia_ |
+| Finalność i liczba potwierdzeń (DEC-07) | _do ustalenia po smoke_ |

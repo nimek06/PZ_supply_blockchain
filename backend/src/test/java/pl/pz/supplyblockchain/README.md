@@ -19,3 +19,9 @@ Wymagania PDF dodają przypadki certyfikatu stacji (wystawca, adres, ważność,
 odwołanie, zgodność z rejestrem on-chain) i niezależności podpisów kontroli. Test API może sprawdzać
 WAITING_FOR_QA i `outcome=REJECTED` (`202`), ale egzekucję dwóch kluczy potwierdź również integracją
 z rzeczywistym kontraktem na Anvil.
+
+Test certyfikatu stacji (T010) `Web3jStationRegistryIT` uruchamia się tylko przy ustawionej
+zmiennej `TEST_RPC_URL`. Czyta rejestr z Anvila przygotowanego przez
+`contracts/script/deploy-local.sh`. Kontrakt to ten z fixture'u certyfikatu albo podany
+w `TEST_CONTRACT_ADDRESS`:
+`TEST_RPC_URL=http://127.0.0.1:8545 ./mvnw verify`.
