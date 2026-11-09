@@ -1,8 +1,8 @@
-"""Testy runnera scenariusza (T020): backend i (opcjonalnie) stan z RPC.
+"""Testy runnera scenariusza (T020): tryb accept-only (202) i tryb z `outcome`.
 
-Klient HTTP działa na `httpx.MockTransport`, który sam rozstrzyga `outcome` na
-podstawie `qaPassed` z body - więc nie ma sieci, ale przechodzi cała ścieżka
-klienta API. Zegar i `sleep` są wstrzykiwane.
+Klient HTTP działa na `httpx.MockTransport`. W trybie tygodnia 2 (`outcome`
+pominięty) runner kończy krok po `202` i NIE czyta statusu polecenia; gdy
+`outcome` jest podane, czeka na status terminalny i porównuje wynik.
 """
 
 from __future__ import annotations
@@ -37,6 +37,25 @@ def scenario(name: str) -> Scenario:
     return load_scenario(default_scenarios_directory() / f"{name}.yaml")
 
 
+def scenario_with_outcome(*, force_fail: bool, outcome: str) -> Scenario:
+    return Scenario(
+        **{
+            "scenarioVersion": 1,
+            "name": "outcome-path",
+            "batchNumber": "B-2026-0001",
+            "station": {"reference": "ST-001"},
+            "seed": 1,
+            "steps": [
+                {
+                    "stageId": 0,
+                    "forceQaFail": force_fail,
+                    "expect": {"httpStatus": 202, "outcome": outcome},
+                }
+            ],
+        }
+    )
+
+
 def config() -> SimulatorConfig:
     return SimulatorConfig(
         backend_url=BACKEND_URL,
@@ -55,17 +74,18 @@ def station_key() -> StationKeyFile:
     )
 
 
-def make_api(*, terminal_status: str | None = "CONFIRMED") -> SimulatorApiClient:
-    """Klient na transporcie bez sieci; outcome zależy od `qaPassed` z body."""
-    state: dict = {"n": 0, "qa": {}}
+def make_api(*, terminal_status: str | None = "CONFIRMED") -> tuple[SimulatorApiClient, dict]:
+    """Klient bez sieci; `outcome` zależy od `qaPassed` z body; zwraca licznik żądań."""
+    state: dict = {"posts": 0, "gets": 0, "qa": {}}
 
     def handler(request: httpx.Request) -> httpx.Response:
         if request.method == "POST":
             body = json.loads(request.content)
-            state["n"] += 1
-            command_id = f"cmd-{state['n']}"
+            state["posts"] += 1
+            command_id = f"cmd-{state['posts']}"
             state["qa"][command_id] = bool(body["report"]["qaPassed"])
             return httpx.Response(202, json={"commandId": command_id, "status": "ACCEPTED"})
+        state["gets"] += 1
         command_id = request.url.path.rsplit("/", 1)[-1]
         if terminal_status is None:
             return httpx.Response(200, json={"commandId": command_id, "status": "PINNING"})
@@ -78,9 +98,10 @@ def make_api(*, terminal_status: str | None = "CONFIRMED") -> SimulatorApiClient
             200, json={"commandId": command_id, "status": "CONFIRMED", "outcome": outcome}
         )
 
-    return SimulatorApiClient(
+    client = SimulatorApiClient(
         BACKEND_URL, client=httpx.Client(transport=httpx.MockTransport(handler))
     )
+    return client, state
 
 
 class FakeChain:
@@ -98,68 +119,86 @@ class FakeChain:
 
 def make_runner(
     active: Scenario, *, chain: object | None = None, terminal_status: str | None = "CONFIRMED"
-) -> Runner:
+) -> tuple[Runner, dict]:
     certificate, _ = sign_certificate(certificate_payload(), ANVIL_KEY_0)
-    return Runner(
+    api, state = make_api(terminal_status=terminal_status)
+    runner = Runner(
         config=config(),
         scenario=active,
         station_key=station_key(),
         certificate=certificate,
-        api=make_api(terminal_status=terminal_status),
+        api=api,
         chain=chain,
         clock=lambda: FIXED_NOW,
         poll_interval=0.0,
         sleep=lambda seconds: None,
     )
+    return runner, state
 
 
-def test_happy_path_is_accepted() -> None:
-    result = make_runner(scenario("ebike-happy-path")).run()
-    assert result.scenario == "ebike-happy-path"
-    assert result.outcomes == ("ACCEPTED", "ACCEPTED")
+def test_happy_path_accepts_and_does_not_read_commands() -> None:
+    runner, state = make_runner(scenario("ebike-happy-path"))
+    result = runner.run()
+    assert result.outcomes == (None, None)  # tydzień 2: brak outcome
     assert [step.qa_passed for step in result.steps] == [True, True]
     assert [step.stage_id for step in result.steps] == [0, 1]
+    assert all(step.status == "ACCEPTED" for step in result.steps)
+    assert state == {"posts": 2, "gets": 0, "qa": state["qa"]}
     assert all(step.next_stage is None for step in result.steps)
 
 
-def test_qa_fail_scenario_is_rejected_without_moving_the_batch() -> None:
-    result = make_runner(scenario("ebike-qa-fail")).run()
-    assert result.outcomes == ("ACCEPTED", "REJECTED")
+def test_qa_fail_scenario_accepts_without_reading_commands() -> None:
+    runner, state = make_runner(scenario("ebike-qa-fail"))
+    result = runner.run()
+    assert result.outcomes == (None, None)
     assert result.steps[1].qa_passed is False
-    assert result.steps[1].status == "CONFIRMED"
+    assert state["gets"] == 0
+
+
+def test_accept_only_does_not_need_a_worker() -> None:
+    """Nawet gdy status nigdy nie jest terminalny, accept-only kończy się sukcesem."""
+    runner, _ = make_runner(scenario("ebike-happy-path"), terminal_status=None)
+    assert runner.run().outcomes == (None, None)
 
 
 def test_batch_id_comes_from_the_scenario() -> None:
-    result = make_runner(scenario("ebike-happy-path")).run()
-    assert result.batch_id == scenario("ebike-happy-path").batch_id()
+    runner, _ = make_runner(scenario("ebike-happy-path"))
+    assert runner.run().batch_id == scenario("ebike-happy-path").batch_id()
 
 
 def test_chain_read_records_next_stage() -> None:
-    result = make_runner(scenario("ebike-happy-path"), chain=FakeChain(2)).run()
-    assert [step.next_stage for step in result.steps] == [2, 2]
+    runner, _ = make_runner(scenario("ebike-happy-path"), chain=FakeChain(2))
+    assert [step.next_stage for step in runner.run().steps] == [2, 2]
+
+
+def test_outcome_path_waits_for_confirmed() -> None:
+    runner, state = make_runner(scenario_with_outcome(force_fail=False, outcome="ACCEPTED"))
+    result = runner.run()
+    assert result.outcomes == ("ACCEPTED",)
+    assert result.steps[0].status == "CONFIRMED"
+    assert state["gets"] >= 1
 
 
 def test_expectation_mismatch_is_rejected() -> None:
-    data = {
-        "scenarioVersion": 1,
-        "name": "mismatch",
-        "batchNumber": "B-2026-0001",
-        "station": {"reference": "ST-001"},
-        "seed": 1,
-        "steps": [{"stageId": 0, "forceQaFail": True, "expect": {"outcome": "ACCEPTED"}}],
-    }
+    runner, _ = make_runner(scenario_with_outcome(force_fail=True, outcome="ACCEPTED"))
     with pytest.raises(RunnerError):
-        make_runner(Scenario(**data)).run()
+        runner.run()
 
 
 def test_failed_command_is_rejected() -> None:
+    runner, _ = make_runner(
+        scenario_with_outcome(force_fail=False, outcome="ACCEPTED"), terminal_status="FAILED"
+    )
     with pytest.raises(RunnerError):
-        make_runner(scenario("ebike-happy-path"), terminal_status="FAILED").run()
+        runner.run()
 
 
 def test_exhausted_polling_is_rejected() -> None:
+    runner, _ = make_runner(
+        scenario_with_outcome(force_fail=False, outcome="ACCEPTED"), terminal_status=None
+    )
     with pytest.raises(RunnerError):
-        make_runner(scenario("ebike-happy-path"), terminal_status=None).run()
+        runner.run()
 
 
 def test_non_202_expectation_is_unsupported() -> None:
@@ -169,7 +208,8 @@ def test_non_202_expectation_is_unsupported() -> None:
         "batchNumber": "B-2026-0001",
         "station": {"reference": "ST-001"},
         "seed": 1,
-        "steps": [{"stageId": 0, "expect": {"httpStatus": 422, "outcome": "REJECTED"}}],
+        "steps": [{"stageId": 0, "expect": {"httpStatus": 422}}],
     }
+    runner, _ = make_runner(Scenario(**data))
     with pytest.raises(RunnerError):
-        make_runner(Scenario(**data)).run()
+        runner.run()

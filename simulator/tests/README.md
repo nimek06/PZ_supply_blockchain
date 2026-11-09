@@ -10,8 +10,8 @@ Mock/stub klienta HTTP ma sprawdzać body, status, timeout i liczbę żądań.
 `test_signing.py`, `test_signature_vector.py`, `test_negative_fixtures.py`,
 `test_certificate.py`, `test_certificate_fixture.py`, `test_certificate_negatives.py`,
 `test_identity.py`, `test_profiles.py`, `test_telemetry.py`, `test_scenario.py`,
-`test_config.py`, `test_chain.py`, `test_runner.py` i `test_client.py` (szkic klienta
-na transporcie `httpx.MockTransport` - bez sieci i bez prawdziwego snu).
+`test_config.py`, `test_chain.py`, `test_runner.py`, `test_cli_scenario.py` i `test_client.py`
+(szkic klienta na transporcie `httpx.MockTransport` - bez sieci i bez prawdziwego snu).
 
 Sprawdź strict validation, jednostki, kanoniczny hash oraz wspólny wektor
 z shared/fixtures. Zmiana podpisanej treści musi być wykrywalna.

@@ -50,7 +50,7 @@ def test_happy_path_fields() -> None:
     assert scenario.station.reference == "ST-001"
     assert scenario.seed == 20261105
     assert [step.stageId for step in scenario.steps] == [0, 1]
-    assert [step.expect.outcome for step in scenario.steps] == ["ACCEPTED", "ACCEPTED"]
+    assert all(step.expect.outcome is None for step in scenario.steps)
     assert all(step.forceQaFail is False for step in scenario.steps)
     assert all(step.expect.httpStatus == 202 for step in scenario.steps)
 
@@ -60,7 +60,7 @@ def test_qa_fail_scenario_marks_the_failing_step() -> None:
     assert [step.stageId for step in scenario.steps] == [0, 1]
     assert scenario.steps[0].forceQaFail is False
     assert scenario.steps[1].forceQaFail is True
-    assert scenario.steps[1].expect.outcome == "REJECTED"
+    assert scenario.steps[1].expect.outcome is None
 
 
 def test_batch_id_is_keccak_of_batch_number() -> None:
@@ -70,6 +70,12 @@ def test_batch_id_is_keccak_of_batch_number() -> None:
 def test_http_status_defaults_to_202(tmp_path: Path) -> None:
     scenario = load_scenario(write_scenario(tmp_path, base_scenario()))
     assert scenario.steps[0].expect.httpStatus == 202
+
+
+def test_outcome_is_optional_but_accepted(tmp_path: Path) -> None:
+    data = base_scenario()
+    scenario = load_scenario(write_scenario(tmp_path, data))
+    assert scenario.steps[0].expect.outcome == "ACCEPTED"
 
 
 def test_missing_file_raises(tmp_path: Path) -> None:

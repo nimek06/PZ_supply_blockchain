@@ -1,9 +1,9 @@
 scenarioVersion: 1
 name: ebike-happy-path
 description: >-
-  Partia e-bike przechodzi przygotowanie (etap 0) i montaż (etap 1) bez wad;
-  każdy krok kończy akceptacją (StageCompleted, outcome=ACCEPTED), a partia
-  przesuwa się na kolejny etap.
+  Partia e-bike przechodzi przygotowanie (etap 0) i montaż (etap 1) bez wad; każdy
+  krok musi zakończyć się przyjęciem polecenia (202). Wynik polecenia (outcome)
+  pojawi się, gdy będzie worker i relayer; do tego czasu pomijamy `outcome`.
 batchNumber: B-2026-0001
 station:
   reference: ST-001
@@ -12,8 +12,6 @@ steps:
   - stageId: 0
     expect:
       httpStatus: 202
-      outcome: ACCEPTED
   - stageId: 1
     expect:
       httpStatus: 202
-      outcome: ACCEPTED

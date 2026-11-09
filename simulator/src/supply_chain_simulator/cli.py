@@ -165,6 +165,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--token-env", metavar="NAME", help="zmienna środowiskowa z tokenem Bearer (nie wypisywany)"
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="tryb --scenario: sprawdź konfigurację, klucz, certyfikat i plan, bez sieci",
+    )
     return parser
 
 
@@ -309,13 +314,16 @@ def _run_mode(args: argparse.Namespace) -> int:
     from supply_chain_simulator.runner import Runner, RunnerError
     from supply_chain_simulator.scenario import ScenarioError, load_scenario
 
-    required = (
-        ("--backend-url", args.backend_url),
-        ("--rpc-url", args.rpc_url),
-        ("--verifying-contract", args.verifying_contract),
+    required = [
         ("--station-key", args.station_key),
         ("--certificate", args.certificate),
-    )
+        ("--verifying-contract", args.verifying_contract),
+    ]
+    if not args.dry_run:
+        required += [
+            ("--backend-url", args.backend_url),
+            ("--rpc-url", args.rpc_url),
+        ]
     missing = [name for name, value in required if not value]
     if missing:
         print(
@@ -333,6 +341,27 @@ def _run_mode(args: argparse.Namespace) -> int:
 
     try:
         scenario = load_scenario(args.scenario)
+        station_key = load_station_key(Path(args.station_key))
+        certificate = load_certificate(Path(args.certificate))
+        assert_station_ready(certificate, station_key)
+    except (ScenarioError, IdentityError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_FAILURE
+
+    if args.dry_run:
+        print(
+            f"[dry-run] scenariusz {scenario.name}: partia {scenario.batchNumber} "
+            f"-> batchId {scenario.batch_id()}"
+        )
+        print(f"  stacja {scenario.station.reference}: {station_key.address} (klucz i certyfikat OK)")
+        print(f"  chainId {args.chain_id}, verifyingContract {args.verifying_contract}")
+        for step in scenario.steps:
+            mode = "qa-fail" if step.forceQaFail else "qa-pass"
+            outcome = f", outcome {step.expect.outcome}" if step.expect.outcome else ""
+            print(f"  etap {step.stageId}: {mode} -> HTTP {step.expect.httpStatus}{outcome}")
+        return EXIT_OK
+
+    try:
         config = SimulatorConfig(
             backend_url=args.backend_url,
             rpc_url=args.rpc_url,
@@ -344,10 +373,7 @@ def _run_mode(args: argparse.Namespace) -> int:
             timeout=args.timeout,
             token=token,
         )
-        station_key = load_station_key(config.station_key_path)
-        certificate = load_certificate(config.certificate_path)
-        assert_station_ready(certificate, station_key)
-    except (ScenarioError, ConfigError, IdentityError) as exc:
+    except ConfigError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_FAILURE
 

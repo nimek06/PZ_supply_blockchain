@@ -31,10 +31,15 @@ class ScenarioError(ValueError):
 
 
 class StepExpectation(StrictModel):
-    """Oczekiwany wynik jednego kroku: status HTTP i wynik polecenia."""
+    """Oczekiwany wynik jednego kroku: status HTTP i opcjonalny wynik polecenia.
+
+    `outcome` pomijamy tam, gdzie polecenie nie osiąga `CONFIRMED` (brak workera
+    i relayera) - wtedy wystarcza `202` z `POST stages`. Gdy `outcome` jest
+    podane, runner czeka na status terminalny i porównuje wynik (tygodnie z workerem).
+    """
 
     httpStatus: Annotated[int, Field(ge=100, le=599)] = 202
-    outcome: Literal["ACCEPTED", "REJECTED"]
+    outcome: Literal["ACCEPTED", "REJECTED"] | None = None
 
 
 class ScenarioStep(StrictModel):

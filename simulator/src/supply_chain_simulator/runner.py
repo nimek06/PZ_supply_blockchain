@@ -141,8 +141,13 @@ class Runner:
                 report, self._certificate, deadline=deadline, signed=signed
             )
             accepted = self._api.submit_stage(batch_id, submission)
-            status = self._await_command(accepted.commandId)
-            self._check(step, report.qaPassed, status)
+            if step.expect.outcome is None:
+                self._check_accept_only(step, report.qaPassed)
+                status_text, command_id, outcome = "ACCEPTED", accepted.commandId, None
+            else:
+                status = self._await_command(accepted.commandId)
+                self._check(step, report.qaPassed, status)
+                status_text, command_id, outcome = status.status, status.commandId, status.outcome
 
             next_stage = None
             if self._chain is not None:
@@ -152,9 +157,9 @@ class Runner:
                 StepResult(
                     stage_id=step.stageId,
                     qa_passed=report.qaPassed,
-                    command_id=status.commandId,
-                    status=status.status,
-                    outcome=status.outcome,
+                    command_id=command_id,
+                    status=status_text,
+                    outcome=outcome,
                     next_stage=next_stage,
                 )
             )
@@ -187,6 +192,14 @@ class Runner:
             raise RunnerError(
                 f"etap {step.stageId}: backend zwrócił outcome={status.outcome}, "
                 f"oczekiwano {expected_outcome}"
+            )
+
+    def _check_accept_only(self, step: ScenarioStep, qa_passed: bool) -> None:
+        """Tryb bez workera: wystarcza `202`; `qaPassed` musi pasować do trybu kroku."""
+        if qa_passed == step.forceQaFail:
+            raise RunnerError(
+                f"etap {step.stageId}: qaPassed={qa_passed} nie odpowiada trybowi "
+                f"forceQaFail={step.forceQaFail}"
             )
 
     def _domain(self) -> Eip712Domain:
