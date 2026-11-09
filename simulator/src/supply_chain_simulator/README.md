@@ -3,8 +3,8 @@
 **Język:** Python 3.11+, kod z adnotacjami typów.
 
 Moduły pakietu (stan 2026-11-05 - gotowe: `__init__`, `__main__`, `cli`, `models`,
-`canonical`, `signing`, `vector`, `certificate`, `profiles`, `telemetry`; szkic: `client`;
-pozostałe planowane):
+`canonical`, `signing`, `vector`, `certificate`, `profiles`, `telemetry`, `scenario`,
+`config`, `chain`, `runner`; szkic: `client`):
 | Plik | Zakres |
 |---|---|
 | `__init__.py` | pakiet, bez efektów ubocznych |
@@ -18,6 +18,8 @@ pozostałe planowane):
 | `vector.py` | deterministyczna budowa `shared/fixtures/signature-vector.json` i `station-certificate.json` |
 | `profiles.py` | profile pomiarów 0..3 jako dane ze schematu (klucze, zakresy, `$ref`) |
 | `telemetry.py` | deterministyczne pomiary etapów 0..3; reguły `qaPassed`, tryb `force_qa_fail` |
+| `scenario.py` | modele scenariusza YAML (kolejne etapy, oczekiwania) i loader |
+| `chain.py` | odczyt stanu z kontraktu przez `eth_call` (`getBatch`, `getStation`, DEC-10) |
 | `client.py` | HTTP, timeout, idempotentne retry, status polecenia |
 | `runner.py` | kolejność kroków i tryb auto/interaktywny |
 

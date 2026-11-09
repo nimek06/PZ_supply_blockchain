@@ -143,6 +143,28 @@ def build_parser() -> argparse.ArgumentParser:
             "station-certificate-<adres>.json); `-` wypisuje na stdout"
         ),
     )
+    parser.add_argument(
+        "--scenario", metavar="PATH", help="scenariusz YAML do uruchomienia (tryb run)"
+    )
+    parser.add_argument(
+        "--backend-url", metavar="URL", help="adres backendu, np. http://127.0.0.1:8080"
+    )
+    parser.add_argument(
+        "--rpc-url", metavar="URL", help="adres RPC, np. http://127.0.0.1:8545"
+    )
+    parser.add_argument(
+        "--station-key", metavar="PATH", help="plik klucza stacji (0600, poza repozytorium)"
+    )
+    parser.add_argument("--certificate", metavar="PATH", help="plik certyfikatu stacji (JSON)")
+    parser.add_argument(
+        "--seed", type=int, metavar="INT", help="seed pomiarów (domyślnie z scenariusza)"
+    )
+    parser.add_argument(
+        "--timeout", type=float, default=10.0, metavar="SECONDS", help="timeout HTTP/RPC"
+    )
+    parser.add_argument(
+        "--token-env", metavar="NAME", help="zmienna środowiskowa z tokenem Bearer (nie wypisywany)"
+    )
     return parser
 
 
@@ -271,6 +293,91 @@ def _certificate_mode(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _run_mode(args: argparse.Namespace) -> int:
+    """Uruchamia scenariusz: konfiguracja, klucz/certyfikat stacji, runner, raport."""
+    from pathlib import Path
+
+    from supply_chain_simulator.chain import ChainReader
+    from supply_chain_simulator.client import ApiError, SimulatorApiClient
+    from supply_chain_simulator.config import ConfigError, SimulatorConfig
+    from supply_chain_simulator.identity import (
+        IdentityError,
+        assert_station_ready,
+        load_certificate,
+        load_station_key,
+    )
+    from supply_chain_simulator.runner import Runner, RunnerError
+    from supply_chain_simulator.scenario import ScenarioError, load_scenario
+
+    required = (
+        ("--backend-url", args.backend_url),
+        ("--rpc-url", args.rpc_url),
+        ("--verifying-contract", args.verifying_contract),
+        ("--station-key", args.station_key),
+        ("--certificate", args.certificate),
+    )
+    missing = [name for name, value in required if not value]
+    if missing:
+        print(
+            f"error: tryb --scenario wymaga argumentów: {', '.join(missing)}",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
+
+    token: str | None = None
+    if args.token_env:
+        token = os.environ.get(args.token_env)
+        if not token:
+            print(f"error: zmienna {args.token_env} jest pusta albo nieustawiona", file=sys.stderr)
+            return EXIT_FAILURE
+
+    try:
+        scenario = load_scenario(args.scenario)
+        config = SimulatorConfig(
+            backend_url=args.backend_url,
+            rpc_url=args.rpc_url,
+            chain_id=args.chain_id,
+            verifying_contract=args.verifying_contract,
+            station_key_path=Path(args.station_key),
+            certificate_path=Path(args.certificate),
+            seed=args.seed if args.seed is not None else scenario.seed,
+            timeout=args.timeout,
+            token=token,
+        )
+        station_key = load_station_key(config.station_key_path)
+        certificate = load_certificate(config.certificate_path)
+        assert_station_ready(certificate, station_key)
+    except (ScenarioError, ConfigError, IdentityError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_FAILURE
+
+    api = SimulatorApiClient(config.backend_url, token=config.token, timeout=config.timeout)
+    chain = ChainReader(config.rpc_url, config.verifying_contract, timeout=config.timeout)
+    try:
+        result = Runner(
+            config=config,
+            scenario=scenario,
+            station_key=station_key,
+            certificate=certificate,
+            api=api,
+            chain=chain,
+        ).run()
+    except (RunnerError, ApiError) as exc:
+        print(f"error: przebieg nie powiódł się: {exc}", file=sys.stderr)
+        return EXIT_FAILURE
+    finally:
+        api.close()
+        chain.close()
+
+    print(f"scenariusz {result.scenario}: partia {result.batch_id} ({len(result.steps)} kroki)")
+    for step in result.steps:
+        print(
+            f"  etap {step.stage_id}: qaPassed={step.qa_passed} status={step.status} "
+            f"outcome={step.outcome} nextStage={step.next_stage}"
+        )
+    return EXIT_OK
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Uruchamia CLI i zwraca kod wyjścia.
 
@@ -344,6 +451,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"zapisano {label}: {path}")
         return EXIT_OK
 
+    if args.scenario is not None:
+        return _run_mode(args)
     if args.station_key_out is not None:
         return _station_key_mode(args)
     if args.issue_certificate:
