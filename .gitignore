@@ -12,6 +12,7 @@ contracts/broadcast/
 
 # Maven
 backend/target/
+backend/scripts/tmp/
 
 # Frontend
 frontend/node_modules/
