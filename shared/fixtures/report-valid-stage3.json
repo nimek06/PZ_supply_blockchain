@@ -1,0 +1,92 @@
+{
+  "vectorVersion": 1,
+  "description": "Poprawny raport etapu 3 (profilePackagingV1, DEC-02): zgodny ze schematem i z regułą `qaPassed`, podpis stacji Anvil #1. Oczekiwane `202` i `outcome=ACCEPTED` po `StageCompleted`. Etapy 0-3 są w jednej partii B-2026-0007, wysyłaj je po kolei. Blok `submission` to gotowe ciało `POST /api/v1/batches/{batchId}/stages`. Klucze to publiczne klucze deweloperskie Anvil - nie zasilaj ich na Amoy.",
+  "domainTypeString": "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+  "domain": {
+    "name": "SupplyChain",
+    "version": "1",
+    "chainId": 31337,
+    "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+  },
+  "batchNumber": "B-2026-0007",
+  "report": {
+    "schemaVersion": 1,
+    "batchId": "0xd370a300acc75d2f043159959fd1c8b6eb4a5923a1cb54df59564422701d5c72",
+    "stageId": 3,
+    "stationAddress": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "timestamp": 1800000180,
+    "measurements": {
+      "unitsPacked": 10,
+      "labelsApplied": 10
+    },
+    "qaPassed": true
+  },
+  "canonicalReportJcs": "{\"batchId\":\"0xd370a300acc75d2f043159959fd1c8b6eb4a5923a1cb54df59564422701d5c72\",\"measurements\":{\"labelsApplied\":10,\"unitsPacked\":10},\"qaPassed\":true,\"schemaVersion\":1,\"stageId\":3,\"stationAddress\":\"0x70997970c51812dc3a010c7d01b50e0d17dc79c8\",\"timestamp\":1800000180}",
+  "reportHash": "0x29db635736cdbcaf92bc0252af17e033af20d0cd0aaa787a259ec87a9f1f7158",
+  "stageCompletion": {
+    "typeString": "StageCompletion(bytes32 batchId,uint32 stageId,bytes32 reportHash,bool qaPassed,uint256 deadline)",
+    "types": {
+      "EIP712Domain": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "version",
+          "type": "string"
+        },
+        {
+          "name": "chainId",
+          "type": "uint256"
+        },
+        {
+          "name": "verifyingContract",
+          "type": "address"
+        }
+      ],
+      "StageCompletion": [
+        {
+          "name": "batchId",
+          "type": "bytes32"
+        },
+        {
+          "name": "stageId",
+          "type": "uint32"
+        },
+        {
+          "name": "reportHash",
+          "type": "bytes32"
+        },
+        {
+          "name": "qaPassed",
+          "type": "bool"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256"
+        }
+      ]
+    },
+    "message": {
+      "batchId": "0xd370a300acc75d2f043159959fd1c8b6eb4a5923a1cb54df59564422701d5c72",
+      "stageId": 3,
+      "reportHash": "0x29db635736cdbcaf92bc0252af17e033af20d0cd0aaa787a259ec87a9f1f7158",
+      "qaPassed": true,
+      "deadline": 1800000600
+    },
+    "digest": "0xdc756d382e5d2afa17a09b9b203967cd28775e8b90dce5d486364f9ff004fba8",
+    "signature": "0x63dbb057e07aba55630744f21899f318797154c3f40f0916f40224e4ec7d13805dfa633a7b12318ace50f06028076cd1cedc92c2957af0e710143a492fd6a55d1c",
+    "signer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+  },
+  "submission": {
+    "stationCertificateId": "0xd6337752b30f2464c72077439190dafc2d68d9f20fe3bdf436d6e9b2c1c3fd3e",
+    "reportHash": "0x29db635736cdbcaf92bc0252af17e033af20d0cd0aaa787a259ec87a9f1f7158",
+    "deadline": 1800000600,
+    "signature": "0x63dbb057e07aba55630744f21899f318797154c3f40f0916f40224e4ec7d13805dfa633a7b12318ace50f06028076cd1cedc92c2957af0e710143a492fd6a55d1c"
+  },
+  "expectedOutcome": {
+    "status": 202,
+    "outcome": "ACCEPTED",
+    "event": "StageCompleted"
+  }
+}

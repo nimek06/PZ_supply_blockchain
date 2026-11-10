@@ -47,6 +47,14 @@ Każdy plik ma blok `submission` = gotowe ciało `POST /api/v1/batches/{batchId}
 (katalog docelowy opcjonalnie); pliki muszą zostać odtwarzalne bajt w bajt
 (`tests/test_negative_fixtures.py`).
 
+**Stan 2026-11-09:** poprawne raporty etapów 0-3, `report-valid-stage0.json` … `-stage3.json`:
+
+- raport zgodny ze schematem i z regułą `qaPassed`, oczekiwane `202` i `outcome=ACCEPTED` (blok `expectedOutcome`)
+- wszystkie etapy w jednej partii `B-2026-0007`, więc można je wysłać po kolei 0 -> 3
+- etap 2 ma dodatkowo `stageApproval` operatora zmiany (Anvil #2)
+- blok `submission` jak w negatywnych, gotowe ciało `POST /api/v1/batches/{batchId}/stages`
+- generuje je `python -m supply_chain_simulator --export-valid-fixtures`, testy w `tests/test_valid_fixtures.py`
+
 **Stan 2026-11-05 (certyfikat, T010):** DEC-13 jest USTALONA (2026-11-02), więc schemat i fixture
 nie opisują już formatu jako propozycji. Ważny fixture pozostaje bez zmian kryptograficznych
 (`payloadHash 0x8a87341f…de433`, podpis wystawcy Anvil #0). Dla weryfikatora Javy (T010) są

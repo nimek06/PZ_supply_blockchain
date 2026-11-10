@@ -32,16 +32,27 @@ Nie budujemy fizycznej linii ani rozbudowanego PKI; cel to programowy MVP z PDF.
 ## Uruchomienie i reset środowiska (T007)
 
 ```bash
+git submodule update --init     # raz po sklonowaniu, biblioteki kontraktów
 cd infrastructure/local
 cp .env.example .env            # uzupełnij POSTGRES_PASSWORD (puste hasło przerywa start)
 docker compose up -d
-docker compose ps               # po ok. 30 s: postgres, anvil i kubo mają status "healthy"
+docker compose ps -a            # postgres, anvil i kubo "healthy", deploy "exited (0)"
 docker compose logs -f anvil    # logi jednej usługi
 docker compose down             # zatrzymuje usługi, ZACHOWUJE dane (wolumeny)
 ```
 
 Health checki: PostgreSQL (`pg_isready`), Anvil (`cast chain-id` = 31337), Kubo (`ipfs id`).
 Ręcznie: `cast chain-id --rpc-url http://127.0.0.1:8545`, `curl -X POST http://127.0.0.1:5001/api/v0/id`.
+
+Kontrakt wdraża i stację rejestruje jednorazowa usługa `deploy` (`deploy-contract.sh`):
+- czeka na Anvila, odpala `DeploySupplyChain.s.sol` i kończy się
+- adres zawsze `0x5FbDB2315678afecb367f032d93F642f64180aa3` (Anvil #0, nonce 0), czyli `CONTRACT_ADDRESS` dla backendu
+- role: admin i relayer to Anvil #0, `QA_INSPECTOR_ROLE` ma Anvil #2 (operator z wektora podpisów)
+- jeśli kontrakt już jest, nic nie robi, więc `up -d` można odpalać wiele razy
+- pierwszy start pobiera kompilator solc, potem jest w wolumenie `foundry-data`
+- `contracts/` jest zamontowane tylko do odczytu, w repo nic się nie zmienia
+- rejestruje stację testową z `shared/fixtures/station-certificate.json` (Anvil #1, `ST-001`, wszystkie etapy), więc stacja z fixture'ów jest od razu aktywna
+- log: `docker compose logs deploy`, sprawdzenie: `cast code 0x5FbDB2315678afecb367f032d93F642f64180aa3 --rpc-url http://127.0.0.1:8545`
 
 ### Testy integracyjne backendu na tej bazie
 
@@ -64,10 +75,10 @@ TEST_DB_USER=$POSTGRES_USER TEST_DB_PASSWORD=$POSTGRES_PASSWORD ./mvnw verify
 Anvila baza opisuje łańcuch, którego już nie ma (checkpoint indexera wskazuje nieistniejące bloki,
 polecenia mają `txHash` z poprzedniego łańcucha). Nic nie czyści się automatycznie.
 
-Po restarcie Anvila wybierz jedno:
+Kontrakt i stacja wracają po `docker compose up -d` (usługa `deploy` odpali się znowu). Baza nie, więc wybierz jedno:
 
 1. **Pełny reset (zalecany w developmencie):** `docker compose down -v` usuwa wszystkie wolumeny
-   (PostgreSQL i Kubo), potem `up -d`, wdrożenie kontraktu (`contracts/script/`), rejestracja stacji i ról.
+   (PostgreSQL, Kubo i cache Foundry), potem `up -d` (kontrakt i stacja wrócą same).
 2. **Reset tylko łańcucha i bazy, bez IPFS:** `docker compose down`, `docker volume rm pz-supply_postgres-data`,
    `docker compose up -d`. Kubo zachowuje pliki; CID są deterministyczne, więc ponowne dodanie nie szkodzi.
 

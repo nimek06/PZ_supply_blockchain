@@ -2,7 +2,8 @@
 
 CLI obsługuje ``--help``, ``--version``, ``--export-signature-vector``,
 ``--export-certificate-fixture``, ``--export-negative-fixtures``
-(negatywne wektory profilu i zgodny negatyw), ``--export-certificate-negatives``
+(negatywne wektory profilu i zgodny negatyw), ``--export-valid-fixtures``
+(poprawne raporty etapów 0-3), ``--export-certificate-negatives``
 (wygasły i niezaufany wystawca), ``--station-key-out`` (generowanie
 klucza stacji) i ``--issue-certificate`` (wystawienie certyfikatu kluczem
 wystawcy z ``--issuer-key-env``). Opcje trybu, scenariusza, adresu backendu, seeda
@@ -73,6 +74,17 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="DIR",
         help=(
             "zapisz negatywne fixture'y (naruszenia profilu etapów 0-3 + report-qa-fail.json) "
+            "(domyślnie katalog shared/fixtures) i zakończ"
+        ),
+    )
+    parser.add_argument(
+        "--export-valid-fixtures",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="DIR",
+        help=(
+            "zapisz poprawne fixture'y etapów 0-3 (report-valid-stageN.json) "
             "(domyślnie katalog shared/fixtures) i zakończ"
         ),
     )
@@ -428,6 +440,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             return EXIT_FAILURE
         for path in paths:
             print(f"zapisano wektor negatywny: {path}")
+        return EXIT_OK
+
+    if args.export_valid_fixtures is not None:
+        from pathlib import Path
+
+        from supply_chain_simulator.vector import write_valid_fixtures
+
+        directory = Path(args.export_valid_fixtures) if args.export_valid_fixtures else None
+        try:
+            paths = write_valid_fixtures(directory)
+        except OSError as exc:
+            print(f"error: nie udało się zapisać poprawnych fixturów: {exc}", file=sys.stderr)
+            return EXIT_FAILURE
+        for path in paths:
+            print(f"zapisano poprawny fixture: {path}")
         return EXIT_OK
 
     if args.export_certificate_negatives is not None:

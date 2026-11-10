@@ -437,6 +437,81 @@ def write_negative_fixtures(directory: Path | None = None) -> list[Path]:
     return written
 
 
+# --- Poprawne raporty etapów 0-3 (tydzień 2) --------------------------------
+# report-valid-stageN.json: raport zgodny z profilem i regułą `qaPassed` (qaPassed=true).
+# Backend ma przyjąć `202`, a polecenie kończy się `outcome=ACCEPTED` po `StageCompleted`.
+# Wszystkie etapy dotyczą jednej partii, więc scenariusz może je wysłać po kolei 0 -> 3.
+# Etap 2 ma też podpis `StageApproval` operatora zmiany (Anvil #2), bo wymaga bramki QA.
+VALID_FIXTURE_BATCH_NUMBER = "B-2026-0007"
+VALID_FIXTURE_STAGES: tuple[int, ...] = (0, 1, 2, 3)
+VALID_MEASUREMENTS: dict[int, dict[str, int]] = {
+    0: {"checklistItemsTotal": 12, "checklistItemsPassed": 12},
+    1: {"operationsTotal": 8, "operationsCompleted": 8, "cycleTimeMs": 420_000},
+    2: dict(VECTOR_MEASUREMENTS),
+    3: {"unitsPacked": 10, "labelsApplied": 10},
+}
+# kolejne etapy minutę po sobie, wszystkie przed VECTOR_DEADLINE
+VALID_STAGE_INTERVAL_SECONDS = 60
+
+
+def _valid_description(stage_id: int) -> str:
+    text = (
+        f"Poprawny raport etapu {stage_id} ({PROFILE_VIOLATION_PROFILES[stage_id]}, DEC-02): "
+        "zgodny ze schematem i z regułą `qaPassed`, podpis stacji Anvil #1. Oczekiwane `202` "
+        "i `outcome=ACCEPTED` po `StageCompleted`. Etapy 0-3 są w jednej partii "
+        f"{VALID_FIXTURE_BATCH_NUMBER}, wysyłaj je po kolei. Blok `submission` to gotowe ciało "
+        "`POST /api/v1/batches/{batchId}/stages`."
+    )
+    if stage_id == 2:
+        text += " Etap 2 wymaga bramki QA, `stageApproval` to podpis operatora Anvil #2."
+    return text + " Klucze to publiczne klucze deweloperskie Anvil - nie zasilaj ich na Amoy."
+
+
+def valid_report(stage_id: int) -> Report:
+    """Raport etapu `stage_id` zgodny z profilem i regułą `qaPassed`."""
+    return Report(
+        schemaVersion=1,
+        batchId=batch_id(VALID_FIXTURE_BATCH_NUMBER),
+        stageId=stage_id,
+        stationAddress=ANVIL_ADDRESS_1,
+        timestamp=VECTOR_TIMESTAMP + stage_id * VALID_STAGE_INTERVAL_SECONDS,
+        measurements=dict(VALID_MEASUREMENTS[stage_id]),
+        qaPassed=True,
+    )
+
+
+def build_valid_fixture(stage_id: int) -> dict[str, object]:
+    """Buduje poprawny fixture etapu `stage_id` (dict do zapisu jako JSON)."""
+    report = valid_report(stage_id)
+    tail: dict[str, object] = {}
+    if stage_id == 2:
+        tail["stageApproval"] = _stage_block(signed_stage_approval(vector_domain(), report))
+    tail["expectedOutcome"] = {"status": 202, "outcome": "ACCEPTED", "event": "StageCompleted"}
+    return _negative_fixture(VALID_FIXTURE_BATCH_NUMBER, report, _valid_description(stage_id), tail)
+
+
+def valid_fixture_name(stage_id: int) -> str:
+    """Nazwa pliku poprawnego fixture'u etapu `stage_id`."""
+    return f"report-valid-stage{stage_id}.json"
+
+
+def valid_fixture_text(stage_id: int) -> str:
+    """Serializowany poprawny fixture etapu `stage_id`."""
+    return json.dumps(build_valid_fixture(stage_id), indent=2, ensure_ascii=False) + "\n"
+
+
+def write_valid_fixtures(directory: Path | None = None) -> list[Path]:
+    """Zapisuje poprawne fixture'y etapów 0-3 i zwraca ścieżki plików."""
+    target = directory if directory is not None else default_negative_fixture_directory()
+    target.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for stage_id in VALID_FIXTURE_STAGES:
+        path = target / valid_fixture_name(stage_id)
+        path.write_text(valid_fixture_text(stage_id), encoding="utf-8")
+        written.append(path)
+    return written
+
+
 def certificate_payload() -> CertificatePayload:
     """Payload certyfikatu testowego dla stacji `ST-001` (Anvil #1, wszystkie etapy)."""
     return CertificatePayload(

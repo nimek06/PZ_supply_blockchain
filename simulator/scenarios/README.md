@@ -22,4 +22,3 @@ Podpisu operatora nie generuj kluczem stacji ukrytym pod inną nazwą.
 
 Uruchomienie: `python -m supply_chain_simulator --scenario scenarios/ebike-happy-path.yaml
 --backend-url ... --rpc-url ... --verifying-contract ... --station-key ... --certificate ...`.
-
