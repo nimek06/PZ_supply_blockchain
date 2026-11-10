@@ -15,6 +15,8 @@ import pl.pz.supplyblockchain.application.ports.DuplicateCommandException;
 import pl.pz.supplyblockchain.application.ports.NewStageCommand;
 import pl.pz.supplyblockchain.application.ports.ReportCanonicalizer;
 import pl.pz.supplyblockchain.application.ports.StageCompletionVerifier;
+import pl.pz.supplyblockchain.application.ports.StationCertificateRepository;
+import pl.pz.supplyblockchain.application.ports.StationCertificateVerifier;
 import pl.pz.supplyblockchain.config.ChainProperties;
 import pl.pz.supplyblockchain.domain.CommandOutcome;
 import pl.pz.supplyblockchain.domain.CommandStatus;
@@ -25,6 +27,8 @@ import pl.pz.supplyblockchain.domain.ErrorCode;
 import pl.pz.supplyblockchain.domain.SignatureVerification;
 import pl.pz.supplyblockchain.domain.StageCommand;
 import pl.pz.supplyblockchain.domain.StageCompletionMessage;
+import pl.pz.supplyblockchain.domain.StationCertificate;
+import pl.pz.supplyblockchain.domain.StationIdentityVerification;
 import pl.pz.supplyblockchain.domain.TelemetryReport;
 
 @Service
@@ -36,6 +40,8 @@ public class SubmitStageService {
     private final ReportCanonicalizer reportCanonicalizer;
     private final StageCompletionVerifier signatureVerifier;
     private final ProfileValidator profileValidator;
+    private final StationCertificateRepository certificateRepository;
+    private final StationCertificateVerifier certificateVerifier;
     private final ChainProperties chainProperties;
     private final Clock clock;
 
@@ -44,12 +50,16 @@ public class SubmitStageService {
             ReportCanonicalizer reportCanonicalizer,
             StageCompletionVerifier signatureVerifier,
             ProfileValidator profileValidator,
+            StationCertificateRepository certificateRepository,
+            StationCertificateVerifier certificateVerifier,
             ChainProperties chainProperties,
             Clock clock) {
         this.commandRepository = commandRepository;
         this.reportCanonicalizer = reportCanonicalizer;
         this.signatureVerifier = signatureVerifier;
         this.profileValidator = profileValidator;
+        this.certificateRepository = certificateRepository;
+        this.certificateVerifier = certificateVerifier;
         this.chainProperties = chainProperties;
         this.clock = clock;
     }
@@ -97,6 +107,20 @@ public class SubmitStageService {
         }
 
         profileValidator.validate(report);
+
+        StationCertificate certificate = certificateRepository
+                .findById(request.stationCertificateId())
+                .orElseThrow(() -> new DomainException(
+                        ErrorCode.CERTIFICATE_INVALID, "station certificate not found"));
+        StationIdentityVerification certVerification = certificateVerifier.verifyForReport(
+                certificate.certificateJson(),
+                report.stationAddress(),
+                report.stageId());
+        if (!certVerification.accepted()) {
+            throw new DomainException(
+                    mapCertificateReason(certVerification.reason()),
+                    certVerification.detail());
+        }
 
         long now = clock.instant().getEpochSecond();
         if (request.deadline() < now) {
@@ -184,6 +208,19 @@ public class SubmitStageService {
         }
         throw new DomainException(ErrorCode.STAGE_ALREADY_PENDING,
                 "stage already has an active command", latest.retryAllowedAfter());
+    }
+
+    private static ErrorCode mapCertificateReason(StationIdentityVerification.Reason reason) {
+        return switch (reason) {
+            case MALFORMED, PAYLOAD_HASH_MISMATCH, INVALID_ISSUER_SIGNATURE,
+                    UNTRUSTED_ISSUER, WRONG_DEPLOYMENT, NOT_YET_VALID, EXPIRED ->
+                    ErrorCode.CERTIFICATE_INVALID;
+            case NOT_REGISTERED, REVOKED -> ErrorCode.STATION_NOT_ACTIVE;
+            case REGISTRY_MISMATCH -> ErrorCode.REGISTRY_MISMATCH;
+            case SIGNER_MISMATCH -> ErrorCode.SIGNER_MISMATCH;
+            case STAGE_NOT_ALLOWED -> ErrorCode.STAGE_NOT_ALLOWED;
+            case OK -> throw new IllegalStateException("accepted certificate has no failure reason");
+        };
     }
 
     private static void validateRequest(SubmitStageCommand request) {
