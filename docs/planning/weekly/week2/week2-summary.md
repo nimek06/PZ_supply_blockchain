@@ -1,7 +1,7 @@
 # Podsumowanie prac — tydzień 2
 
 Stan na 10 listopada 2026 r. Podsumowanie obejmuje zmiany z PR-ów tygodnia 2
-zmergowanych do `main`. Podział ról: [team-split.md](./team-split.md).
+zmergowanych do `main`. Podział ról: [team-split.md](../../team-split.md).
 
 ## Adam (@nimek06) — kontrakty i integracja z łańcuchem
 

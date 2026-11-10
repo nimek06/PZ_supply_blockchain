@@ -1,7 +1,7 @@
 # Scenariusz referencyjny MVP: stacja montażowa roweru elektrycznego (e-bike)
 
 **Status:** zatwierdzony 2026-11-02 (DEC-01 uzupełnione o scenariusz e-bike, DEC-02: profil
-e-bike v1, patrz [decisions](decisions.md)). Nie zmienia protokołu, kontraktu ani
+e-bike v1, patrz [decisions](../decisions/decisions.md)). Nie zmienia protokołu, kontraktu ani
 podpisów: to scenariusz wypełniający ogólną marszrutę 0..3. Wartości pomiarów są
 **demonstracyjne**, nie normy.
 
@@ -21,7 +21,7 @@ elektrycznie jest EN 15194; scenariusz **nie deklaruje zgodności** z żadną no
 
 ## 2. Marszruta e-bike na etapach 0..3
 
-Etapy, numeracja i reguły przejść pozostają zgodne z [production-rules](production-rules.md).
+Etapy, numeracja i reguły przejść pozostają zgodne z [production-rules](../rules/production-rules.md).
 
 | stageId / kod | Stacja (przykład) | Co poświadcza raport | Klucze pomiarów (profil v1, liczby całkowite) |
 |---|---|---|---|
@@ -31,7 +31,7 @@ Etapy, numeracja i reguły przejść pozostają zgodne z [production-rules](prod
 | 3 / PACKAGING | Stacja pakowania | zabezpieczenie do transportu, etykieta z numerem partii | `unitsPacked`, `labelsApplied` |
 
 Profile (zakresy, klucze wymagane, `additionalProperties: false`) są w
-[telemetry.schema.json](../shared/schemas/telemetry.schema.json) (`profile*V1`) i są
+[telemetry.schema.json](../../shared/schemas/telemetry.schema.json) (`profile*V1`) i są
 źródłem prawdy; ta tabela tylko je opisuje. Reguły oceny `qaPassed`:
 
 | Etap | `qaPassed=true` tylko gdy |
@@ -44,7 +44,7 @@ Profile (zakresy, klucze wymagane, `additionalProperties: false`) są w
 Przykład na etapie 2: kontrola 10 rowerów z partii, 12 punktów listy (hamulce, napęd,
 elektryka, oświetlenie, wygląd), 0 wad, 12/12 zaliczonych -> `qaPassed=true` i wymagany drugi podpis.
 Wada lub niezaliczony punkt -> `qaPassed=false` -> `StageRejected` bez przesunięcia partii
-(DEC-15); poprawka i nowy raport według [reguły zastępowania](corrections.md).
+(DEC-15); poprawka i nowy raport według [reguły zastępowania](../rules/corrections.md).
 
 **DEC-02 zatwierdzone 2026-11-02:** profil e-bike z powyższymi kluczami jest zamrożonym
 zestawem v1; wartości są demonstracyjne, nie normy. Wspólny wektor podpisu

@@ -4,10 +4,10 @@
 
 Poniższy podział jest projektem implementacji. Nie opisuje działających usług.
 Punktem wyjścia jest jeden backend i jedna instancja relayera, nie mikroserwisy.
-Zakres wyznacza [opis PDF i mapa zgodności](source-alignment.md):
+Zakres wyznacza [opis PDF i mapa zgodności](../project/source-alignment.md):
 modelowa linia bez przebudowy fizycznej infrastruktury, 12 tygodni,
 certyfikowane tożsamości stacji i dwa klucze przy zamknięciu kontroli.
-Uwzględnia zmiany [v2](changes-v2.md) z 2026-10-27; podział prac: [team-split](team-split.md).
+Uwzględnia zmiany [v2](../project/changes-v2.md) z 2026-10-27; podział prac: [team-split](../planning/team-split.md).
 
 ## Granice modułów
 
@@ -39,7 +39,7 @@ Każdy krok potrzebuje zapisanego wyniku i bezpiecznego wznowienia po awarii.
 ## Maszyna stanów i QA
 
 Użytkownik wybrał ogólną marszrutę przygotowanie -> montaż -> kontrola ->
-pakowanie, bez konkretnego produktu. [Reguły produkcji](production-rules.md)
+pakowanie, bez konkretnego produktu. [Reguły produkcji](../rules/production-rules.md)
 opisują stageId 0..3 i bramkę kontroli na etapie 2. Profile pomiarów i szczegóły
 formatów pozostają do ustalenia; numeracja i reguły muszą być jednakowe
 w kontrakcie, schematach i symulatorze.
@@ -74,7 +74,7 @@ dotyczy adresu odzyskanego z podpisu, nie `msg.sender` relayera.
 Administrator wdrożenia nie jest kontem stacji.
 `QA_INSPECTOR_ROLE` jest techniczną nazwą uprawnienia operatora zmiany
 do współzatwierdzania kontroli; nie jest zamiennikiem podpisu stacji.
-Backend dodatkowo weryfikuje [certyfikat stacji](station-identity.md) i jego zgodność z rejestrem.
+Backend dodatkowo weryfikuje [certyfikat stacji](../rules/station-identity.md) i jego zgodność z rejestrem.
 
 On-chain zapisuj tylko identyfikatory, odniesienia kryptograficzne i niezbędny
 stan reguł (role, rejestr stacji, nextStage, skróty odrzuceń). Pełny JSON, certyfikaty
@@ -87,6 +87,6 @@ uwierzytelnionego użytkownika: SIWE wydaje token Bearer (bez cookie i CSRF).
 Samo połączenie MetaMask nie loguje do backendu.
 Ostateczna autoryzacja operacji on-chain pozostaje w kontrakcie.
 
-Szczegóły: [dwa klucze i approval](quality-approval.md),
-[macierz uprawnień i login](access-control.md) oraz
-[wznowienie po błędzie](corrections.md). Pełna lista zmian: [v2](changes-v2.md).
+Szczegóły: [dwa klucze i approval](../rules/quality-approval.md),
+[macierz uprawnień i login](../rules/access-control.md) oraz
+[wznowienie po błędzie](../rules/corrections.md). Pełna lista zmian: [v2](../project/changes-v2.md).

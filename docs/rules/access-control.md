@@ -1,6 +1,6 @@
 # 5. Uprawnienia i logowanie
 
-**Status:** projekt DEC-05/06 po zmianach [v2](changes-v2.md); zabezpieczenia nie
+**Status:** projekt DEC-05/06 po zmianach [v2](../project/changes-v2.md); zabezpieczenia nie
 są jeszcze zaimplementowane. Wymagania RBAC wynikają z PDF. Uwierzytelnienie
 API to SIWE tylko do wydania tokenu Bearer (bez cookie i CSRF).
 

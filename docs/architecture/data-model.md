@@ -1,11 +1,11 @@
 # Dane, relacje i stany
 
-**Status:** logiczny model do implementacji po potwierdzeniu decyzji (zmiany [v2](changes-v2.md)).
+**Status:** logiczny model do implementacji po potwierdzeniu decyzji (zmiany [v2](../project/changes-v2.md)).
 Nazwy tabel/kolumn to propozycja dla migracji, nie istniejący schemat SQL.
 Typy transportowe i podpisy są zdefiniowane w [protocol](protocol.md).
 Wybrana marszruta i znaczenie nextStage/completed są w
-[production-rules](production-rules.md). Wznowienie po błędzie opisuje
-[corrections](corrections.md) (reguła zastępowania, bez nonce stacji).
+[production-rules](../rules/production-rules.md). Wznowienie po błędzie opisuje
+[corrections](../rules/corrections.md) (reguła zastępowania, bez nonce stacji).
 
 ## 1. Gdzie znajdują się dane
 
@@ -66,7 +66,7 @@ flowchart LR
 
 | Rekord | Klucz i najważniejsze pola | Ograniczenia |
 |---|---|---|
-| commands | UUID, chain_id, contract_address, type, owner_address, batch_id, batch_number, stage_id, station_address, signed_payload_digest, report_json, signature, deadline, cid, status, outcome (ACCEPTED/REJECTED), failure_code, retry_at, retry_allowed_after, lease_owner/until, version | STAGE: unikalny digest w deployment; częściowy unikalny indeks `(deployment, batch_id, stage_id)` dla poleceń aktywnych lub CONFIRMED/ACCEPTED (reguła zastępowania z [corrections](corrections.md)); CREATE: unikalne deployment + owner + idempotency_key |
+| commands | UUID, chain_id, contract_address, type, owner_address, batch_id, batch_number, stage_id, station_address, signed_payload_digest, report_json, signature, deadline, cid, status, outcome (ACCEPTED/REJECTED), failure_code, retry_at, retry_allowed_after, lease_owner/until, version | STAGE: unikalny digest w deployment; częściowy unikalny indeks `(deployment, batch_id, stage_id)` dla poleceń aktywnych lub CONFIRMED/ACCEPTED (reguła zastępowania z [corrections](../rules/corrections.md)); CREATE: unikalne deployment + owner + idempotency_key |
 | qa_approvals | UUID, command_id FK, operator_address, approval_deadline, signature, created_at, status | jedno aktywne ważne approval na polecenie; ten sam operator idempotentnie, inny operator przy ważnym approval: konflikt |
 | transaction_attempts | UUID, command_id FK, relayer_address, tx_nonce, tx_hash, signed_tx, calldata_hash, fee parameters, broadcast_at, receipt_block/hash/status | unikalny tx_hash; ponowne wysłanie dotyczy identycznych bajtów (bez fee-bump w MVP) |
 | auth_challenges / auth_sessions | challenge: adres, domena, nonce SIWE, expiry, used_at; sesja: skrót SHA-256 tokenu, adres, expiry, last_seen, revoked_at | challenge jednorazowy i atomowo zużywany; w bazie tylko skrót tokenu |
@@ -78,7 +78,7 @@ flowchart LR
 
 Rekordy challenge i sesji (V2-06): losowy token Bearer jest zwracany raz,
 w bazie zostaje tylko jego skrót, ostatnia aktywność i odwołanie.
-Parametry i zasady są w [access-control](access-control.md); nie przechowuj
+Parametry i zasady są w [access-control](../rules/access-control.md); nie przechowuj
 podpisu loginu jako ponownie używalnego tokenu ani ról jako trwałego pozwolenia.
 
 Pole `qa_operator` oznacza operatora zmiany z uprawnieniem QA, odczytanego ze
@@ -147,7 +147,7 @@ flowchart TD
 | READY_TO_SUBMIT | dane kompletne (dla etapu 2 także approval), wstępne warunki sprawdzone | ponowny preflight, przydział nonce i zapis próby |
 | SUBMITTED | podpisana próba/hash/nonce zapisana, nawet gdy odpowiedź send zaginęła | uzgodnienie broadcast/receipt; nie tworzyć nowego zamiaru |
 | CONFIRMED | efekt na kanonicznym chainie oraz aktualna projekcja; `outcome` ACCEPTED (`StageCompleted`) lub REJECTED (`StageRejected`) | odczyt; możliwy kontrolowany rollback po reorg |
-| FAILED | znana, konkretna przyczyna; pole `retry_allowed_after` | nowy raport według reguły zastępowania ([corrections](corrections.md)); nie mutacja podpisu |
+| FAILED | znana, konkretna przyczyna; pole `retry_allowed_after` | nowy raport według reguły zastępowania ([corrections](../rules/corrections.md)); nie mutacja podpisu |
 
 Przy awarii między zapisem próby a zmianą statusu recovery sprawdza próby
 niezależnie od statusu polecenia. Zapis próby, rezerwacja nonce i przejście
@@ -176,7 +176,7 @@ flowchart LR
 ```
 
 Approval operatora nie jest stanem łańcucha: to podpis przekazany do `completeStage`,
-który nie ma żadnego skutku bez wykonania etapu. Zasady: [quality-approval](quality-approval.md).
+który nie ma żadnego skutku bez wykonania etapu. Zasady: [quality-approval](../rules/quality-approval.md).
 Na bramce kontroli wymagane są oba niezależne klucze; nie wystarcza boolean
 ustawiony przez tę samą stację.
 Kontrakt wymaga `qaPassed=true` (inaczej tylko `StageRejected`), podpisu stacji

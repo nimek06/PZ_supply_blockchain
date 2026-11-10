@@ -3,14 +3,14 @@
 To lista testów do napisania. Obecna struktura nie zawiera jeszcze runnerów
 ani testów aplikacji. Testy muszą sprawdzać wymaganie, nie samo HTTP 200.
 Szczegółowe przypadki pięciu obszarów są na końcu
-[reguł produkcji](production-rules.md), [dwóch kluczy](quality-approval.md),
-[certyfikatów](station-identity.md) i [uprawnień](access-control.md).
+[reguł produkcji](../rules/production-rules.md), [dwóch kluczy](../rules/quality-approval.md),
+[certyfikatów](../rules/station-identity.md) i [uprawnień](../rules/access-control.md).
 Testy wznowienia (nowy raport po wygaśnięciu starego) wynikają z zamkniętej DEC-09:
-[reguła zastępowania](corrections.md). Zmiany v2: [changes-v2](changes-v2.md).
+[reguła zastępowania](../rules/corrections.md). Zmiany v2: [changes-v2](../project/changes-v2.md).
 
 ## Wspólne dane i podpisy
 
-W [fixtures](../shared/fixtures/README.md) przygotuj poprawny raport,
+W [fixtures](../../shared/fixtures/README.md) przygotuj poprawny raport,
 jego kanoniczne bajty, hash, domenę i podpis z klucza wyłącznie testowego
 generowanego lokalnie. Kod testu ma odtwarzać podpis bez prawdziwych sekretów.
 Python, Java i TypeScript muszą otrzymać identyczny `reportHash` i signer;
@@ -71,7 +71,7 @@ ręczna (tydzień 5) i w próbie demo (tydzień 10).
 
 Osoba 4 koordynuje testy integracyjne i raport demonstracji; każdy autor
 odpowiada za testy własnego modułu. Kryteria pochodzą z
-[wymagań MVP](spec.md), a wymagania źródłowe z [mapy PDF](source-alignment.md).
+[wymagań MVP](../project/spec.md), a wymagania źródłowe z [mapy PDF](../project/source-alignment.md).
 
 ## Gdzie umieszczać testy
 

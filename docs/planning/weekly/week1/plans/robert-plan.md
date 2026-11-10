@@ -1,6 +1,6 @@
 # Tydzień 1 - plan Roberta (symulator, integracja, dokumentacja)
 
-Wersja „po ludzku” do [week1-plan.md](week1-plan.md). Techniczne tabele są tam;
+Wersja „po ludzku” do [week1-plan.md](../week1-plan.md). Techniczne tabele są tam;
 tutaj opisuję, **co właściwie robisz, po co i po czym poznasz, że działa**.
 
 ## Twoja rola w jednym zdaniu
@@ -70,8 +70,8 @@ bo na nim wszyscy sprawdzają, że ich kod liczy to samo.
 ### Środa - profile pomiarów i certyfikat
 
 **Co robisz:**
-- Z Kubą: profile pomiarów dla etapów 0..3. Nie wymyślamy norm fizycznych; profil ma jasno opisywać klucze, jednostki całkowite i granice **demonstracyjne** ([production-rules](../../production-rules.md)).
-- Szkic `station-certificate.schema.json` i przykład certyfikatu: wersja, `stationId`, adres, wystawca, serial, ważność od-do, dozwolone etapy ([station-identity](../../station-identity.md)). To dokument audytowy zgodny z rejestrem stacji, który wpisze Adam do kontraktu.
+- Z Kubą: profile pomiarów dla etapów 0..3. Nie wymyślamy norm fizycznych; profil ma jasno opisywać klucze, jednostki całkowite i granice **demonstracyjne** ([production-rules](../../../../rules/production-rules.md)).
+- Szkic `station-certificate.schema.json` i przykład certyfikatu: wersja, `stationId`, adres, wystawca, serial, ważność od-do, dozwolone etapy ([station-identity](../../../../rules/station-identity.md)). To dokument audytowy zgodny z rejestrem stacji, który wpisze Adam do kontraktu.
 - Naprawy wektora, jeśli ktoś zgłosi rozbieżność.
 
 **Po co:** bez profili backend nie ma jak ocenić raportu, a symulator - co generować. Certyfikat jest wymaganiem PDF (każda stacja ma klucz **i** certyfikat).
@@ -94,7 +94,7 @@ bo na nim wszyscy sprawdzają, że ich kod liczy to samo.
 **Co robisz:**
 - Szkielet GitHub Actions: joby uruchamiające testy kontraktów (`forge test`), backendu (`./mvnw verify`) i symulatora (`pytest`). Przekażesz go Adamowi, który będzie go rozwijał od tygodnia 2.
 - Pierwszy scenariusz YAML w `simulator/scenarios/`: ścieżka poprawna (0 -> 3) i QA fail (`qaPassed = false`).
-- Demo tygodnia (60 min): kolejność jest w [week1-plan.md](week1-plan.md).
+- Demo tygodnia (60 min): kolejność jest w [week1-plan.md](../week1-plan.md).
 
 **Po co:** CI od początku zapobiega sytuacji, w której zmiana jednej osoby po cichu psuje testy innej.
 

@@ -1,9 +1,9 @@
 # Plan drugiego tygodnia implementacji (bez frontendu)
 
 **Status:** plan roboczy dla 4 osób, tydzień 2 z 12. Kontynuacja
-[week1-plan.md](../week1/week1-plan.md); stan tygodnia 1: [week1_summary.md](../week1/week1_summary.md).
+[week1-plan.md](../week1/week1-plan.md); stan tygodnia 1: [week1-summary.md](../week1/week1-summary.md).
 Zadania z [team-split](../../team-split.md), zakres i kolejność z [plan.md](../../plan.md).
-Scenariusz produktu: [product-scenario.md](../../product-scenario.md) (e-bike, system ogólny).
+Scenariusz produktu: [product-scenario.md](../../../project/product-scenario.md) (e-bike, system ogólny).
 
 **Frontend nie jest realizowany także w tygodniu 2** (decyzja 2026-11-02). T005 (inicjalizacja),
 T032 (HTTPS, skaner QR) i wektor w TypeScripcie (część T008) przechodzą na **poniedziałek
@@ -14,7 +14,7 @@ Pozycje to zadania do wykonania, nie raport ukończenia.
 ## Wejście: co zostało z tygodnia 1 (poniedziałek, przed nowymi zadaniami)
 
 Zrobione 2026-11-02: PR-y Kuby i Roberta są w `main`; DEC-02 (profil e-bike) i DEC-11 zamknięte
-w [decisions.md](../../decisions.md); wektor podpisu dostosowany do profilu e-bike etapu 2;
+w [decisions.md](../../../decisions/decisions.md); wektor podpisu dostosowany do profilu e-bike etapu 2;
 poprawki Flyway i adresu w YAML są w `main`; `stationCertificateId` walidowany jako bytes32.
 CI nie jest rozwijane (decyzja 2026-11-02).
 
@@ -49,7 +49,7 @@ CI nie jest rozwijane (decyzja 2026-11-02).
 
 | Dzień | Zadanie | Wynik |
 |---|---|---|
-| Pon | Zaległość: **prawdziwy smoke Amoy** (`DeploySupplyChain`, `RegisterStation`, `SmokeStage`, `export-deployment.sh 80002 amoy`), uzupełnienie notatki o faucet i tx | `amoy.json`, adres i tx w [adam-amoy-notes.md](../week1/adam-amoy-notes.md) |
+| Pon | Zaległość: **prawdziwy smoke Amoy** (`DeploySupplyChain`, `RegisterStation`, `SmokeStage`, `export-deployment.sh 80002 amoy`), uzupełnienie notatki o faucet i tx | `amoy.json`, adres i tx w [adam-amoy-notes.md](../week1/notes/adam-amoy-notes.md) |
 | Wt | Test zgodności ABI: dane wejściowe `completeStage` w fixture, `cast calldata` vs `CompleteStageCallEncoder`; ewentualne poprawki ogłoszone osobie 2 | identyczne bajty w Javie i Solidity |
 | Śr | **T010 (start):** weryfikator certyfikatu stacji w Javie (EIP-712 wystawcy `StationCertificate`, zgodność z `getStation`) na fixture `station-certificate.json` | testy: poprawny, odwołany, wygasły, adres niezgodny z rejestrem |
 | Czw | **T010 (dokończenie)** i przegląd z osobą 2; skrypt deploy kontraktu dla Compose (`DeploySupplyChain` na Anvil z kontenera, jedna komenda) | certyfikat zweryfikowany, deploy lokalny jednym poleceniem |
@@ -63,10 +63,10 @@ Ryzyko: brak POL na Amoy -> zadanie zostaje otwarte i nie blokuje reszty.
 | Dzień | Zadanie | Wynik |
 |---|---|---|
 | Pon | Poprawki Flyway/YAML (już w `main`) potwierdzone: `./mvnw verify` z `TEST_DB_URL`; konfiguracja `supplychain.relayer.min-tip-gwei` (30 dla Polygon/Amoy) | zielone testy, tip w konfiguracji |
-| Wt | **T011:** role i owner (`OPERATOR_ROLE`, `QA_INSPECTOR_ROLE`, administrator), `DELETE /auth/sessions/current`, TTL 8 h / 30 min bezczynności (DEC-11), domyślna odmowa wg [access-control](../../access-control.md) | testy: brak roli `403`, wygasły token `401`, wylogowanie |
+| Wt | **T011:** role i owner (`OPERATOR_ROLE`, `QA_INSPECTOR_ROLE`, administrator), `DELETE /auth/sessions/current`, TTL 8 h / 30 min bezczynności (DEC-11), domyślna odmowa wg [access-control](../../../rules/access-control.md) | testy: brak roli `403`, wygasły token `401`, wylogowanie |
 | Śr | `POST /api/v1/batches` z `Idempotency-Key`, generator `B-RRRR-NNNN`, `batchId = keccak256`, `GET /batches/{id}` i `/batch-numbers/{n}` (z bazy, bez indexera) | duplikat klucza zwraca ten sam `commandId` |
 | Czw | **Walidator profilu pomiarów (część T015):** profile e-bike jako dane (JSON/YAML), nieznane klucze i wartości spoza zakresu -> `422`, `qaPassed` zgodne z oceną | testy mutacji: każdy klucz i granica |
-| Pt | **T014:** migracje `attempts`, `qa_approvals` zgodne z [data-model](../../data-model.md); `GET /commands/{id}` z autoryzacją właściciela; spike Pinata (z osobą 3) | migracje, uprawnienia statusu |
+| Pt | **T014:** migracje `attempts`, `qa_approvals` zgodne z [data-model](../../../architecture/data-model.md); `GET /commands/{id}` z autoryzacją właściciela; spike Pinata (z osobą 3) | migracje, uprawnienia statusu |
 
 Kryterium: `POST /batches` -> `202`, `POST /stages` z profilem e-bike -> `202`, raport poza profilem -> `422`.
 Ryzyko: profile mogą się jeszcze zmienić po przeglądzie -> zmiana wymaga ogłoszenia i nowego wektora (osoba 4).
@@ -75,7 +75,7 @@ Ryzyko: profile mogą się jeszcze zmienić po przeglądzie -> zmiana wymaga og�
 
 | Dzień | Zadanie | Wynik |
 |---|---|---|
-| Pon | Profile e-bike v1 w `telemetry.schema.json` są zatwierdzone (DEC-02); uzupełnić zestaw przykładów poprawnych i błędnych (po jednym na każdą regułę `qaPassed` z [product-scenario](../../product-scenario.md)) | przykłady w `shared/fixtures/` |
+| Pon | Profile e-bike v1 w `telemetry.schema.json` są zatwierdzone (DEC-02); uzupełnić zestaw przykładów poprawnych i błędnych (po jednym na każdą regułę `qaPassed` z [product-scenario](../../../project/product-scenario.md)) | przykłady w `shared/fixtures/` |
 | Wt | **T002:** poprawki OpenAPI po recenzji osoby 2; walidacja OpenAPI 3.1; test zgodności odpowiedzi backendu ze schematem (`POST /stages`, `POST /batches`) uruchamiany lokalnie (`./mvnw test`) | OpenAPI zatwierdzone, test zgodności przechodzi |
 | Śr | **T016 (część):** adapter `ReportStorage` dla Kubo (upload bajtów JCS jako plik, `cid-version`, walidacja CIDv0/v1, pobranie i porównanie hashu); przegląd osoby 2 | test integracyjny na Kubo z Compose |
 | Czw | Spike Pinaty z tokenem osoby 2: wersja CID, limity planu, pobranie przez bramkę (zaległość z tygodnia 1) | notatka o Pinacie |
@@ -154,7 +154,7 @@ ogłoszenia zmiany i opublikowania nowego wektora.
 - Worker, relayer wysyłający transakcje i indexer (tydzień 4-5; teraz tylko spike indexera).
 - API kolejki QA i `POST` approval (tydzień 5-6).
 - Zmian podpisanych pól bez ogłoszenia; identyfikator profilu/produktu w raporcie v2
-  (patrz [product-scenario](../../product-scenario.md) pkt 4.3).
+  (patrz [product-scenario](../../../project/product-scenario.md) pkt 4.3).
 
 ## Skutki dla tygodnia 3
 

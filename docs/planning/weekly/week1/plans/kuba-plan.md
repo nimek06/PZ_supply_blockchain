@@ -1,6 +1,6 @@
 # Tydzień 1 - plan Kuby (schematy, Java, infrastruktura)
 
-Wersja „po ludzku” do [week1-plan.md](week1-plan.md). Techniczne tabele są tam;
+Wersja „po ludzku” do [week1-plan.md](../week1-plan.md). Techniczne tabele są tam;
 tutaj opisuję, **co właściwie robisz, po co i po czym poznasz, że działa**.
 
 ## Twoja rola w jednym zdaniu
@@ -33,7 +33,7 @@ lokalny blockchain i bazę.
 ## Co będzie istniało w piątek wieczorem
 
 - `shared/schemas/openapi.yaml` zatwierdzony przez Mikołaja i zespół.
-- `telemetry.schema.json` i `eip712.json` zgodne z [protokołem](../../protocol.md).
+- `telemetry.schema.json` i `eip712.json` zgodne z [protokołem](../../../../architecture/protocol.md).
 - Szkic **profili pomiarów** dla etapów 0..3 (razem z Robertem), do zaakceptowania w piątek.
 - Moduł Javy w `backend/.../infrastructure/blockchain/`: JCS, Keccak-256 i **odzysk adresu z podpisu** dla `StageCompletion` i `StageApproval`, sprawdzony na wektorze od Roberta i testami mutacji.
 - `infrastructure/local/compose.yaml` + `.env.example` + health checki + opis „jak świadomie wyczyścić środowisko”.
@@ -49,9 +49,9 @@ lokalny blockchain i bazę.
 - partie: `POST /batches`, `GET /batches/{batchId}`, `GET /batch-numbers/{batchNumber}`, historia;
 - etapy: `POST /batches/{batchId}/stages`, `GET /commands/{commandId}`;
 - kolejka QA: lista kandydatów, szczegóły, `POST .../approval`;
-- format błędów (Problem Details) i statusy polecenia ze [model danych](../../data-model.md).
+- format błędów (Problem Details) i statusy polecenia ze [model danych](../../../../architecture/data-model.md).
 
-Wszystko oparte na [protokole](../../protocol.md): nie wymyślasz nic nowego, tylko przepisujesz do YAML.
+Wszystko oparte na [protokole](../../../../architecture/protocol.md): nie wymyślasz nic nowego, tylko przepisujesz do YAML.
 
 **Po co:** od tego zależą Mikołaj (kontrolery), Robert (klient w symulatorze) i Ty w tygodniu 2 (mocki frontendu). Im wcześniej jest szkic, tym wcześniej mogą go krytykować.
 

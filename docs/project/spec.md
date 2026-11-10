@@ -2,7 +2,7 @@
 
 **Status:** specyfikacja po zmianach [v2](changes-v2.md), 2026-10-27 (pierwotnie 2026-10-26);
 zespół potwierdza ją na spotkaniu startowym.
-Źródło nadrzędne: [opis PDF](../Opis_Projectu%20%283%29.pdf);
+Źródło nadrzędne: [opis PDF](../../Opis_Projectu%20%283%29.pdf);
 [mapa zgodności](source-alignment.md) wyjaśnia interpretację zakresu.
 Nie przeprowadzono
 inwentaryzacji działającej aplikacji: kod wykonawczy jeszcze nie istnieje.
@@ -49,7 +49,7 @@ Bez wymaganego zatwierdzenia linia nie przechodzi przez bramkę QA.
 Negatywnego wyniku stacji nie można obejść zatwierdzeniem inspektora.
 
 **Odbiór:** porównanie przepływu bez zatwierdzenia, z nim i z innym reportHash.
-Źródło raportów oczekujących opisuje [flows](flows.md).
+Źródło raportów oczekujących opisuje [flows](../architecture/flows.md).
 
 ### US4 - Publiczna weryfikacja produktu, P2
 
@@ -119,15 +119,15 @@ innym niż demonstracyjne.
 
 Użytkownik wybrał ogólne przygotowanie -> montaż -> kontrola -> pakowanie,
 bez produktu ani norm fizycznych. Rozwinięcie wymagań REQ-002..005/014:
-[reguły produkcji](production-rules.md), [poprawki](corrections.md)
-i [dwa klucze](quality-approval.md). REQ-012/013 rozwijają
-[uprawnienia](access-control.md) i [certyfikaty](station-identity.md).
+[reguły produkcji](../rules/production-rules.md), [poprawki](../rules/corrections.md)
+i [dwa klucze](../rules/quality-approval.md). REQ-012/013 rozwijają
+[uprawnienia](../rules/access-control.md) i [certyfikaty](../rules/station-identity.md).
 Rozwiązanie recovery (DEC-09) jest wybrane: nowy raport etapu dopiero po wygaśnięciu
-starego podpisu, bez nonce ([corrections](corrections.md)); kryteria wznowienia z US5
+starego podpisu, bez nonce ([corrections](../rules/corrections.md)); kryteria wznowienia z US5
 są więc możliwe do spełnienia i testowane (T026).
 
-Format raportu i wariant podpisu pochodzą z [protokołu](protocol.md).
-Pozostałe propozycje oraz ich właścicieli zawiera [decisions](decisions.md).
+Format raportu i wariant podpisu pochodzą z [protokołu](../architecture/protocol.md).
+Pozostałe propozycje oraz ich właścicieli zawiera [decisions](../decisions/decisions.md).
 Ten dokument nadaje identyfikatory wymaganiom, ale **nie zatwierdza**
 nieustalonych procesów fabrycznych. Plan może powstać wstępnie;
 implementacja danej części wymaga zamknięcia przypisanej decyzji.

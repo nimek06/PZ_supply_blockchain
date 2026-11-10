@@ -16,7 +16,7 @@
 ## Do wykonania z portfelem (wymaga POL z faucetu)
 
 Prawdziwe transakcje wymagają testowego konta z POL; klucz nie może trafić do repozytorium
-ani do czatu. Uzupełnij `contracts/.env` według [.env.example](../../../contracts/.env.example),
+ani do czatu. Uzupełnij `contracts/.env` według [.env.example](../../../../../contracts/.env.example),
 w tym klucz deployera i osobny testowy klucz stacji. Następnie z katalogu głównego repozytorium:
 
 ```bash
@@ -24,7 +24,7 @@ contracts/script/amoy-smoke.sh --dry-run  # bez transakcji; symuluje pierwszy po
 contracts/script/amoy-smoke.sh            # prawdziwy smoke na Amoy
 ```
 
-Szczegóły, wznawianie i wymagane saldo: [opis skryptu](../../../contracts/script/README.md#smoke-na-amoy-jednym-poleceniem).
+Szczegóły, wznawianie i wymagane saldo: [opis skryptu](../../../../../contracts/script/README.md#smoke-na-amoy-jednym-poleceniem).
 W poprzednich ręcznych poleceniach brakowało ustawienia `SUPPLY_CHAIN_ADDRESS` po deployu.
 Ponadto samo `--priority-gas-price` może dać tip wyższy niż wyliczone przez Forge
 `maxFeePerGas`; wrapper ustawia obie wartości.

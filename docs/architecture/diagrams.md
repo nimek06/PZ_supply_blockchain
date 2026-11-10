@@ -1,13 +1,13 @@
 # Mapa systemu i zależności
 
 To **projekt docelowy**, nie diagram istniejącego kodu. Czytaj razem z
-[architekturą](architecture.md), [decyzjami](decisions.md) i
+[architekturą](architecture.md), [decyzjami](../decisions/decisions.md) i
 [przepływami](flows.md). Mermaid renderuje się w podglądzie Markdown
 obsługującym Mermaid oraz na GitHubie.
-Nadrzędny zakres opisuje [mapa PDF](source-alignment.md). QA oznacza operatora
+Nadrzędny zakres opisuje [mapa PDF](../project/source-alignment.md). QA oznacza operatora
 zmiany; jego niezależny podpis `StageApproval` współautoryzuje zamknięcie kontroli.
 Rejestr stacji jest on-chain, certyfikaty są off-chain (poświadczenie audytowe),
-a nie nową fizyczną infrastrukturą. Zmiany v2: [changes-v2](changes-v2.md).
+a nie nową fizyczną infrastrukturą. Zmiany v2: [changes-v2](../project/changes-v2.md).
 
 ## 1. Architektura aplikacji
 

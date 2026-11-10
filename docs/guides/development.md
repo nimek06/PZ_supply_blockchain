@@ -8,7 +8,7 @@
 - Python 3.11+ w venv (suita testów symulatora, w tym `eth-account`, przechodzi na 3.12, 3.13 i 3.14);
   Docker z Compose do PostgreSQL, Anvil i Kubo.
 - Konto Pinaty i RPC Amoy: smoke deploy na Amoy już w tygodniu 1, pełna
-  integracja w tygodniu 5 ([plan tygodnia 1](weekly_plans/week1/week1-plan.md)).
+  integracja w tygodniu 5 ([plan tygodnia 1](../planning/weekly/week1/week1-plan.md)).
 
 **Manifestów i aplikacji jeszcze nie ma.** Najpierw wykonaj inicjalizację poniżej.
 Nie uruchamiaj generatora na całym repozytorium ani opcji nadpisującej README.
@@ -85,17 +85,17 @@ projektu globalnie. `npm ci` wymaga istniejącego i zgodnego lockfile.
 
 ## Kolejność pracy zespołu
 
-Przed pisaniem reguł przeczytajcie [zmiany v2](changes-v2.md) i pięć rozwinięć:
-[produkcja](production-rules.md), [poprawki](corrections.md),
-[dwa klucze](quality-approval.md), [certyfikaty](station-identity.md)
-i [uprawnienia/logowanie](access-control.md).
+Przed pisaniem reguł przeczytajcie [zmiany v2](../project/changes-v2.md) i pięć rozwinięć:
+[produkcja](../rules/production-rules.md), [poprawki](../rules/corrections.md),
+[dwa klucze](../rules/quality-approval.md), [certyfikaty](../rules/station-identity.md)
+i [uprawnienia/logowanie](../rules/access-control.md).
 Ogólna marszruta jest wybrana, a scenariuszem referencyjnym jest e-bike
-([scenariusz](product-scenario.md)); progi pomiarowe są demonstracyjne (DEC-02, profile v1).
+([scenariusz](../project/product-scenario.md)); progi pomiarowe są demonstracyjne (DEC-02, profile v1).
 Recovery jest wybrane (DEC-09).
-Podział zadań: [team-split](team-split.md); pierwszy tydzień: [week1-plan](weekly_plans/week1/week1-plan.md).
+Podział zadań: [team-split](../planning/team-split.md); pierwszy tydzień: [week1-plan](../planning/weekly/week1/week1-plan.md).
 
-1. Przeczytajcie [mapę zgodności z PDF](source-alignment.md) i
-   [plan 12 tygodni](plan.md). Potwierdźcie zmiany v2 i decyzje.
+1. Przeczytajcie [mapę zgodności z PDF](../project/source-alignment.md) i
+   [plan 12 tygodni](../planning/plan.md). Potwierdźcie zmiany v2 i decyzje.
 2. Osoba 4 generuje wektory (`StageCompletion`, `StageApproval`, certyfikat);
    osoby 1, 2 i 3 weryfikują je w Solidity, Javie i TS.
 3. Osoba 1 implementuje kontrakt, testuje, wdraża lokalnie i na Amoy (smoke),

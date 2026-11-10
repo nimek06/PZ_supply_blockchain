@@ -1,10 +1,10 @@
 # Wstępny plan projektu - 12 tygodni
 
-**Źródło nadrzędne:** [PDF i mapa zgodności](source-alignment.md).
-**Wymagania:** [spec](spec.md), REQ-001..014.
-**Zmiany v2 (2026-10-27):** [changes-v2](changes-v2.md) - wiążące, gdy starszy
+**Źródło nadrzędne:** [PDF i mapa zgodności](../project/source-alignment.md).
+**Wymagania:** [spec](../project/spec.md), REQ-001..014.
+**Zmiany v2 (2026-10-27):** [changes-v2](../project/changes-v2.md) - wiążące, gdy starszy
 tekst mówi inaczej. **Podział zadań:** [team-split](team-split.md) (zastępuje
-kolumny „Osoba” poniżej). **Tydzień 1:** [week1-plan](weekly_plans/week1/week1-plan.md).
+kolumny „Osoba” poniżej). **Tydzień 1:** [week1-plan](weekly/week1/week1-plan.md).
 **Status:** plan roboczy, nie lista ukończonych prac. Żadne zadanie wykonawcze
 nie jest oznaczone jako zrobione, bo kod aplikacji jeszcze nie istnieje.
 
@@ -26,24 +26,24 @@ integracja pionowa na Amoy w tygodniu 5, próba demo w tygodniu 10.
 Nie deklarujemy produkcyjnego SLA ani kosztu zero niezależnie od limitów usług.
 
 Nie ma osobnej konstytucji projektu ani kodu do migracji. Zasady przyjmujemy
-z PDF, [architektury](architecture.md) i [development](development.md):
+z PDF, [architektury](../architecture/architecture.md) i [development](../guides/development.md):
 minimalny stan on-chain, brak sekretów w Git, jawne błędy, wspólne schematy,
 podpisy stacji i operatora oraz brak nadmiernej architektury.
 Wytyczne migracyjne framework-to-framework nie dotyczą tego nowego szkieletu.
 
 ### Dokumenty wejściowe
 
-- [Diagramy](diagrams.md): komunikacja i zależności buildów.
-- [Przepływy](flows.md): API, worker, współzatwierdzenie, indexer i UI.
-- [Model danych](data-model.md): lokalna trwałość, stany i minimalny on-chain.
-- [Protokół](protocol.md): JSON, hash, EIP-712, statusy i retry.
-- [Tożsamość stacji](station-identity.md): certyfikat i rejestr.
-- [Decyzje](decisions.md): rejestr decyzji po zmianach v2.
-- [Reguły produkcji](production-rules.md): wybrana ogólna marszruta i profile QA.
-- [Poprawki](corrections.md): reguła zastępowania raportu (DEC-09 zamknięta).
-- [Dwa klucze](quality-approval.md): podpisy stacji i operatora, warunki kontraktu.
-- [Uprawnienia](access-control.md): macierz, owner i login (SIWE -> token Bearer).
-- [Zmiany v2](changes-v2.md), [podział zadań](team-split.md), [tydzień 1](weekly_plans/week1/week1-plan.md).
+- [Diagramy](../architecture/diagrams.md): komunikacja i zależności buildów.
+- [Przepływy](../architecture/flows.md): API, worker, współzatwierdzenie, indexer i UI.
+- [Model danych](../architecture/data-model.md): lokalna trwałość, stany i minimalny on-chain.
+- [Protokół](../architecture/protocol.md): JSON, hash, EIP-712, statusy i retry.
+- [Tożsamość stacji](../rules/station-identity.md): certyfikat i rejestr.
+- [Decyzje](../decisions/decisions.md): rejestr decyzji po zmianach v2.
+- [Reguły produkcji](../rules/production-rules.md): wybrana ogólna marszruta i profile QA.
+- [Poprawki](../rules/corrections.md): reguła zastępowania raportu (DEC-09 zamknięta).
+- [Dwa klucze](../rules/quality-approval.md): podpisy stacji i operatora, warunki kontraktu.
+- [Uprawnienia](../rules/access-control.md): macierz, owner i login (SIWE -> token Bearer).
+- [Zmiany v2](../project/changes-v2.md), [podział zadań](team-split.md), [tydzień 1](weekly/week1/week1-plan.md).
 
 Przed zadaniem dotyczącym niezatwierdzonego formatu należy sprawdzić odpowiednią
 decyzję. Wymagań dwóch kluczy i certyfikatów nie można usunąć przez głosowanie
@@ -56,7 +56,7 @@ pomiary z Amoy. T026 jest zadaniem wykonawczym bez blokady decyzyjnej.
 ## 2. Harmonogram i punkty odbioru
 
 Kolumny „Osoba” wynikają z [team-split](team-split.md). Szczegóły tygodnia 1:
-[week1-plan](weekly_plans/week1/week1-plan.md).
+[week1-plan](weekly/week1/week1-plan.md).
 
 | Tydzień | Wspólny wynik | Osoba 1 - kontrakt, indexer, CI | Osoba 2 - backend | Osoba 3 - schematy/Java/infra (tyg. 1), potem frontend | Osoba 4 - symulator/testy/dokumentacja |
 |---|---|---|---|---|---|
@@ -92,14 +92,14 @@ jeśli się różnią). Dokładne prerequisites są w sekcji 4.
 **Odbiór:** potwierdzone decyzje v2, jednostki, wariant dwóch podpisów i certyfikatu;
 odtwarzalne narzędzia i zgodne formaty; smoke deploy na Amoy.
 
-- [ ] T001 [Plan:1.1] Cały zespół: potwierdzić zmiany v2 i DEC-02/07/11 w `docs/decisions.md` (data, inicjały); dopisać parametry QA i kryteria odbioru w `docs/spec.md`.
+- [ ] T001 [Plan:1.1] Cały zespół: potwierdzić zmiany v2 i DEC-02/07/11 w `docs/decisions/decisions.md` (data, inicjały); dopisać parametry QA i kryteria odbioru w `docs/project/spec.md`.
 - [ ] T002 [Plan:1.1] Osoba 3 (OpenAPI, telemetria, `eip712.json`) i osoba 4 (certyfikat) z recenzją osób 2 i 1: utworzyć `shared/schemas/openapi.yaml`, `telemetry.schema.json`, `eip712.json` (typy `StageCompletion` i `StageApproval`), `station-certificate.schema.json` i zgodne przykłady w `shared/fixtures/`.
 - [ ] T003 [Plan:1.1] Osoba 1: utworzyć `contracts/foundry.toml` z jawnym `evm_version`, przypiąć OpenZeppelin i forge-std oraz potwierdzić kompilację i discovery testów.
 - [ ] T004 [Plan:1.1] Osoba 2: utworzyć `backend/pom.xml` (aktualna wspierana wersja Spring Boot), Maven Wrapper i `backend/src/main/java/pl/pz/supplyblockchain/SupplyBlockchainApplication.java`; sprawdzić start aplikacji i zgodność Web3j z Jackson.
 - [ ] T005 [Plan:2.1] Osoba 3 (**tydzień 2**, frontend poza tygodniem 1): utworzyć `frontend/package.json`, lockfile, Vite/TS/ESLint, `frontend/src/app/providers.tsx` i `router.tsx`; build ma obejmować type-check; lokalny HTTPS.
 - [ ] T006 [Plan:1.1] Osoba 4: utworzyć `simulator/pyproject.toml`, pakiet i CLI w `simulator/src/supply_chain_simulator/cli.py`; dodać pytest i instalację w venv (Python 3.11-3.12).
 - [ ] T007 [Plan:1.1] Osoba 3 z recenzją osób 2 i 4: utworzyć `infrastructure/local/compose.yaml` (PostgreSQL, Anvil, Kubo) i `.env.example`, sprawdzenie health DB/RPC/IPFS; opisać świadomy reset w istniejącym README.
-- [ ] T031 [Plan:1.1] Osoba 1: smoke deploy kontraktu na Amoy (faucet, RPC, minimalny tip, `evm_version`, limity `eth_getLogs`); notatka z wynikami w `docs/development.md`.
+- [ ] T031 [Plan:1.1] Osoba 1: smoke deploy kontraktu na Amoy (faucet, RPC, minimalny tip, `evm_version`, limity `eth_getLogs`); notatka z wynikami w `docs/guides/development.md`.
 - [ ] T032 [Plan:2.1] Osoba 3 (**tydzień 2**): spike HTTPS i skanera QR na telefonie; wybór biblioteki; decyzja w `frontend/README.md`.
 - [ ] T033 [Plan:1.1] Osoba 3 (krypto): moduł Javy z JCS, Keccak i ręcznym odzyskiem EIP-712 (`StageCompletion`, `StageApproval`) na wektorze; osoba 2 (Web3j): kodowanie wywołania, podpis transakcji i opłaty EIP-1559 na Anvil (bez `.send()`).
 
@@ -122,7 +122,7 @@ certyfikat zgodny z rejestrem on-chain; prywatny GET nie działa bez tokenu.
 **Odbiór:** testy przejść i dwóch kluczy, brak pełnego JSON on-chain,
 idempotentny zapis CREATE_BATCH/STAGE z regułą zastępowania i status po uwierzytelnieniu.
 
-- [ ] T012 [US1] [Plan:3.1] Osoba 1: utworzyć `contracts/src/SupplyChain.sol` i `contracts/test/SupplyChain.t.sol`: role, rejestr stacji (`registerStation`/`revokeStation`, `expiresAt`, `stageMask`), `createBatch(string)`, etapy 0..3, `completeStage` z podpisem stacji i `StageApproval` operatora (różne adresy, aktualna rola QA), `StageRejected`, deadline i `maxDeadlineWindow`, minimalne eventy z indeksowanym `batchId`. Bez nonce i bez `approveStage` ([changes-v2](changes-v2.md)).
+- [ ] T012 [US1] [Plan:3.1] Osoba 1: utworzyć `contracts/src/SupplyChain.sol` i `contracts/test/SupplyChain.t.sol`: role, rejestr stacji (`registerStation`/`revokeStation`, `expiresAt`, `stageMask`), `createBatch(string)`, etapy 0..3, `completeStage` z podpisem stacji i `StageApproval` operatora (różne adresy, aktualna rola QA), `StageRejected`, deadline i `maxDeadlineWindow`, minimalne eventy z indeksowanym `batchId`. Bez nonce i bez `approveStage` ([changes-v2](../project/changes-v2.md)).
 - [ ] T013 [US1] [Plan:3.1] Osoba 1: utworzyć `contracts/script/DeploySupplyChain.s.sol`, `ConfigureRoles.s.sol` i `RegisterStations.s.sol`, wyeksportować `shared/abi/SupplyChain.abi.json` (`forge inspect`) i publiczne dane lokalnego wdrożenia.
 - [ ] T014 [US2] [Plan:3.1] Osoba 2: utworzyć domenę i trwałe repozytoria commands/attempts/qa_approvals/sessions/projections w `backend/src/main/java/pl/pz/supplyblockchain/domain/` i `infrastructure/persistence/`; dodać constraints, lease (`FOR UPDATE SKIP LOCKED`) i indeksy w migracjach.
 - [ ] T015 [US2] [Plan:3.1] Osoba 2: zaimplementować przyjęcie partii (numer `B-RRRR-NNNN`) i etapu, idempotencję po digest, regułę zastępowania, Problem Details i status w `backend/src/main/java/pl/pz/supplyblockchain/application/` i `api/`; `202` dopiero po commit.
@@ -169,8 +169,8 @@ zgodny raport, niezgodność oraz brak możliwości weryfikacji.
 **Odbiór:** macierz testów przechodzi, wznowienie jest jawne (reguła zastępowania),
 a brak usługi lub dowodu nie staje się pozornym sukcesem.
 
-- [ ] T026 [US5] [Plan:7.1] Osoba 2 (backend) z osobami 1 (test revertu po deadline) i 4 (CLI): zaimplementować [regułę zastępowania](corrections.md): `retryAllowedAfter`, `409 STAGE_ALREADY_PENDING`, ponowne zgłoszenie po deadline; CLI symulatora do wznowienia; nie usuwać starej idempotencji ani nie zmieniać podpisu w miejscu.
-- [ ] T027 [US5] [Plan:7.1] Osoba 4 z autorami modułów: dodać testy restartu, konkurencji, reorg (Anvil snapshot/revert), certyfikatów/rejestru, dwóch podpisów i wznowienia w `backend/src/test/`, `contracts/test/`, `simulator/tests/`, `frontend/tests/`; odnotować wyniki w `docs/testing.md`.
+- [ ] T026 [US5] [Plan:7.1] Osoba 2 (backend) z osobami 1 (test revertu po deadline) i 4 (CLI): zaimplementować [regułę zastępowania](../rules/corrections.md): `retryAllowedAfter`, `409 STAGE_ALREADY_PENDING`, ponowne zgłoszenie po deadline; CLI symulatora do wznowienia; nie usuwać starej idempotencji ani nie zmieniać podpisu w miejscu.
+- [ ] T027 [US5] [Plan:7.1] Osoba 4 z autorami modułów: dodać testy restartu, konkurencji, reorg (Anvil snapshot/revert), certyfikatów/rejestru, dwóch podpisów i wznowienia w `backend/src/test/`, `contracts/test/`, `simulator/tests/`, `frontend/tests/`; odnotować wyniki w `docs/guides/testing.md`.
 
 ### P8.1 - Testnet i przekazanie projektu
 
@@ -181,7 +181,7 @@ bez sekretów w repozytorium i bez deklaracji niezaimplementowanych możliwości
 
 - [ ] T028 [Plan:8.1] Osoba 1 (szkielet od osoby 4 z tyg. 1): utworzyć działające workflow w `.github/workflows/` repozytorium projektu zgodnie z `infrastructure/ci/README.md`; testy PR bez publicznego RPC/Pinaty (Anvil i Kubo w CI); dodawać joby od tygodnia 2.
 - [ ] T029 [Plan:8.1] Osoby 1+2+3: integracja pionowa na Amoy w tyg. 5 (kontrakt, rejestracja stacji, Pinata/RPC, frontend) i próba demo w tyg. 10; zapisać `shared/deployments/amoy.json`; żadnych kluczy/JWT w plikach publicznych.
-- [ ] T030 [Plan:8.1] Osoba 4 z całym zespołem: dopisać instrukcję demonstracji i rzeczywiste wyniki do `docs/testing.md` oraz aktualne uruchomienie do `docs/development.md`; odebrać wszystkie REQ-001..014.
+- [ ] T030 [Plan:8.1] Osoba 4 z całym zespołem: dopisać instrukcję demonstracji i rzeczywiste wyniki do `docs/guides/testing.md` oraz aktualne uruchomienie do `docs/guides/development.md`; odebrać wszystkie REQ-001..014.
 
 ## 4. Zależności i praca równoległa
 
@@ -302,7 +302,7 @@ Dowody to **planowane** pliki i zachowania, nie potwierdzenie ukończenia.
 
 ## 7. Walidacja i przekazanie
 
-Macierz i konkretne scenariusze są w [testing](testing.md). Lokalne integracje
+Macierz i konkretne scenariusze są w [testing](../guides/testing.md). Lokalne integracje
 korzystają z PostgreSQL, Anvil i kontrolowanych odpowiedzi HTTP; nie zastępuj
 PostgreSQL przez H2 jako dowodu działania blokad. UI testuj komponentowo
 i na responsywnych ekranach. Brak Dockera/przeglądarki oznacza jawny brak

@@ -1,6 +1,6 @@
 # Tydzień 1 - plan Mikołaja (backend)
 
-Wersja „po ludzku” do [week1-plan.md](week1-plan.md). Techniczne tabele są tam;
+Wersja „po ludzku” do [week1-plan.md](../week1-plan.md). Techniczne tabele są tam;
 tutaj opisuję, **co właściwie robisz, po co i po czym poznasz, że działa**.
 
 ## Twoja rola w jednym zdaniu
@@ -18,7 +18,7 @@ W tym tygodniu pracujesz tylko nad początkiem tej drogi.
 | Polecenie (command) | Zapis w bazie „ktoś chce zrobić X”. Ma status i numer (`commandId`). |
 | Idempotencja | Jeśli stacja wyśle to samo zgłoszenie 10 razy (bo np. zerwało się połączenie), efekt ma być jeden, a odpowiedź za każdym razem ta sama. |
 | Digest | Skrót podpisywanej wiadomości EIP-712. Po nim rozpoznajesz „to samo zgłoszenie”. |
-| Reguła zastępowania | Zasada: jeśli etap ma już aktywne zgłoszenie, nowe z inną treścią dostaje `409`. Nowe po błędzie wolno dopiero, gdy stary podpis na pewno wygasł. Szczegóły: [corrections](../../corrections.md). |
+| Reguła zastępowania | Zasada: jeśli etap ma już aktywne zgłoszenie, nowe z inną treścią dostaje `409`. Nowe po błędzie wolno dopiero, gdy stary podpis na pewno wygasł. Szczegóły: [corrections](../../../../rules/corrections.md). |
 | Flyway / migracja | Pliki SQL, które tworzą i zmieniają tabele w bazie w uporządkowany sposób. |
 | Testcontainers | Biblioteka, która na czas testu uruchamia prawdziwego PostgreSQL w Dockerze. Nie używamy H2, bo zachowuje się inaczej niż produkcyjna baza. |
 | Web3j | Biblioteka Javy do rozmowy z blockchainem. U nas służy tylko do zakodowania wywołania i podpisania transakcji. |
@@ -56,7 +56,7 @@ W tym tygodniu pracujesz tylko nad początkiem tej drogi.
 
 **Co robisz:**
 - Recenzujesz szkic `openapi.yaml` od Kuby: czy endpointy, statusy i błędy mają sens z punktu widzenia backendu? Czy odpowiedzi `202`, `409`, `422` są tam, gdzie trzeba?
-- Szkicujesz migracje według [data-model](../../data-model.md): tabela `commands` (z digestem, statusem, `outcome`, `retry_allowed_after`), `qa_approvals`, `auth_challenges`, `auth_sessions`.
+- Szkicujesz migracje według [data-model](../../../../architecture/data-model.md): tabela `commands` (z digestem, statusem, `outcome`, `retry_allowed_after`), `qa_approvals`, `auth_challenges`, `auth_sessions`.
 
 **Po co:** OpenAPI to umowa między backendem a frontendem. Jeśli ją zaakceptujesz bez czytania, w tygodniu 5 wyjdą niespójności. Twoje uwagi są potrzebne właśnie teraz.
 
@@ -118,4 +118,4 @@ Potem demo z zespołem.
 
 - Web3j kłóci się z wersją Spring Boota -> wybierz wspierane połączenie wersji i zapisz je w `README` backendu.
 - Wynik hasha w Javie różni się od Pythona -> nie zmieniaj protokołu; z Kubą i Robertem znajdźcie, w którym kroku (JCS, Keccak, kolejność pól) jest różnica.
-- Nie jesteś pewien statusu HTTP -> sprawdź tabelę w [protokole](../../protocol.md).
+- Nie jesteś pewien statusu HTTP -> sprawdź tabelę w [protokole](../../../../architecture/protocol.md).

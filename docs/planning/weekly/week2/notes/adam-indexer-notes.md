@@ -9,13 +9,13 @@
 - T019 `ChainEventIndexer` (tydzień 4-5, przegląd: osoba 2);
 - DEC-07 (liczba potwierdzeń).
 
-**Projekt wyjściowy:** [data-model §5](../../data-model.md), [flows §6 i §8](../../flows.md).
+**Projekt wyjściowy:** [data-model §5](../../../../architecture/data-model.md), [flows §6 i §8](../../../../architecture/flows.md).
 
 ## Wnioski
 
 1. **Okna `eth_getLogs`:** logi czytamy oknami po **10 000 bloków** (`toBlock - fromBlock <= 9 999`).
    Rozmiar okna trzymamy w konfiguracji, bo darmowe RPC mają różne limity. W
-   [tygodniu 1](../week1/adam-amoy-notes.md) drpc odrzucał już 1 000 bloków.
+   [tygodniu 1](../../week1/notes/adam-amoy-notes.md) drpc odrzucał już 1 000 bloków.
 2. **Propozycja do DEC-07:**
    - Amoy: indexer czyta do bloku `finalized`. Ten blok jest tylko **1-2 bloki (1-2 s)** za
      `latest`, a poniżej niego reorg nie powinien wystąpić.
@@ -32,7 +32,7 @@
    - w dwóch łańcuchach (Anvil po resecie).
 5. **Zniknięcie transakcji:** reorg może usunąć transakcję bez śladu. Nie ma wtedy tx ani
    receipt, mempool jest pusty, a nonce znów wolny. Relayer wysyła ponownie te same bajty (ten sam
-   hash), zgodnie z [flows §6](../../flows.md).
+   hash), zgodnie z [flows §6](../../../../architecture/flows.md).
 
 ## Pomiary Amoy (tylko odczyt)
 
@@ -118,8 +118,8 @@ Zasady dodatkowe:
 - **Błąd `unknown block`:** odpowiedź `eth_getLogs` z `blockHash` z tym błędem nie dowodzi reorgu,
   bo węzeł może być opóźniony. Decyduje porównanie hashy nagłówków.
 - **Statusy poleceń:**
-  - Domenowy CONFIRMED nadaje tylko indexer ([flows §8](../../flows.md)).
-  - Gdy reorg usuwa log, status wraca do ponownej weryfikacji. [protocol](../../protocol.md):
+  - Domenowy CONFIRMED nadaje tylko indexer ([flows §8](../../../../architecture/flows.md)).
+  - Gdy reorg usuwa log, status wraca do ponownej weryfikacji. [protocol](../../../../architecture/protocol.md):
     „Reorganizacja może cofnąć pozorne potwierdzenie”.
   - Worker uzgadnia receipt i w razie potrzeby wysyła te same bajty.
   - Przy `finalized` na Amoy taka sytuacja nie powinna wystąpić.

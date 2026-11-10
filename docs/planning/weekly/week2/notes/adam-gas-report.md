@@ -1,7 +1,7 @@
 # Tydzień 2 - raport gazu kontraktu `SupplyChain` (Adam)
 
 **Data:** 2026-11-09. **Narzędzia:** Foundry 1.8.6 (solc 0.8.24, `via_ir`, `evm_version = cancun`), Anvil.
-**Kontrakt:** [SupplyChain.sol](../../../contracts/src/SupplyChain.sol) bez zmian: runtime 6 196 B,
+**Kontrakt:** [SupplyChain.sol](../../../../../contracts/src/SupplyChain.sol) bez zmian: runtime 6 196 B,
 initcode 7 056 B (limit EIP-170 to 24 576 B).
 
 ## Jak odtworzyć
@@ -12,7 +12,7 @@ forge test --match-path test/SupplyChain.gas.t.sol --gas-report   # tabela dla f
 forge test --match-path test/SupplyChain.gas.t.sol -vvvv           # gaz każdego wywołania
 ```
 
-Scenariusz [SupplyChain.gas.t.sol](../../../contracts/test/SupplyChain.gas.t.sol):
+Scenariusz [SupplyChain.gas.t.sol](../../../../../contracts/test/SupplyChain.gas.t.sol):
 - pełna trasa partii (etap 2 z akceptacją QA);
 - odrzucenie;
 - odrzucenie z CID o maksymalnej długości (128 znaków);
@@ -62,7 +62,7 @@ Kontrakt jest kompilowany dla `cancun`, a podłoga calldata z EIP-7623 (Prague) 
 
 - `completeStage` etapu 0 kosztuje 46 916 gazu:
   - ok. 25,6 tys. to koszt samej transakcji: 21 000 oraz ok. 4,6 tys. za 548 B calldata
-    (wyliczone z [fixture calldata](../../../shared/fixtures/complete-stage-calldata.json));
+    (wyliczone z [fixture calldata](../../../../../shared/fixtures/complete-stage-calldata.json));
   - ok. 21,3 tys. to wykonanie: sprawdzenie roli, odczyt partii, stacji i `maxDeadlineWindow`,
     digest EIP-712 i `ecrecover`, zapis etapu oraz event `StageCompleted` z CID.
 
@@ -80,7 +80,7 @@ Kontrakt jest kompilowany dla `cancun`, a podłoga calldata z EIP-7623 (Prague) 
 
 Koszt [POL] = `gasUsed` × (base fee + tip) / 10^18. Base fee na Amoy wynosi 64 wei, więc jest
 pomijalny i o koszcie decyduje tip. `eth_maxPriorityFeePerGas` to sugestia węzła, a nie stała:
-- 30 gwei 2026-10-28 ([notatka tyg. 1](../week1/adam-amoy-notes.md));
+- 30 gwei 2026-10-28 ([notatka tyg. 1](../../week1/notes/adam-amoy-notes.md));
 - 35,2 gwei 2026-11-09 (publicnode).
 
 | Pozycja | Gaz | POL przy 30 gwei | POL przy 35,2 gwei |

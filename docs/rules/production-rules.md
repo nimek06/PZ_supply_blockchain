@@ -8,8 +8,8 @@ Nie przyjmujemy testu ciśnieniowego ani norm dla wybranego wyrobu.
 Numeracja poniżej porządkuje ten wariant MVP; parametry pomiarów wymagają
 osobnego profilu demonstracyjnego przed generowaniem schematów i testów.
 
-Wymagania nadrzędne: [opis PDF](source-alignment.md), REQ-002..005 i REQ-014
-z [specyfikacji](spec.md). To projekt logiki, nie gotowa implementacja.
+Wymagania nadrzędne: [opis PDF](../project/source-alignment.md), REQ-002..005 i REQ-014
+z [specyfikacji](../project/spec.md). To projekt logiki, nie gotowa implementacja.
 
 ## Stany partii
 

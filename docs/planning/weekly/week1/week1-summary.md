@@ -13,8 +13,8 @@ CI (`.github/`) zostaje bez zmian i nie jest rozwijane (decyzja 2026-11-02: niep
 
 ## Definicja ukończenia tygodnia - punkt po punkcie
 
-- [x] **Decyzje v2 potwierdzone i wpisane z datą w `docs/decisions.md`.**
-  Wpis zespołu z 2026-11-02 w nagłówku [decisions.md](../../decisions.md); DEC-02 (profil e-bike)
+- [x] **Decyzje v2 potwierdzone i wpisane z datą w `docs/decisions/decisions.md`.**
+  Wpis zespołu z 2026-11-02 w nagłówku [decisions.md](../../../decisions/decisions.md); DEC-02 (profil e-bike)
   i DEC-11 (wartości czasu) zamknięte jako `USTALONA`. Otwarta pozostaje DEC-07 (liczba
   potwierdzeń na Amoy, po pomiarach).
 - [x] **Wektor `signature-vector.json` przechodzi w Pythonie, Javie i Solidity.**
@@ -44,8 +44,8 @@ CI (`.github/`) zostaje bez zmian i nie jest rozwijane (decyzja 2026-11-02: niep
   (niezgodność wykryta wcześniej usunięta; test w `simulator/tests/test_signature_vector.py`
   pilnuje zgodności z schematem). OpenAPI nadal wymaga przeglądu szczegółów w tygodniu 2.
 - [x] **Notatki: limity Pinaty, tip gazu Amoy, limity RPC, wersje zależności.**
-  Tip i limity RPC Amoy: [adam-amoy-notes.md](adam-amoy-notes.md). Kubo: zbadane,
-  notatka Kuby ([kuba-ipfs-notes.md](kuba-ipfs-notes.md)). **Pinata: niezbadana**
+  Tip i limity RPC Amoy: [adam-amoy-notes.md](notes/adam-amoy-notes.md). Kubo: zbadane,
+  notatka Kuby ([kuba-ipfs-notes.md](notes/kuba-ipfs-notes.md)). **Pinata: niezbadana**
   (czeka na token Mikołaja, przechodzi na tydzień 2).
 - [x] **Żadnych sekretów w repozytorium.** Nie znaleziono kluczy prywatnych ani
   tokenów w sprawdzonych commitach; `.env` wszędzie w `.gitignore`.

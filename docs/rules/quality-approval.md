@@ -22,7 +22,7 @@ kontroli, nie zastępuje pomiarów.
 | StageApproval EIP-712 | operator zmiany z QA_INSPECTOR_ROLE | batchId, stageId, reportHash, approvalDeadline i domenę | backend + kontrakt |
 | Transakcja completeStage | relayer | wykonanie wywołania z dwoma dowodami | EVM; nie jest drugim podpisem QA |
 
-Typy i kolejność pól: [protokół](protocol.md). Operator nie podpisuje CID, decyzji
+Typy i kolejność pól: [protokół](../architecture/protocol.md). Operator nie podpisuje CID, decyzji
 dla całej partii ani niczego kluczem stacji. Domena (chainId, adres kontraktu)
 chroni przed użyciem podpisu w innym wdrożeniu.
 
@@ -55,7 +55,7 @@ kontrakt nie przechowuje go w storage. Adres operatora trafia do zdarzenia
    `completeStage` z obu podpisami.
 8. Dopiero kanoniczny `StageCompleted` zamyka etap.
 
-Szczegółowy diagram: [flows](flows.md). UI pokazuje dwa kroki: „zatwierdzenie
+Szczegółowy diagram: [flows](../architecture/flows.md). UI pokazuje dwa kroki: „zatwierdzenie
 kontroli” (podpis, bez transakcji) i „rejestracja zakończenia etapu” (relayer).
 
 ## Warunki kontraktu

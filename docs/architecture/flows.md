@@ -1,14 +1,14 @@
 # Przepływy od kliknięcia do potwierdzenia
 
-**Status:** projekt wykonania, zgodny z [protokołem](protocol.md) po zmianach [v2](changes-v2.md).
+**Status:** projekt wykonania, zgodny z [protokołem](protocol.md) po zmianach [v2](../project/changes-v2.md).
 Szczegóły QA/auth z tego dokumentu trafiają do OpenAPI przed implementacją.
 QA oznacza operatora zmiany uprawnionego do kontroli, nie dodatkową osobę.
 Wymóg drugiego klucza i certyfikatu stacji pochodzi z PDF; techniczna realizacja
 (podpis `StageApproval`, rejestr stacji on-chain) jest opisana w v2.
 Strzałki sekwencji oznaczają wywołania i odpowiedzi, nie importy.
-Dokładne warunki etapów ustala [production-rules](production-rules.md),
-politykę approval [quality-approval](quality-approval.md), a role i sesje
-[access-control](access-control.md). Wznowienie po błędzie: [corrections](corrections.md).
+Dokładne warunki etapów ustala [production-rules](../rules/production-rules.md),
+politykę approval [quality-approval](../rules/quality-approval.md), a role i sesje
+[access-control](../rules/access-control.md). Wznowienie po błędzie: [corrections](../rules/corrections.md).
 
 ## 1. Przygotowanie środowiska
 
@@ -78,7 +78,7 @@ ten sam commandId i numer partii; z inną treścią daje konflikt.
    odrzuceniem za deadline lub zmieniony stan etapu. Inaczej retry po sukcesie
    mylnie dawałby konflikt.
 5. Nowy zamiar przechodzi sprawdzenie bieżącego stanu, deadline i
-   [reguły zastępowania](corrections.md) i jest zapisany atomowo wraz z idempotencją.
+   [reguły zastępowania](../rules/corrections.md) i jest zapisany atomowo wraz z idempotencją.
 6. Worker pinując zapisuje CID, potem weryfikuje aktualny stan i deadline.
 7. Jeden writer przygotowuje, podpisuje i zapisuje transakcję, potem ją wysyła.
 8. Receipt sukcesu nie jest jeszcze potwierdzeniem projekcji.
@@ -245,7 +245,7 @@ UI rozróżnia:
 | tx zapisana, przed broadcast | nonce relayera i podpisane bajty/hash | wyślij te same bajty |
 | timeout send / brak receipt | tx hash i nonce relayera | uzgadniaj transakcję; brak receipt nie oznacza FAILED; zablokowana tx = procedura ręczna (bez fee-bump w MVP) |
 | receipt revert | znany skutek i zużyty nonce konta relayera | FAILED; stan partii się nie zmienił |
-| deadline minął przed send | oryginalny podpis i polecenie | FAILED z `retryAllowedAfter`; nowy raport po warunku [reguły zastępowania](corrections.md) |
+| deadline minął przed send | oryginalny podpis i polecenie | FAILED z `retryAllowedAfter`; nowy raport po warunku [reguły zastępowania](../rules/corrections.md) |
 | brak approval | przypięty kandydat | WAITING_FOR_QA do podpisu operatora lub wygaśnięcia |
 | reorg | surowe logi, checkpoint i potwierdzona wcześniej projekcja | ponowny skan okna N bloków, unieważnij skutki, odtwórz projekcję i statusy |
 
@@ -270,7 +270,7 @@ Tożsamość właściciela zgłoszenia stacji wynika z recover raportu, a nie
 z niezweryfikowanego `owner` w JSON. Token użyty do prywatnego odczytu musi
 odpowiadać temu adresowi lub mieć aktualną rolę administratora.
 Sama rola QA daje dostęp do kandydatów, nie do wszystkich prywatnych commands.
-Szczegóły opisuje [access-control](access-control.md).
+Szczegóły opisuje [access-control](../rules/access-control.md).
 
 ## 8. Zasada spójności projekcji
 

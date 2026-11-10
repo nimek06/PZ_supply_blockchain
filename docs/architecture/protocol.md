@@ -2,19 +2,19 @@
 
 ## Zanim powstanie kod
 
-To kontrakt integracji po zmianach [v2](changes-v2.md), nie istniejące endpointy.
+To kontrakt integracji po zmianach [v2](../project/changes-v2.md), nie istniejące endpointy.
 Wszystkie cztery osoby potwierdzają go na spotkaniu startowym przed pisaniem klientów.
-Zakres nadrzędny wyznacza [opis PDF](source-alignment.md).
+Zakres nadrzędny wyznacza [opis PDF](../project/source-alignment.md).
 Wymagane są certyfikat stacji i dwa niezależne klucze do zamknięcia kontroli:
 stacji (`StageCompletion`) i operatora zmiany (`StageApproval`).
 Wybrana ogólna marszruta to przygotowanie -> montaż -> kontrola -> pakowanie,
-opisana w [regułach produkcji](production-rules.md) jako stageId 0..3.
+opisana w [regułach produkcji](../rules/production-rules.md) jako stageId 0..3.
 Profile pomiarów (DEC-02, e-bike, zatwierdzone 2026-11-02) są w
-[telemetry.schema.json](../shared/schemas/telemetry.schema.json), a wartości czasu (DEC-11)
-w [decisions](decisions.md); do potwierdzenia pozostaje liczba potwierdzeń (DEC-07).
+[telemetry.schema.json](../../shared/schemas/telemetry.schema.json), a wartości czasu (DEC-11)
+w [decisions](../decisions/decisions.md); do potwierdzenia pozostaje liczba potwierdzeń (DEC-07).
 Nie stosuj fikcyjnych progów ani ukrytego domyślnego PASS.
 
-Zapisz implementowalne schematy w [shared/schemas](../shared/schemas/README.md).
+Zapisz implementowalne schematy w [shared/schemas](../../shared/schemas/README.md).
 Identyczny testowy raport ma dać identyczny hash w Pythonie, Javie i TypeScript.
 
 ## Raport i typy
@@ -162,7 +162,7 @@ z konfiguracji danej sieci, nie z dowolnej domeny dostarczonej przez klienta.
 Certyfikat jest uprzednio rejestrowany i weryfikowany; jego ID jest poza
 raportem JCS. Adres certyfikatu musi odpowiadać signerowi raportu i aktywnej
 rejestracji stacji on-chain.
-Zasady wystawienia, ważności i odwołania opisuje [station-identity](station-identity.md).
+Zasady wystawienia, ważności i odwołania opisuje [station-identity](../rules/station-identity.md).
 Publiczny paszport nie udostępnia wewnętrznych błędów relayera, surowych podpisów
 ani danych administracyjnych. Endpoint statusu polecenia wymaga uprawnienia
 właściciela/obsługi, nie jest publiczny tylko dlatego, że identyfikator to UUID.
@@ -172,7 +172,7 @@ zdarzenia na łańcuchu. Nie mieszaj niepotwierdzonych poleceń z ukończonymi e
 
 Uwierzytelnienie: token Bearer w nagłówku `Authorization` (SIWE tylko do jego
 wydania, brak cookie i CSRF). Precyzyjne prawa do endpointów, owner i rozdzielenie
-podpisanego POST od prywatnego GET opisuje [access-control](access-control.md).
+podpisanego POST od prywatnego GET opisuje [access-control](../rules/access-control.md).
 Nie nazywaj ogólnie „obsługą” wszystkich ról: QA widzi kandydatów, a status
 command jest dla właściciela lub aktualnego administratora.
 
@@ -213,14 +213,14 @@ Tożsamość zamiaru stacji to **digest EIP-712 `StageCompletion`**
 (`signed_payload_digest`), zapisany z `(chainId, contractAddress)`.
 Powtórzenie identycznej treści zwraca istniejący `commandId`. Dla tego samego
 `(deployment, batchId, stageId)` obowiązuje
-[reguła zastępowania](corrections.md): aktywne polecenie z innym hashem daje
+[reguła zastępowania](../rules/corrections.md): aktywne polecenie z innym hashem daje
 `409 STAGE_ALREADY_PENDING`, a nowy raport po FAILED jest dozwolony dopiero gdy
 stary deadline minął w potwierdzonym bloku. Dla tworzenia partii użyj
 `Idempotency-Key`, zakresu użytkownika i skrótu treści żądania.
 
 Po timeout stacja sprawdza status lub ponawia identyczne żądanie. Nie usuwaj
 wpisu idempotencji, by „odblokować” stację. DEC-09 jest zamknięta
-(wariant C uproszczony, [corrections](corrections.md)).
+(wariant C uproszczony, [corrections](../rules/corrections.md)).
 
 Relayer ma niezależny nonce transakcyjny konta EVM. Jeden writer przydziela
 go dla danego `(chainId, relayerAddress)`. Samo `@Async` lub równoległe
@@ -237,7 +237,7 @@ podwójnego przejścia.
 ## Projekt interfejsu kontraktu
 
 Powierzchnię kontraktu (funkcje, zdarzenia, reguły `completeStage`) opisuje
-[changes-v2](changes-v2.md); poniżej skrót. Dokładne ABI musi powstać z kompilatora
+[changes-v2](../project/changes-v2.md); poniżej skrót. Dokładne ABI musi powstać z kompilatora
 (`forge inspect`), a nie z ręcznie napisanego JSON.
 
 - `createBatch(string batchNumber)` (RELAYER_ROLE): `batchId = keccak256(batchNumber)`.
@@ -260,7 +260,7 @@ kontrakt wymaga ważnego approval operatora z aktualną QA_INSPECTOR_ROLE i adre
 **różnym** od stacji. Oba dowody autoryzują ten sam hash; pozytywnego wyniku stacji
 nie zastąpi decyzja człowieka. Nie ma transakcji `approveStage`, stanu approval
 w storage ani portfela multisig; operator nie płaci gazu.
-Szczegóły: [quality-approval](quality-approval.md), przepływ: [flows](flows.md).
+Szczegóły: [quality-approval](../rules/quality-approval.md), przepływ: [flows](flows.md).
 Approval wiąże raport (hash), nie pojedynczą próbę wysyłki, i wygasa po swoim deadline.
 
 ### Minimalny zapis on-chain

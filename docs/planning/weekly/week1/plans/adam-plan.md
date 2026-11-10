@@ -1,6 +1,6 @@
 # Tydzień 1 - plan Adama (kontrakty i łańcuch)
 
-Wersja „po ludzku” do [week1-plan.md](week1-plan.md). Techniczne szczegóły i tabele
+Wersja „po ludzku” do [week1-plan.md](../week1-plan.md). Techniczne szczegóły i tabele
 są tam; tutaj opisuję, **co właściwie robisz, po co i po czym poznasz, że działa**.
 
 ## Twoja rola w jednym zdaniu
@@ -54,7 +54,7 @@ uprawnień, podpis jest zły albo kontrola jakości nie przeszła. Reszta zespo�
 
 ### Wtorek - szkielet kontraktu
 
-**Co robisz:** tworzysz `contracts/src/SupplyChain.sol` z podstawami: role (administrator, relayer, operator QA), rejestr stacji (`registerStation`, `revokeStation`), `createBatch(string)` oraz dwa typy podpisów `StageCompletion` i `StageApproval` (dokładne pola i kolejność są w [protokole](../../protocol.md)).
+**Co robisz:** tworzysz `contracts/src/SupplyChain.sol` z podstawami: role (administrator, relayer, operator QA), rejestr stacji (`registerStation`, `revokeStation`), `createBatch(string)` oraz dwa typy podpisów `StageCompletion` i `StageApproval` (dokładne pola i kolejność są w [protokole](../../../../architecture/protocol.md)).
 
 **Po co:** to „kręgosłup” - na nim zbudujesz resztę w czwartek. Typy podpisów muszą mieć dokładnie te pola, które ustalono, bo Robert i Kuba generują i sprawdzają te same podpisy.
 
@@ -115,11 +115,11 @@ Zdarzenia mają mieć `batchId` oznaczony jako „indeksowany”, żeby można j
 ## Czego w tym tygodniu NIE robisz
 
 - Nie piszesz indexera (to tydzień 4-5), weryfikatora certyfikatów (tydzień 3) ani CI (tydzień 2; szkielet da Robert).
-- Nie dodajesz funkcji `approveStage` ani licznika nonce - celowo ich nie ma ([zmiany v2](../../changes-v2.md)).
+- Nie dodajesz funkcji `approveStage` ani licznika nonce - celowo ich nie ma ([zmiany v2](../../../../project/changes-v2.md)).
 - Nie zmieniasz podpisywanych pól po cichu. Zmiana wymaga ogłoszenia, bo dotyka Pythona, Javy i TS.
 
 ## Jeśli się zablokujesz
 
 - Kontrakt nie działa na Amoy -> zapisz błąd i `evm_version`, spróbuj starszej wersji, napisz na kanale; to jest wynik, nie porażka.
 - Test wektora się nie zgadza -> sprawdź kolejność pól i domenę (nazwa, wersja, chainId, adres) i porównaj z Robertem.
-- Nie wiesz, czy reguła jest zdefiniowana -> sprawdź [changes-v2](../../changes-v2.md) (sekcja „Nowa powierzchnia kontraktu”).
+- Nie wiesz, czy reguła jest zdefiniowana -> sprawdź [changes-v2](../../../../project/changes-v2.md) (sekcja „Nowa powierzchnia kontraktu”).

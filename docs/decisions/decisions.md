@@ -1,6 +1,6 @@
 # Założenia, decyzje i granice MVP
 
-**Status:** po analizie 2026-10-27 wprowadzono zmiany [v2](changes-v2.md).
+**Status:** po analizie 2026-10-27 wprowadzono zmiany [v2](../project/changes-v2.md).
 Pozycje oznaczone `USTALONA` zatwierdził użytkownik 2026-10-27; zespół
 potwierdził je na spotkaniu startowym **2026-11-02** (Adam, Mikołaj, Kuba, Robert;
 wpis do zatwierdzenia w PR). Osoby 1/2/3/4 odpowiadają modułom z głównego README.
@@ -19,19 +19,19 @@ do zatwierdzenia przez zespół w wyznaczonym terminie, nie zgodę na zmianę w 
 
 | ID / status | Decyzja | Właściciel | Co blokuje |
 |---|---|---|---|
-| DEC-01 / USTALONA (uzupełnione 2026-11-02) | Ogólna marszruta przygotowanie -> montaż -> kontrola -> pakowanie, stageId 0..3, bramka dwóch kluczy na etapie 2. Architektura i kontrakt niezależne od produktu, bez norm fabrycznych. Scenariusz referencyjny MVP: montaż roweru elektrycznego (e-bike), z możliwością rozszerzenia na inne produkty ([scenariusz](product-scenario.md)) | cały zespół | [reguły produkcji](production-rules.md), [scenariusz e-bike](product-scenario.md) |
-| DEC-02 / USTALONA (2026-11-02, Adam, Mikołaj, Kuba, Robert) | Całkowite jednostki; jeden zamrożony zestaw profili v1 dla etapów 0..3 w wariancie **e-bike** (klucze i zakresy: `profile*V1` w [telemetry.schema.json](../shared/schemas/telemetry.schema.json), opis: [scenariusz](product-scenario.md)). Wartości demonstracyjne, nie normy. Wspólny wektor podpisu dostosowany do profilu etapu 2 | 2 + 4, konsultacja 1 | schema, walidacja, generatory |
+| DEC-01 / USTALONA (uzupełnione 2026-11-02) | Ogólna marszruta przygotowanie -> montaż -> kontrola -> pakowanie, stageId 0..3, bramka dwóch kluczy na etapie 2. Architektura i kontrakt niezależne od produktu, bez norm fabrycznych. Scenariusz referencyjny MVP: montaż roweru elektrycznego (e-bike), z możliwością rozszerzenia na inne produkty ([scenariusz](../project/product-scenario.md)) | cały zespół | [reguły produkcji](../rules/production-rules.md), [scenariusz e-bike](../project/product-scenario.md) |
+| DEC-02 / USTALONA (2026-11-02, Adam, Mikołaj, Kuba, Robert) | Całkowite jednostki; jeden zamrożony zestaw profili v1 dla etapów 0..3 w wariancie **e-bike** (klucze i zakresy: `profile*V1` w [telemetry.schema.json](../../shared/schemas/telemetry.schema.json), opis: [scenariusz](../project/product-scenario.md)). Wartości demonstracyjne, nie normy. Wspólny wektor podpisu dostosowany do profilu etapu 2 | 2 + 4, konsultacja 1 | schema, walidacja, generatory |
 | DEC-03 / USTALONA | JCS + Keccak + EIP-712 `StageCompletion` **bez nonce**; CID jest osobnym wskazaniem relayera. Ręczna implementacja EIP-712 w Javie, wspólny wektor w 4 językach (V2-01, V2-10) | 1 + 2 + 4 | wektory podpisów |
-| DEC-04 / USTALONA | Dwa klucze: EIP-712 stacji + **podpis EIP-712 `StageApproval` operatora poza łańcuchem**, weryfikowane razem w `completeStage`. Adresy różne, aktualna rola QA. Brak `approveStage` on-chain (V2-03) | 1 + 2 + 3 | [dwa klucze](quality-approval.md) |
-| DEC-05 / USTALONA | SIWE (EIP-4361) tylko do wydania opaque tokenu Bearer (w bazie skrót SHA-256). Brak cookie i CSRF. Wartości TTL robocze (DEC-11) (V2-06) | 2 + 3 + 4 | [logowanie](access-control.md), OpenAPI |
-| DEC-06 / USTALONA | OPERATOR_ROLE dla create w API, RELAYER_ROLE dla wykonania on-chain, QA_INSPECTOR_ROLE dla operatora kontroli. **Brak STATION_ROLE** - zastępuje ją rejestr stacji (DEC-13). Domyślna odmowa | 1 + 2 + 3 | [macierz uprawnień](access-control.md) |
+| DEC-04 / USTALONA | Dwa klucze: EIP-712 stacji + **podpis EIP-712 `StageApproval` operatora poza łańcuchem**, weryfikowane razem w `completeStage`. Adresy różne, aktualna rola QA. Brak `approveStage` on-chain (V2-03) | 1 + 2 + 3 | [dwa klucze](../rules/quality-approval.md) |
+| DEC-05 / USTALONA | SIWE (EIP-4361) tylko do wydania opaque tokenu Bearer (w bazie skrót SHA-256). Brak cookie i CSRF. Wartości TTL robocze (DEC-11) (V2-06) | 2 + 3 + 4 | [logowanie](../rules/access-control.md), OpenAPI |
+| DEC-06 / USTALONA | OPERATOR_ROLE dla create w API, RELAYER_ROLE dla wykonania on-chain, QA_INSPECTOR_ROLE dla operatora kontroli. **Brak STATION_ROLE** - zastępuje ją rejestr stacji (DEC-13). Domyślna odmowa | 1 + 2 + 3 | [macierz uprawnień](../rules/access-control.md) |
 | DEC-07 / DO POTWIERDZENIA (po smoke Amoy) | Jedna aktywna operacja na `(batchId, stageId)`. Liczba potwierdzeń: lokalnie 1, na Amoy wartość po pomiarach w tyg. 1 i 5 | 1 + 2 + 4 | finalność, deadline |
 | DEC-08 / USTALONA | PostgreSQL jako trwała kolejka (`FOR UPDATE SKIP LOCKED`), jedna instancja relayera i scheduler indexera. Bez Redis/RabbitMQ. **Bez fee-bump transakcji** (V2-07) | 2 | persistence, worker |
-| DEC-09 / USTALONA (2026-10-27) | Wariant C uproszczony: nowy raport etapu dopiero, gdy stary nie może się już wykonać (deadline minął w potwierdzonym bloku). Bez nonce i bez dodatkowych funkcji kontraktu. `maxDeadlineWindow` egzekwuje kontrakt. Opis: [corrections](corrections.md) (V2-02) | 1 + 2 + 4 | T026 |
+| DEC-09 / USTALONA (2026-10-27) | Wariant C uproszczony: nowy raport etapu dopiero, gdy stary nie może się już wykonać (deadline minął w potwierdzonym bloku). Bez nonce i bez dodatkowych funkcji kontraktu. `maxDeadlineWindow` egzekwuje kontrakt. Opis: [corrections](../rules/corrections.md) (V2-02) | 1 + 2 + 4 | T026 |
 | DEC-10 / USTALONA | Symulator odczytuje z kontraktu przez publiczne RPC wyłącznie stan partii (`getBatch`, `nextStage`); nonce nie istnieje | 1 + 4 | konfiguracja symulatora |
-| DEC-11 / USTALONA (2026-11-02, Adam, Mikołaj, Kuba, Robert) | Potwierdzone wartości robocze: `maxDeadlineWindow` 3600 s, `approvalDeadline` domyślnie jak deadline stacji, token 8 h / 30 min bezczynności, challenge 5 min; limity API i retry/backoff ustalane przed odbiorem. Minimalny priority fee relayera konfigurowalny, 30 gwei zmierzone na Amoy ([notatka](weekly_plans/week1/adam-amoy-notes.md)) | 2 + 3 + 4 | odporność i odbiór |
+| DEC-11 / USTALONA (2026-11-02, Adam, Mikołaj, Kuba, Robert) | Potwierdzone wartości robocze: `maxDeadlineWindow` 3600 s, `approvalDeadline` domyślnie jak deadline stacji, token 8 h / 30 min bezczynności, challenge 5 min; limity API i retry/backoff ustalane przed odbiorem. Minimalny priority fee relayera konfigurowalny, 30 gwei zmierzone na Amoy ([notatka](../planning/weekly/week1/notes/adam-amoy-notes.md)) | 2 + 3 + 4 | odporność i odbiór |
 | DEC-12 / USTALONA | Numer partii `B-RRRR-NNNN` nadawany przez backend; `batchId = keccak256(utf8(batchNumber))`, liczony też on-chain w `createBatch(string)`. QR i ręczne wpisanie używają numeru (V2-11). Wersje zależności przypinane przy inicjalizacji | 2, cały zespół | CreateBatchRequest |
-| DEC-13 / USTALONA | Rejestr stacji on-chain (`registerStation`/`revokeStation`, `expiresAt`, `stageMask`) jest źródłem egzekucji. JSON certyfikatu: payload + EIP-712 wystawcy jako poświadczenie audytowe zgodne z rejestrem. Aktywacja po potwierdzonej rejestracji. Nie deklarujemy X.509 ani TPM (V2-04) | 2 + 4, 1 (kontrakt i Java) | [certyfikat](station-identity.md) |
+| DEC-13 / USTALONA | Rejestr stacji on-chain (`registerStation`/`revokeStation`, `expiresAt`, `stageMask`) jest źródłem egzekucji. JSON certyfikatu: payload + EIP-712 wystawcy jako poświadczenie audytowe zgodne z rejestrem. Aktywacja po potwierdzonej rejestracji. Nie deklarujemy X.509 ani TPM (V2-04) | 2 + 4, 1 (kontrakt i Java) | [certyfikat](../rules/station-identity.md) |
 | DEC-14 / USTALONA | Magazyn raportów: port `ReportStorage`, Kubo lokalnie i w CI, Pinata w demo; upload bajtów JCS jako plik; walidator CID przyjmuje CIDv0 i CIDv1 (V2-12) | 2 | IPFS, CI |
 | DEC-15 / USTALONA | Odrzucenie kontroli zapisywane on-chain (`StageRejected`), bez przesunięcia partii; HTTP `202`, `outcome=REJECTED` (V2-05) | 1 + 2 | kontrakt, historia |
 | DEC-16 / USTALONA | Środowiska: smoke deploy na Amoy w tyg. 1, integracja pionowa także na Amoy w tyg. 5, próba demo w tyg. 10; lokalny HTTPS dla frontendu; Spring Boot = aktualna wspierana wersja (V2-13..15) | cały zespół | plan |
@@ -43,7 +43,7 @@ Inspektor szukający tylko potwierdzonych `StageCompleted` nigdy nie zobaczyłby
 raportu do zatwierdzenia. Kandydat istnieje wcześniej w bazie, po pinowaniu,
 i jest dostępny wyłącznie uprawnionej obsłudze/QA. Publiczna historia go nie zawiera.
 Operator zatwierdza go podpisem `StageApproval`, który backend zapisuje i
-przekazuje kontraktowi razem z podpisem stacji. Przebieg: [flows](flows.md).
+przekazuje kontraktowi razem z podpisem stacji. Przebieg: [flows](../architecture/flows.md).
 
 ## Cztery rodzaje podpisów
 

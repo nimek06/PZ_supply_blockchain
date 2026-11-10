@@ -2,7 +2,7 @@
 
 **Status:** zmiany wynikają z analizy spójności i ryzyk, zatwierdzonej przez
 użytkownika 2026-10-27. Zespół potwierdza je na spotkaniu startowym
-([plan tygodnia 1](weekly_plans/week1/week1-plan.md)); ewentualny sprzeciw wymaga zmiany tego pliku
+([plan tygodnia 1](../planning/weekly/week1/week1-plan.md)); ewentualny sprzeciw wymaga zmiany tego pliku
 i dokumentów zależnych, nie lokalnego obejścia w kodzie.
 Ten dokument jest **wiążący**, gdy starszy tekst innego pliku mówi inaczej.
 
@@ -35,8 +35,8 @@ Ten dokument jest **wiążący**, gdy starszy tekst innego pliku mówi inaczej.
 | V2-13 | Amoy w tygodniu 10 | **Smoke deploy na Amoy w tygodniu 1**, integracja pionowa także na Amoy w tygodniu 5, próba demo w tygodniu 10. `evm_version` ustawiony jawnie w `foundry.toml` |
 | V2-14 | Kamera/QR bez planu HTTPS | **Lokalny HTTPS dla frontendu** (certyfikat deweloperski lub tunel) od tygodnia 1; wybór biblioteki QR po spike'u |
 | V2-15 | Spring Boot 3.3+ | **Aktualna wspierana wersja** wybrana przy inicjalizacji; sprawdzić zgodność z Web3j i Jackson |
-| V2-16 | Podział prac z osobą 2 przeciążoną | Patrz [nowy podział zadań](team-split.md) |
-| V2-17 | 14 otwartych DEC | Domknięte lub ustawione domyślnie; patrz [decyzje](decisions.md) |
+| V2-16 | Podział prac z osobą 2 przeciążoną | Patrz [nowy podział zadań](../planning/team-split.md) |
+| V2-17 | 14 otwartych DEC | Domknięte lub ustawione domyślnie; patrz [decyzje](../decisions/decisions.md) |
 
 ## Nowa powierzchnia kontraktu (projekt; ABI wygeneruje kompilator)
 

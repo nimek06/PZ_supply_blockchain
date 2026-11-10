@@ -1,6 +1,6 @@
 # Zgodność z opisem projektu
 
-**Źródło nadrzędne:** [Opis_Projectu (3).pdf](../Opis_Projectu%20%283%29.pdf),
+**Źródło nadrzędne:** [Opis_Projectu (3).pdf](../../Opis_Projectu%20%283%29.pdf),
 3 strony, odczytane 2026-10-26. Dokument źródłowy pozostaje bez zmian.
 Przy sprzeczności z wcześniejszym README pierwszeństwo ma PDF.
 
@@ -18,15 +18,15 @@ fizycznej. Zmieniamy sposób rejestrowania, przechowywania i weryfikacji danych.
 | Fragment PDF | Wymaganie dla projektu | Dokument wykonawczy / wymaganie |
 |---|---|---|
 | s. 1, zakres 1 | zdecentralizowany prototyp rejestru partii modelowej linii | [spec](spec.md), REQ-001..002 |
-| s. 1, zakres 2 i podcel determinizmu | maszyna stanów, RBAC, pozytywne QA przed przejściem | [protocol](protocol.md), REQ-004..005 |
-| s. 1, zakres 3 | symulator czujników podpisujący pakiet lokalnym kluczem | [simulator](../simulator/README.md), REQ-003..004, REQ-011 |
-| s. 1, zakres 4 i s. 2 zero-bloat | pełny JSON w IPFS, identyfikator partii i odniesienie kryptograficzne on-chain; tylko niezbędny stan reguł | [data-model](data-model.md), REQ-007 |
-| s. 1, zakres 5 | responsywny widok stacji, ręczne ID lub QR, publiczna oś czasu | [frontend](../frontend/README.md), REQ-009..010 |
-| s. 2, atestacja i tożsamość stacji | własna para kluczy i certyfikat każdej emulowanej stacji | [tożsamość stacji](station-identity.md), REQ-013 |
-| s. 2, cyfrowy paszport | audytowalna ścieżka komponentu po numerze partii | [flows](flows.md), REQ-008, REQ-010 |
-| s. 3, Garbage In, Garbage Out | współautoryzacja zamknięcia kontroli: klucz maszyny/czujnika + klucz operatora zmiany | [flows](flows.md), REQ-005, REQ-014 |
-| s. 3, 12 tygodni i EVM | backend i kontrakty w pierwszych 4-5 tygodniach, ograniczenie nadmiernej architektury | [plan](plan.md) |
-| s. 3, cztery osoby | osoba 4 odpowiada także za testy integracyjne i dokumentację | [plan](plan.md), [testing](testing.md) |
+| s. 1, zakres 2 i podcel determinizmu | maszyna stanów, RBAC, pozytywne QA przed przejściem | [protocol](../architecture/protocol.md), REQ-004..005 |
+| s. 1, zakres 3 | symulator czujników podpisujący pakiet lokalnym kluczem | [simulator](../../simulator/README.md), REQ-003..004, REQ-011 |
+| s. 1, zakres 4 i s. 2 zero-bloat | pełny JSON w IPFS, identyfikator partii i odniesienie kryptograficzne on-chain; tylko niezbędny stan reguł | [data-model](../architecture/data-model.md), REQ-007 |
+| s. 1, zakres 5 | responsywny widok stacji, ręczne ID lub QR, publiczna oś czasu | [frontend](../../frontend/README.md), REQ-009..010 |
+| s. 2, atestacja i tożsamość stacji | własna para kluczy i certyfikat każdej emulowanej stacji | [tożsamość stacji](../rules/station-identity.md), REQ-013 |
+| s. 2, cyfrowy paszport | audytowalna ścieżka komponentu po numerze partii | [flows](../architecture/flows.md), REQ-008, REQ-010 |
+| s. 3, Garbage In, Garbage Out | współautoryzacja zamknięcia kontroli: klucz maszyny/czujnika + klucz operatora zmiany | [flows](../architecture/flows.md), REQ-005, REQ-014 |
+| s. 3, 12 tygodni i EVM | backend i kontrakty w pierwszych 4-5 tygodniach, ograniczenie nadmiernej architektury | [plan](../planning/plan.md) |
+| s. 3, cztery osoby | osoba 4 odpowiada także za testy integracyjne i dokumentację | [plan](../planning/plan.md), [testing](../guides/testing.md) |
 
 ## Co zachowano
 
@@ -65,7 +65,7 @@ a raporty w IPFS. Nie oznacza jednak decentralizacji każdej części systemu.
 
 Konkretnych etapów i limitów pomiarowych, formatu certyfikatu, TTL podpisów,
 finalności, uwierzytelnienia API i dokładnego wariantu dwóch podpisów.
-Wybory wykonawcze są jawne w [decyzjach](decisions.md). „Darmowy testnet” nie gwarantuje
+Wybory wykonawcze są jawne w [decyzjach](../decisions/decisions.md). „Darmowy testnet” nie gwarantuje
 bezterminowej darmowej Pinaty/RPC ani dostępności faucet; przed demonstracją
 sprawdź limity kont i testowe środki na gaz. DPP nie oznacza certyfikacji
 zgodności z regulacjami UE ani gotowego liczenia śladu węglowego.
