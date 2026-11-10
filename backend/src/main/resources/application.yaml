@@ -47,6 +47,8 @@ supplychain:
     url: ${CHAIN_RPC_URL:http://127.0.0.1:8545}
   relayer:
     min-tip-gwei: ${RELAYER_MIN_TIP_GWEI:30}
+  station:
+    trusted-issuers: "${STATION_TRUSTED_ISSUERS:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}"
   auth:
     domain: ${AUTH_DOMAIN:localhost}
     uri: ${AUTH_URI:http://localhost:5173}

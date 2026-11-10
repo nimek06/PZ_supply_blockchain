@@ -23,6 +23,8 @@ supplychain:
     url: http://127.0.0.1:8545
   relayer:
     min-tip-gwei: 30
+  station:
+    trusted-issuers: "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
   auth:
     domain: localhost
     uri: http://localhost:5173

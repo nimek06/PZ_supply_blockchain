@@ -1,5 +1,8 @@
 package pl.pz.supplyblockchain.api;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -7,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,14 +19,21 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import pl.pz.supplyblockchain.application.ports.StationCertificateRepository;
+import pl.pz.supplyblockchain.application.ports.StationCertificateVerifier;
+import pl.pz.supplyblockchain.domain.StationCertificate;
+import pl.pz.supplyblockchain.domain.StationIdentityVerification;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 @EnabledIfEnvironmentVariable(named = "TEST_DB_URL", matches = ".+")
 class StageSubmissionIT {
 
@@ -30,6 +42,30 @@ class StageSubmissionIT {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private StationCertificateRepository certificateRepository;
+
+    @MockitoBean
+    private StationCertificateVerifier certificateVerifier;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        JsonNode fixture;
+        try (InputStream in = getClass().getResourceAsStream("/fixtures/station-certificate.json")) {
+            fixture = objectMapper.readTree(in);
+        }
+        JsonNode certificate = fixture.get("certificate");
+        String certificateJson = objectMapper.writeValueAsString(certificate);
+        String certificateId = certificate.get("payload").get("certificateId").asString();
+        String stationAddress = certificate.get("payload").get("stationAddress").asString();
+        certificateRepository.save(new StationCertificate(
+                certificateId, stationAddress, certificateJson, Instant.now()));
+
+        when(certificateVerifier.verifyForReport(any(), any(), anyInt())).thenReturn(
+                new StationIdentityVerification(
+                        StationIdentityVerification.Reason.OK, "ok", null, null, null));
+    }
 
     @Test
     void submitStageReturns202AndIdempotentReplay() throws Exception {
