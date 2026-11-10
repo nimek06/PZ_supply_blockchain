@@ -56,6 +56,7 @@ Możesz też nadpisać wartości ad-hoc (mają priorytet nad `.env`):
 | `POSTGRES_PASSWORD` | `supplychain` | hasło użytkownika Postgres |
 | `BACKEND_URL` | `http://127.0.0.1:8080` | adres backendu |
 | `RPC_URL` | `http://127.0.0.1:8545` | adres Anvila |
+| `CANONICAL_CONTRACT` | `0x5FbDB2315678afecb367f032d93F642f64180aa3` | adres, którego E2E oczekuje po resecie Anvila |
 
 ```bash
 POSTGRES_PORT=54432 ./backend/scripts/local-e2e/run-e2e.sh
@@ -65,8 +66,8 @@ POSTGRES_PORT=54432 ./backend/scripts/local-e2e/run-e2e.sh
 
 Skrypt `run-e2e.sh` wykonuje kolejno:
 
-1. `setup-stack.sh` — `docker compose up -d`, reset hasła, tworzy bazy.
-2. `deploy-contracts.sh` — `deploy-local.sh --docker` (wdraża SupplyChain i role).
+1. `setup-stack.sh` — startuje Postgres, Anvil i Kubo, resetuje Anvil do pustego łańcucha, ustawia hasło Postgres i tworzy bazy `supplychain_e2e` oraz `supplychain_e2e_test`.
+2. `deploy-contracts.sh` — `deploy-local.sh --docker` (wdraża SupplyChain i role pod kanonicznym adresem `0x5FbDB2315678afecb367f032d93F642f64180aa3`).
 3. `start-backend.sh` — buduje jar i uruchamia backend w tle, czeka na `/actuator/health` i migracje.
 4. `prepare-station.sh` — klucz stacji, certyfikat z aktualnym `issuedAt`, rejestracja on-chain, zapis certyfikatu do bazy.
 5. `run-simulator.sh` — scenariusz `ebike-happy-path.yaml`.
@@ -122,3 +123,4 @@ kill "$(cat backend/scripts/tmp/e2e-run-*/backend.pid)"
 | `STATION_NOT_ACTIVE` | Ponownie uruchom `deploy-contracts.sh` i `prepare-station.sh` |
 | `REGISTRY_MISMATCH` | `prepare-station.sh` nie zarejestrował stacji z `expiresAt` z certyfikatu — uruchom go ponownie |
 | brak `forge`/`cast` | Upewnij się, że uruchamiasz `deploy-contracts.sh`, który używa `--docker` |
+| kontrakt pod innym adresie niż `0x5FbDB2315678afecb367f032d93F642f64180aa3` | Upewnij się, że nie uruchomiłeś wcześniej `docker compose up -d` (serwis `deploy` zużywa nonce). `setup-stack.sh` resetuje Anvil, więc ponowne uruchomienie `run-e2e.sh` przywraca kanoniczny adres. |

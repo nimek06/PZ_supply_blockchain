@@ -28,11 +28,15 @@ BACKEND_PID_FILE="$E2E_WORKDIR/backend.pid"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 POSTGRES_USER="${POSTGRES_USER:-supplychain}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-supplychain}"
-POSTGRES_DB="${POSTGRES_DB:-supplychain_e2e}"
+# E2E używa dedykowanej bazy, żeby nie nadpisywać danych z głównej bazy z .env.
+POSTGRES_DB="${E2E_POSTGRES_DB:-supplychain_e2e}"
 
 BACKEND_URL="${BACKEND_URL:-http://127.0.0.1:8080}"
 RPC_URL="${RPC_URL:-http://127.0.0.1:8545}"
 CHAIN_ID="${CHAIN_ID:-31337}"
+
+# Adres kanonicznego kontraktu na świeżym Anvilu (Anvil #0, nonce 0).
+CANONICAL_CONTRACT="${CANONICAL_CONTRACT:-0x5FbDB2315678afecb367f032d93F642f64180aa3}"
 
 ANVIL_ADMIN_KEY="${ANVIL_ADMIN_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}"
 ANVIL_STATION_KEY="${ANVIL_STATION_KEY:-0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d}"
@@ -65,6 +69,7 @@ wait_for_healthy() {
   done
   die "$service nie osiągnął stanu healthy w ${timeout}s"
 }
+
 
 contract_address() {
   [[ -f "$DEPLOYMENTS_FILE" ]] || die "brak $DEPLOYMENTS_FILE - najpierw deploy kontraktu"

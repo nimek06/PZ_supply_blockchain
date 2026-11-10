@@ -10,4 +10,6 @@ cd "$CONTRACTS_DIR"
 ./script/deploy-local.sh --docker
 
 address=$(contract_address)
+[[ ${address,,} == ${CANONICAL_CONTRACT,,} ]] ||
+  die "kontrakt $address != kanoniczny $CANONICAL_CONTRACT — Anvil nie był pusty? (patrz setup-stack.sh)"
 info "Kontrakt: $address"
