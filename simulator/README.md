@@ -17,6 +17,7 @@ Osoba 4 utrzymuje też narzędzie wystawcy certyfikatów, compose i wektory.
 - [src](src/README.md): instalowalny pakiet symulatora.
 - [scenarios](scenarios/README.md): deklaratywne przebiegi stacji.
 - [tests](tests/README.md): modele, podpisy, HTTP i tryby działania.
+- [scripts](scripts/README.md): lokalny przebieg E2E (preflight + scenariusz).
 
 ## Kolejność pisania
 

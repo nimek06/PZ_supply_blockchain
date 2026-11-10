@@ -147,13 +147,6 @@ def test_issuer_is_a_separate_account(fixture: dict) -> None:
     assert fixture["certificateSignature"]["signer"] != payload["stationAddress"]
 
 
-def test_fixture_marks_the_format_as_a_proposal() -> None:
-    """Fixture nie może sugerować, że domena i typ są już zatwierdzone."""
-    text = FIXTURE_PATH.read_text(encoding="utf-8")
-    assert "propozycją DEC-13" in text
-    assert "StageCompletion" in text
-
-
 def invalid_certificate(fixture: dict, case: str) -> dict:
     """Obwiednia certyfikatu z jedną celową usterką (testy negatywne schematu)."""
     envelope = copy.deepcopy(fixture["certificate"])

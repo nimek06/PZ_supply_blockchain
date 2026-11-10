@@ -30,3 +30,4 @@ simulator/dist/
 # Local runtime data and secrets
 infrastructure/local/data/
 infrastructure/local/secrets/
+shared/deployments/local.json

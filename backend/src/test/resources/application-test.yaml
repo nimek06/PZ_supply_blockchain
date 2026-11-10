@@ -19,6 +19,10 @@ supplychain:
     domain-name: SupplyChain
     domain-version: "1"
     max-deadline-window-seconds: 3600
+  rpc:
+    url: http://127.0.0.1:8545
+  relayer:
+    min-tip-gwei: 30
   auth:
     domain: localhost
     uri: http://localhost:5173

@@ -44,6 +44,8 @@ public class StageController {
                         accepted.id(),
                         accepted.type().name(),
                         accepted.status().name(),
-                        statusUrl));
+                        statusUrl,
+                        null,
+                        null));
     }
 }

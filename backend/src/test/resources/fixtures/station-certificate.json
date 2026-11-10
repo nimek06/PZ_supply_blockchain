@@ -1,0 +1,75 @@
+{
+  "fixtureVersion": 1,
+  "description": "Przykładowy certyfikat stacji (DEC-13): payload + podpis EIP-712 wystawcy w osobnej domenie SupplyChainStationRegistry i typie StationCertificate. Wystawcą jest publiczny klucz deweloperski Anvil #0 (lokalny admin, DEFAULT_ADMIN_ROLE) - nie zasilaj tego adresu na Amoy. stationId = keccak256(\"ST-001\"), expiresAt = issuedAt + 365 dni i stageMask 0x0F odpowiadają rejestracji w contracts/test/SupplyChain.t.sol. Podpis certyfikatu nie jest podpisem StageCompletion i nie zastępuje rejestracji on-chain. Typ i nazwa domeny są nadal propozycją DEC-13.",
+  "domainTypeString": "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+  "domain": {
+    "name": "SupplyChainStationRegistry",
+    "version": "1",
+    "chainId": 31337,
+    "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+  },
+  "certificate": {
+    "certificateVersion": 1,
+    "payload": {
+      "schemaVersion": 1,
+      "certificateId": "0xd6337752b30f2464c72077439190dafc2d68d9f20fe3bdf436d6e9b2c1c3fd3e",
+      "stationId": "0x071dc5a525d6ea42c4b169703ea5c1776b953512942daac912791c213858f46c",
+      "stationAddress": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+      "issuerAddress": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      "chainId": 31337,
+      "verifyingContract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "issuedAt": 1800000000,
+      "expiresAt": 1831536000,
+      "allowedStageIds": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "payloadHash": "0x8a87341f0d3246663324c2ea77d4f6c28dde9dcb7bc78185b74077fac05de433",
+    "signature": "0x90a23cff883955a41f932d0cdc6661f10654323fbd2dad0c14ad82bc7eabbf1239b0063eceb0fbee5ea5983abe1d3b016205427803f5038e6d291af6448eb0fa1c"
+  },
+  "canonicalPayloadJcs": "{\"allowedStageIds\":[0,1,2,3],\"certificateId\":\"0xd6337752b30f2464c72077439190dafc2d68d9f20fe3bdf436d6e9b2c1c3fd3e\",\"chainId\":31337,\"expiresAt\":1831536000,\"issuedAt\":1800000000,\"issuerAddress\":\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\",\"schemaVersion\":1,\"stationAddress\":\"0x70997970c51812dc3a010c7d01b50e0d17dc79c8\",\"stationId\":\"0x071dc5a525d6ea42c4b169703ea5c1776b953512942daac912791c213858f46c\",\"verifyingContract\":\"0x5fbdb2315678afecb367f032d93f642f64180aa3\"}",
+  "certificateSignature": {
+    "typeString": "StationCertificate(bytes32 payloadHash)",
+    "types": {
+      "EIP712Domain": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "version",
+          "type": "string"
+        },
+        {
+          "name": "chainId",
+          "type": "uint256"
+        },
+        {
+          "name": "verifyingContract",
+          "type": "address"
+        }
+      ],
+      "StationCertificate": [
+        {
+          "name": "payloadHash",
+          "type": "bytes32"
+        }
+      ]
+    },
+    "message": {
+      "payloadHash": "0x8a87341f0d3246663324c2ea77d4f6c28dde9dcb7bc78185b74077fac05de433"
+    },
+    "digest": "0x02418a81d9f703752852b9eeb8379ba9957a8da197863ade03e1e2d6df066afe",
+    "signature": "0x90a23cff883955a41f932d0cdc6661f10654323fbd2dad0c14ad82bc7eabbf1239b0063eceb0fbee5ea5983abe1d3b016205427803f5038e6d291af6448eb0fa1c",
+    "signer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+  },
+  "registryCall": {
+    "station": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "stationId": "0x071dc5a525d6ea42c4b169703ea5c1776b953512942daac912791c213858f46c",
+    "expiresAt": 1831536000,
+    "stageMask": 15
+  }
+}

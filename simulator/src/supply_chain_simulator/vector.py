@@ -1,11 +1,15 @@
 """Budowa wspólnych wektorów w `shared/fixtures/` (T008).
 
-Dwa pliki, oba deterministyczne (te same dane wejściowe dają identyczny plik):
+Pliki są deterministyczne (te same dane wejściowe dają identyczny plik):
 
 - `signature-vector.json` - raport JCS, `reportHash` i podpisy EIP-712
   `StageCompletion` (stacja) oraz `StageApproval` (operator zmiany);
 - `station-certificate.json` - przykładowy certyfikat stacji z podpisem
-  wystawcy (`StationCertificate`, DEC-13; format nadal propozycją).
+  wystawcy (`StationCertificate`, DEC-13);
+- `report-profile-violation-stage*.json` i `report-qa-fail.json` - negatywne
+  wektory profilu (tydzień 2);
+- `station-certificate-expired.json` i `station-certificate-untrusted-issuer.json`
+  - negatywne warianty certyfikatu dla weryfikatora Javy (T010).
 
 Klucze to publiczne, znane klucze deweloperskie Anvil (konta #0-#2) - nie ma
 ich w plikach JSON i nigdy nie wolno zasilać tych adresów na Amoy.
@@ -140,7 +144,32 @@ CERTIFICATE_DESCRIPTION = (
     "keccak256(\"ST-001\"), expiresAt = issuedAt + 365 dni i stageMask 0x0F "
     "odpowiadają rejestracji w contracts/test/SupplyChain.t.sol. Podpis "
     "certyfikatu nie jest podpisem StageCompletion i nie zastępuje rejestracji "
-    "on-chain. Typ i nazwa domeny są nadal propozycją DEC-13."
+    "on-chain. Format DEC-13 jest ustalony (2026-11-02); zmiana typu lub domeny "
+    "wymaga nowej wersji."
+)
+
+# Negatywne warianty certyfikatu dla weryfikatora Javy (T010, osoba 1).
+# Nie zmieniają wektora ważnego: to osobne pliki z oczekiwanym odrzuceniem.
+CERTIFICATE_EXPIRED_SERIAL = "CERT-2025-0001"
+CERTIFICATE_EXPIRED_ISSUED_AT = 1_600_000_000
+CERTIFICATE_EXPIRED_EXPIRES_AT = CERTIFICATE_EXPIRED_ISSUED_AT + 24 * 3600
+CERTIFICATE_UNTRUSTED_SERIAL = "CERT-2026-0002"
+CERTIFICATE_EXPIRED_FIXTURE_NAME = "station-certificate-expired.json"
+CERTIFICATE_UNTRUSTED_ISSUER_FIXTURE_NAME = "station-certificate-untrusted-issuer.json"
+CERTIFICATE_EXPIRED_DESCRIPTION = (
+    "Certyfikat negatywny v1 (T010): poprawnie podpisany przez zaufanego wystawcę "
+    "(Anvil #0), ale okno ważności jest w przeszłości - issuedAt 1600000000, "
+    "expiresAt 1600086400. Weryfikator ma go odrzucić jako wygasły (now >= expiresAt), "
+    "mimo poprawnego podpisu. Blok expectedVerification podaje powód i checkedAt. "
+    "Klucze to publiczne klucze deweloperskie Anvil #0 - nie zasilaj tego adresu na Amoy."
+)
+CERTIFICATE_UNTRUSTED_ISSUER_DESCRIPTION = (
+    "Certyfikat negatywny v1 (T010): poprawnie podpisany i spójny (issuerAddress = "
+    "odzyskany podpisujący = Anvil #2), ale wystawca nie jest na allowliście wdrożenia "
+    "(allowlista = Anvil #0, administrator). Weryfikator ma go odrzucić jako niezaufanego "
+    "wystawcę, mimo poprawnej kryptografii. Blok expectedVerification podaje powód "
+    "i trustedIssuers. Klucze to publiczne klucze deweloperskie Anvil #2 - nie zasilaj "
+    "tego adresu na Amoy."
 )
 
 
@@ -499,22 +528,18 @@ def certificate_payload() -> CertificatePayload:
     )
 
 
-def build_certificate_fixture() -> dict[str, object]:
-    """Buduje treść fixture'u certyfikatu (dict gotowy do zapisu jako JSON).
-
-    Obwiednia `certificate` jest dokumentem zgodnym ze schematem
-    `shared/schemas/station-certificate.schema.json`. Blok
-    `certificateSignature` powtarza format wektora podpisu, żeby Java, TS
-    i Solidity mogły zweryfikować podpis bez czytania modeli Pythona, a
-    `registryCall` podaje argumenty `registerStation` dla admina (Adam, T012).
-    """
-    payload = certificate_payload()
-    certificate, signed = sign_certificate(payload, ANVIL_KEY_0)
+def _certificate_fixture(
+    payload: CertificatePayload,
+    signing_key: int,
+    description: str,
+    extra: dict[str, object],
+) -> dict[str, object]:
+    """Buduje fixture certyfikatu: obwiednię, canonical payload i blok podpisu."""
+    certificate, signed = sign_certificate(payload, signing_key)
     block = signed.as_dict()
-
-    return {
+    fixture: dict[str, object] = {
         "fixtureVersion": CERTIFICATE_FIXTURE_VERSION,
-        "description": CERTIFICATE_DESCRIPTION,
+        "description": description,
         "domainTypeString": EIP712_DOMAIN_TYPE_STRING,
         "domain": certificate_domain(payload).model_dump(mode="json"),
         "certificate": certificate.model_dump(mode="json"),
@@ -527,13 +552,115 @@ def build_certificate_fixture() -> dict[str, object]:
             "signature": block["signature"],
             "signer": block["signer"],
         },
-        "registryCall": {
-            "station": payload.stationAddress,
-            "stationId": payload.stationId,
-            "expiresAt": payload.expiresAt,
-            "stageMask": stage_mask(payload.allowedStageIds),
-        },
     }
+    fixture.update(extra)
+    return fixture
+
+
+def build_certificate_fixture() -> dict[str, object]:
+    """Buduje treść ważnego fixture'u certyfikatu (dict gotowy do zapisu jako JSON).
+
+    Obwiednia `certificate` jest dokumentem zgodnym ze schematem
+    `shared/schemas/station-certificate.schema.json`. Blok
+    `certificateSignature` powtarza format wektora podpisu, żeby Java, TS
+    i Solidity mogły zweryfikować podpis bez czytania modeli Pythona, a
+    `registryCall` podaje argumenty `registerStation` dla admina (Adam, T012).
+    """
+    payload = certificate_payload()
+    return _certificate_fixture(
+        payload,
+        ANVIL_KEY_0,
+        CERTIFICATE_DESCRIPTION,
+        {
+            "registryCall": {
+                "station": payload.stationAddress,
+                "stationId": payload.stationId,
+                "expiresAt": payload.expiresAt,
+                "stageMask": stage_mask(payload.allowedStageIds),
+            }
+        },
+    )
+
+
+def certificate_expired_payload() -> CertificatePayload:
+    """Payload certyfikatu z oknem ważności w przeszłości (now >= expiresAt)."""
+    base = certificate_payload().model_dump(mode="json")
+    base.update(
+        certificateId=certificate_id(CERTIFICATE_EXPIRED_SERIAL),
+        issuedAt=CERTIFICATE_EXPIRED_ISSUED_AT,
+        expiresAt=CERTIFICATE_EXPIRED_EXPIRES_AT,
+    )
+    return CertificatePayload(**base)
+
+
+def certificate_untrusted_payload() -> CertificatePayload:
+    """Payload z wystawcą spoza allowlisty (Anvil #2), podpisany tym samym kluczem."""
+    base = certificate_payload().model_dump(mode="json")
+    base.update(
+        certificateId=certificate_id(CERTIFICATE_UNTRUSTED_SERIAL),
+        issuerAddress=ANVIL_ADDRESS_2,
+    )
+    return CertificatePayload(**base)
+
+
+def build_certificate_expired_fixture() -> dict[str, object]:
+    """Kryptograficznie poprawny certyfikat, który należy odrzucić jako wygasły."""
+    return _certificate_fixture(
+        certificate_expired_payload(),
+        ANVIL_KEY_0,
+        CERTIFICATE_EXPIRED_DESCRIPTION,
+        {
+            "expectedVerification": {
+                "accepted": False,
+                "reason": "expired",
+                "checkedAt": CERTIFICATE_EXPIRED_EXPIRES_AT,
+            }
+        },
+    )
+
+
+def build_certificate_untrusted_issuer_fixture() -> dict[str, object]:
+    """Spójny certyfikat podpisany kluczem wystawcy spoza allowlisty wdrożenia."""
+    return _certificate_fixture(
+        certificate_untrusted_payload(),
+        ANVIL_KEY_2,
+        CERTIFICATE_UNTRUSTED_ISSUER_DESCRIPTION,
+        {
+            "expectedVerification": {
+                "accepted": False,
+                "reason": "untrusted_issuer",
+                "trustedIssuers": [ANVIL_ADDRESS_0.lower()],
+            }
+        },
+    )
+
+
+def certificate_expired_fixture_text() -> str:
+    """Serializowany wariant wygasły (2 spacje wcięcia, końcowa nowa linia)."""
+    return json.dumps(build_certificate_expired_fixture(), indent=2, ensure_ascii=False) + "\n"
+
+
+def certificate_untrusted_issuer_fixture_text() -> str:
+    """Serializowany wariant z niezaufanym wystawcą (2 spacje, końcowa nowa linia)."""
+    return (
+        json.dumps(build_certificate_untrusted_issuer_fixture(), indent=2, ensure_ascii=False)
+        + "\n"
+    )
+
+
+def write_certificate_negative_fixtures(directory: Path | None = None) -> list[Path]:
+    """Zapisuje negatywne warianty certyfikatu i zwraca ścieżki plików."""
+    target = directory if directory is not None else default_negative_fixture_directory()
+    target.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for name, text in (
+        (CERTIFICATE_EXPIRED_FIXTURE_NAME, certificate_expired_fixture_text()),
+        (CERTIFICATE_UNTRUSTED_ISSUER_FIXTURE_NAME, certificate_untrusted_issuer_fixture_text()),
+    ):
+        path = target / name
+        path.write_text(text, encoding="utf-8")
+        written.append(path)
+    return written
 
 
 def certificate_fixture_text() -> str:

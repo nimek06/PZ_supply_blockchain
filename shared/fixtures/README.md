@@ -5,6 +5,7 @@
 Plan: `report-valid.json`, `report-qa-fail.json`, `report-profile-violation-stage0..3.json`, `signature-vector.json`
 (`StageCompletion` bez nonce, `StageApproval`; wektor wspólny dla Python, Java, TS/viem i Solidity),
 `station-certificate.json` (certyfikat stacji: payload, `payloadHash`, podpis wystawcy i `registryCall`)
+oraz warianty negatywne `station-certificate-expired.json` i `station-certificate-untrusted-issuer.json` (T010)
 oraz przykładowe odpowiedzi partii/historii/polecenia zgodne z OpenAPI.
 Wektor zawiera kanoniczny raport, oczekiwany reportHash, typed data, podpis
 i publiczny adres testowej stacji. Wartości kryptograficzne trzeba wygenerować
@@ -53,3 +54,20 @@ Każdy plik ma blok `submission` = gotowe ciało `POST /api/v1/batches/{batchId}
 - etap 2 ma dodatkowo `stageApproval` operatora zmiany (Anvil #2)
 - blok `submission` jak w negatywnych, gotowe ciało `POST /api/v1/batches/{batchId}/stages`
 - generuje je `python -m supply_chain_simulator --export-valid-fixtures`, testy w `tests/test_valid_fixtures.py`
+
+**Stan 2026-11-05 (certyfikat, T010):** DEC-13 jest USTALONA (2026-11-02), więc schemat i fixture
+nie opisują już formatu jako propozycji. Ważny fixture pozostaje bez zmian kryptograficznych
+(`payloadHash 0x8a87341f…de433`, podpis wystawcy Anvil #0). Dla weryfikatora Javy (T010) są
+dodatkowe podpisane warianty negatywne:
+
+- `station-certificate-expired.json` — poprawnie podpisany przez zaufanego wystawcę, ale
+  `issuedAt 1600000000` i `expiresAt 1600086400` (w przeszłości) → odrzucenie „wygasły”;
+  `expectedVerification.checkedAt` podaje moment kontroli.
+- `station-certificate-untrusted-issuer.json` — poprawnie podpisany i spójny
+  (`issuerAddress` = odzyskany podpisujący = Anvil #2), ale spoza allowlisty wdrożenia
+  (`trustedIssuers = [Anvil #0]`) → odrzucenie „niezaufany wystawca”.
+
+`odwołany` i `adres niezgodny z rejestrem` to stany rejestru on-chain, nie treść certyfikatu:
+użyj ważnego fixture'u i skonfiguruj stub `getStation` (odwołana stacja / inny adres lub `stationId`).
+Generuje je `python -m supply_chain_simulator --export-certificate-negatives`; odtwarzalność
+sprawdza `tests/test_certificate_negatives.py`.

@@ -35,6 +35,7 @@ public class SubmitStageService {
     private final CommandRepository commandRepository;
     private final ReportCanonicalizer reportCanonicalizer;
     private final StageCompletionVerifier signatureVerifier;
+    private final ProfileValidator profileValidator;
     private final ChainProperties chainProperties;
     private final Clock clock;
 
@@ -42,11 +43,13 @@ public class SubmitStageService {
             CommandRepository commandRepository,
             ReportCanonicalizer reportCanonicalizer,
             StageCompletionVerifier signatureVerifier,
+            ProfileValidator profileValidator,
             ChainProperties chainProperties,
             Clock clock) {
         this.commandRepository = commandRepository;
         this.reportCanonicalizer = reportCanonicalizer;
         this.signatureVerifier = signatureVerifier;
+        this.profileValidator = profileValidator;
         this.chainProperties = chainProperties;
         this.clock = clock;
     }
@@ -57,15 +60,6 @@ public class SubmitStageService {
         if (!report.normalizedBatchId().equalsIgnoreCase(request.pathBatchId())) {
             throw new DomainException(ErrorCode.SCHEMA_VIOLATION,
                     "report.batchId does not match the path batchId");
-        }
-
-        long now = clock.instant().getEpochSecond();
-        if (request.deadline() < now) {
-            throw new DomainException(ErrorCode.DEADLINE_EXPIRED, "deadline has already passed");
-        }
-        if (request.deadline() > now + chainProperties.maxDeadlineWindowSeconds()) {
-            throw new DomainException(ErrorCode.DEADLINE_TOO_FAR,
-                    "deadline is further than the configured limit from now");
         }
 
         CanonicalReport canonicalReport = reportCanonicalizer.canonicalize(report);
@@ -100,6 +94,17 @@ public class SubmitStageService {
                 commandRepository.findBySignedPayloadDigest(deploymentId, verification.digest());
         if (sameDigest.isPresent()) {
             return sameDigest.get();
+        }
+
+        profileValidator.validate(report);
+
+        long now = clock.instant().getEpochSecond();
+        if (request.deadline() < now) {
+            throw new DomainException(ErrorCode.DEADLINE_EXPIRED, "deadline has already passed");
+        }
+        if (request.deadline() > now + chainProperties.maxDeadlineWindowSeconds()) {
+            throw new DomainException(ErrorCode.DEADLINE_TOO_FAR,
+                    "deadline is further than the configured limit from now");
         }
 
         Optional<StageCommand> latest =

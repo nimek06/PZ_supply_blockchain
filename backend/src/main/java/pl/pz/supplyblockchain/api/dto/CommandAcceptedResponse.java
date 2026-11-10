@@ -8,5 +8,7 @@ public record CommandAcceptedResponse(
         UUID commandId,
         String type,
         String status,
-        String statusUrl) {
+        String statusUrl,
+        String batchId,
+        String batchNumber) {
 }

@@ -21,6 +21,13 @@ import pl.pz.supplyblockchain.domain.ErrorCode;
 @Component
 public class CompleteStageCallEncoder {
 
+    private static final int SIGNATURE_LENGTH = 65;
+
+    /**
+     * ABI-encodes {@code completeStage(...)}. {@code approvalSignature} may be empty
+     * ({@code null}, {@code ""} or {@code "0x"}) because the contract evaluates the approval only
+     * for the QA stage with {@code qaPassed = true}; the station signature is always required.
+     */
     public String encode(CompleteStageCall call) {
         List<Type> inputs = List.of(
                 bytes32(call.batchId(), "batchId"),
@@ -31,7 +38,7 @@ public class CompleteStageCallEncoder {
                 new Utf8String(call.ipfsCid()),
                 new DynamicBytes(signature(call.stationSignature(), "stationSignature")),
                 new Uint256(BigInteger.valueOf(call.approvalDeadline())),
-                new DynamicBytes(signature(call.approvalSignature(), "approvalSignature")));
+                new DynamicBytes(optionalSignature(call.approvalSignature(), "approvalSignature")));
         Function function = new Function("completeStage", inputs, Collections.emptyList());
         return FunctionEncoder.encode(function);
     }
@@ -52,9 +59,16 @@ public class CompleteStageCallEncoder {
             throw new DomainException(ErrorCode.SCHEMA_VIOLATION, field + " is required");
         }
         byte[] bytes = Numeric.hexStringToByteArray(value);
-        if (bytes.length != 65) {
+        if (bytes.length != SIGNATURE_LENGTH) {
             throw new DomainException(ErrorCode.SCHEMA_VIOLATION, field + " must be 65 bytes");
         }
         return bytes;
+    }
+
+    private static byte[] optionalSignature(String value, String field) {
+        if (value == null || Numeric.cleanHexPrefix(value).isEmpty()) {
+            return new byte[0];
+        }
+        return signature(value, field);
     }
 }

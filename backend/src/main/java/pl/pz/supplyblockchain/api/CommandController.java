@@ -28,7 +28,7 @@ public class CommandController {
             @PathVariable UUID commandId,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         String owner = authService.authenticateRequired(authorization);
-        StageCommand command = commandQueryService.getOwned(commandId, owner);
+        StageCommand command = commandQueryService.getVisible(commandId, owner);
         return new CommandStatusResponse(
                 command.id(),
                 command.type().name(),

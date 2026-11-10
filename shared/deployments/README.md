@@ -8,7 +8,9 @@ parametry domeny EIP-712. Nie dopisuj pliku Amoy przed faktycznym wdrożeniem (s
 
 Lokalny adres po restarcie sieci może się zmienić; przykład nie jest aktywnym
 wdrożeniem. Rzeczywiste lokalne dane dostarczaj konfiguracją środowiska
-nie myląc ich z trwałym adresem Amoy.
+nie myląc ich z trwałym adresem Amoy. Plik `local.json` z bieżącego Anvila zapisuje
+[deploy-local.sh](../../contracts/script/README.md#lokalny-deploy-jednym-poleceniem).
+Git go ignoruje.
 
 Aktualizuj po wykonaniu i sprawdzeniu deploymentu. Backend i frontend muszą
 używać tej samej sieci oraz adresu. Nigdy nie dodawaj prywatnych kluczy,
