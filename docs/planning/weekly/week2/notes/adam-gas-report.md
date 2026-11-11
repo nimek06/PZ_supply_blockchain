@@ -1,5 +1,10 @@
 # Tydzień 2 - raport gazu kontraktu `SupplyChain` (Adam)
 
+> Pomiary historyczne pozostają bez zmian. Po
+> [DEC-17](../../../../decisions/local-blockchain-scope.md) aplikacja działa
+> na Anvilu; wyceny i parametry Amoy są materiałem do dodatkowego skryptu dema,
+> nie wymaganiami lokalnego relayera ani gwarancją aktualnych opłat.
+
 **Data:** 2026-11-09. **Narzędzia:** Foundry 1.8.6 (solc 0.8.24, `via_ir`, `evm_version = cancun`), Anvil.
 **Kontrakt:** [SupplyChain.sol](../../../../../contracts/src/SupplyChain.sol) bez zmian: runtime 6 196 B,
 initcode 7 056 B (limit EIP-170 to 24 576 B).

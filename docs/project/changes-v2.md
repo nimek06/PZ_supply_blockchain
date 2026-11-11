@@ -6,6 +6,11 @@ użytkownika 2026-10-27. Zespół potwierdza je na spotkaniu startowym
 i dokumentów zależnych, nie lokalnego obejścia w kodzie.
 Ten dokument jest **wiążący**, gdy starszy tekst innego pliku mówi inaczej.
 
+**Korekta zakresu 2026-11-11:** [DEC-17, wariant 1](../decisions/local-blockchain-scope.md)
+ma pierwszeństwo w sprawie środowisk: cały system Anvil/Kubo i tylko dodatkowe
+jednorazowe demo kontraktu Amoy. Pierwotne uzasadnienie poniżej jest historyczne;
+V2-12 i V2-13 zaktualizowano bez usuwania pozostałych reguł v2.
+
 ## Po co zmiany
 
 1. Sekwencyjny nonce stacji + wolne QA + brak recovery mógł trwale zablokować stację.
@@ -31,8 +36,8 @@ Ten dokument jest **wiążący**, gdy starszy tekst innego pliku mówi inaczej.
 | V2-09 | `.send()` z wrappera Web3j | **Web3j tylko do kodowania wywołań i podpisu.** Własne podpisywanie transakcji, własny dostawca opłat EIP-1559 z konfigurowalnym minimalnym tipem. `DefaultGasProvider` zabroniony |
 | V2-10 | EIP-712 w Javie przez gotowy koder | **Ręczna implementacja** jednej stałej struktury (Keccak + odzyskanie adresu), sprawdzona wspólnym wektorem w Pythonie, Javie, TS i Solidity |
 | V2-11 | `batchId` losowy `bytes32` | **Numer partii** `B-RRRR-NNNN` (np. `B-2026-0001`) nadaje backend; `batchId = keccak256(utf8(batchNumber))`, liczone także on-chain w `createBatch(string batchNumber)`. QR i ręczne wpisanie używają numeru |
-| V2-12 | Pinata jedyną implementacją, JSON jako obiekt | **Port `ReportStorage`:** Kubo lokalnie i w CI, Pinata do demo. Wysyłane są dokładnie bajty JCS jako plik. Walidator CID przyjmuje CIDv0 i CIDv1. Limity planu Pinaty sprawdzić przed pętlami symulatora |
-| V2-13 | Amoy w tygodniu 10 | **Smoke deploy na Amoy w tygodniu 1**, integracja pionowa także na Amoy w tygodniu 5, próba demo w tygodniu 10. `evm_version` ustawiony jawnie w `foundry.toml` |
+| V2-12 | Pinata jedyną implementacją, JSON jako obiekt | **Port `ReportStorage`:** Kubo w rozwoju, CI i demo, bez wymogu adaptera Pinata (DEC-14/17). Dokładnie bajty JCS jako plik; CIDv0 i CIDv1 |
+| V2-13 | Pełna integracja aplikacji na Amoy | **Wariant 1 od 2026-11-11:** lokalny pion Anvil/Kubo w tyg. 5, lokalna próba prezentacji i dodatkowe demo samego kontraktu Amoy skryptem w tyg. 10. `evm_version` jawny; historyczne smoke z tyg. 1 nie blokuje MVP |
 | V2-14 | Kamera/QR bez planu HTTPS | **Lokalny HTTPS dla frontendu** (certyfikat deweloperski lub tunel) od tygodnia 1; wybór biblioteki QR po spike'u |
 | V2-15 | Spring Boot 3.3+ | **Aktualna wspierana wersja** wybrana przy inicjalizacji; sprawdzić zgodność z Web3j i Jackson |
 | V2-16 | Podział prac z osobą 2 przeciążoną | Patrz [nowy podział zadań](../planning/team-split.md) |
@@ -105,5 +110,6 @@ zastąpienia: nie przesuwa partii.
 
 Wymagania PDF (dwa niezależne klucze przy kontroli, certyfikat stacji, hybrydowy
 zapis IPFS/on-chain, RBAC, maszyna stanów, QR, paszport), marszruta 0..3,
-JCS + Keccak-256, jeden relayer, PostgreSQL jako trwała kolejka, lokalnie Anvil,
-docelowo Amoy (`chainId = 80002`).
+JCS + Keccak-256, jeden relayer, PostgreSQL jako trwała kolejka.
+Środowisko docelowe aplikacji to Anvil (`chainId = 31337`) i Kubo;
+Amoy (`80002`) tylko do dodatkowego dema kontraktu (DEC-17).

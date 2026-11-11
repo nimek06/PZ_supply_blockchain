@@ -1,7 +1,48 @@
-# Analiza zakresu: tylko lokalny blockchain (bez Polygon Amoy)
+# Zakres blockchainu: wariant 1 — lokalny system i jednorazowe demo Amoy
 
-**Status:** propozycja do decyzji zespołu (2026-11-10). Do czasu zatwierdzenia
-obowiązuje dotychczasowy plan z [decisions.md](decisions.md) i [plan.md](../planning/plan.md).
+**Status:** wybrano wariant 1 dnia **2026-11-11**. Decyzja zastępuje wcześniejszy
+obowiązek pełnej integracji aplikacji z Amoy i Pinatą. Rejestr:
+[DEC-17](decisions.md); wykonanie: [plan projektu](../planning/plan.md).
+
+## Obowiązujący zakres
+
+- **Anvil (chainId 31337):** cały system — kontrakt, backend, relayer, indexer,
+  symulator, frontend, portfel, testy i podstawowa demonstracja.
+- **Kubo:** jedyny wymagany magazyn IPFS, także podczas demonstracji. Nie budujemy
+  ani nie utrzymujemy adaptera Pinata.
+- **Polygon Amoy (chainId 80002):** dodatkowe, jednorazowe demo kontraktu skryptem
+  przed prezentacją (T029, tydzień 10): deploy, role, rejestracja stacji,
+  utworzenie partii i etapy 0..3, w tym kontrola z dwoma niezależnymi podpisami.
+  Zachowujemy adres kontraktu, hashe transakcji i odnośniki do eksploratora.
+  Istniejący smoke test jednego etapu to punkt startowy, nie pełne demo.
+- Backend, frontend, relayer i indexer **nie muszą działać na Amoy**. Nie ma
+  synchronizacji między sieciami, mostu ani kotwiczenia lokalnych wyników.
+  Demo Amoy ma osobną partię i podpisy dla właściwej domeny EIP-712; podpisów
+  z Anvila nie można przenieść na Amoy.
+- RPC URL, chainId i adres kontraktu pozostają konfiguracją. Nie oznacza to
+  zobowiązania do obsługi drugiego środowiska przez całą aplikację.
+- Indexer lokalny używa `latest` i jednego potwierdzenia (blok zawierający
+  transakcję liczy się jako pierwsze). Zachowujemy wykrywanie zmiany hash bloku,
+  okno ponownego skanu i testy reorgu na Anvilu. Nadal wymagane są trwałe próby
+  transakcji, bezpieczne ponowienie i obsługa restartu.
+- SIWE i podpisy QA przez portfel pozostają w zakresie. Anvil udostępnia
+  domyślnie 10 kont po 10 000 fikcyjnych ETH; niczego nie kupujemy.
+  Publicznych kluczy deweloperskich Anvila nie używamy na Amoy.
+- Demo Amoy korzysta z osobnych kont testowych i testowego POL z faucetu.
+  Awaria RPC lub faucetu nie blokuje lokalnego MVP; brak dema zapisujemy jawnie,
+  a nie przedstawiamy jako wykonany test. Nie utrzymujemy go w CI.
+
+**Granica prezentacji:** lokalny paszport jest publicznym odczytem bez logowania
+w udostępnionym środowisku, nie niezależnym publicznym rejestrem Polygon.
+Kod QR wskazuje adres aplikacji osiągalny z urządzenia, a nie samo RPC.
+Demo Amoy potwierdza działanie kontraktu na publicznym EVM, nie pełną integrację
+aplikacji ani publiczną dostępność raportów z lokalnego Kubo.
+
+## Wcześniejsza analiza i rozważane alternatywy (2026-11-10)
+
+Poniższy materiał zachowuje wcześniejszą dyskusję, w tym dosłowny opis czterech
+wariantów. Propozycje i zalecenia poniżej nie zmieniają wybranego zakresu powyżej.
+Wartość 10–15% była niezweryfikowanym szacunkiem, nie pomiarem oszczędności pracy.
 
 ## Pytanie
 
@@ -51,14 +92,15 @@ indexerze, konfiguracji i zadaniach wdrożeniowych. Kosztem jest utrata
 | Kuba (frontend) | łatwiej: jedna sieć i stały chainId; trzeba opisać konfigurację MetaMask |
 | Robert (symulator i integracja) | praktycznie bez zmian, bo symulator już celuje w Anvil |
 
-## Dokumenty do poprawy po decyzji
+## Dokumenty powiązane z decyzją
 
 - [decisions.md](decisions.md): nowa decyzja o zakresie; korekta DEC-07 (finalność)
   i DEC-11 (priority fee relayera).
 - [plan.md](../planning/plan.md) i [team-split.md](../planning/team-split.md): T029 i
   kroki Amoy w tygodniach 5 i 10.
 - [Stack_Tech.md](../../Stack_Tech.md), [README.md](../../README.md) i
-  [contracts/script/README.md](../../contracts/script/README.md): wzmianki o Amoy i Pinacie.
+  [contracts/script/README.md](../../contracts/script/README.md): starsze wzmianki
+  poza `docs/` nie zostały zmienione w tej aktualizacji; dla zakresu obowiązuje DEC-17.
 - Notatki Adama ([gas](../planning/weekly/week2/notes/adam-gas-report.md),
   [indexer](../planning/weekly/week2/notes/adam-indexer-notes.md)): oznaczyć sekcje Amoy
   jako materiał archiwalny.
@@ -74,3 +116,30 @@ indexerze, konfiguracji i zadaniach wdrożeniowych. Kosztem jest utrata
 
 W ten sposób zyskujemy prawie całe uproszczenie, a na obronie nadal możemy pokazać,
 że kontrakt działa na prawdziwej sieci.
+
+## Warianty hybrydowe: lokalnie + ograniczone użycie Polygon Amoy
+
+Możecie wybrać kilka wariantów — od symbolicznego użycia Polygon Amoy po faktyczną integrację:
+
+| Wariant | Lokalnie | Na Polygon Amoy | Nakład |
+|---|---|---|---|
+| **1. Jednorazowe demo** | Cały rozwój i działająca aplikacja | Deploy kontraktu i jeden pełny przebieg partii przed prezentacją | Mały |
+| **2. Opcjonalny tryb Amoy** | Domyślne środowisko, testy i CI | Ten sam system uruchamiany na żądanie z inną konfiguracją | Średni |
+| **3. Kotwiczenie wyników** | Wszystkie etapy produkcji, podpisy i raporty | Tylko hash końcowego paszportu lub podsumowania partii | Mały–średni, ale wymaga dodatkowej logiki |
+| **4. Wybrane partie demonstracyjne** | Większość partii i wszystkie automatyczne testy | Kilka partii przechodzi pełny proces przez aplikację | Średni |
+
+### Co faktycznie daje każdy wariant?
+
+**1. Jednorazowe demo**  
+Pokazujecie, że kontrakt działa również na publicznym EVM. Nie musicie utrzymywać całej aplikacji pod Amoy — przebieg można wykonać skryptem. **Nie dowodzi to jednak integracji całego systemu z Polygonem.**
+
+**2. Opcjonalny tryb Amoy**  
+Najbardziej naturalny dla obecnej architektury. Zmieniacie RPC, chainId, adresy kontraktów i konta; frontend przełącza sieć. Dane backendu i stan indexera muszą być rozdzielone między środowiskami. **Nie wymaga synchronizacji Anvil ↔ Amoy** — to dwa niezależne uruchomienia.
+
+**3. Kotwiczenie wyników**  
+Po zakończeniu partii publikujecie na Amoy hash jej paszportu. Później można sprawdzić, czy dokument się zmienił. To **nie potwierdza prawdziwości produkcji ani poszczególnych etapów** — tylko zgodność dokumentu z publicznie zapisanym hashem. Nie trzeba mostu między sieciami, ale trzeba dopisać publikowanie i weryfikację tego hasha.
+
+**4. Wybrane partie demonstracyjne**  
+Pełna integracja z Amoy, ale używana sporadycznie. Ogranicza liczbę transakcji i obsługę środowiska, **nie usuwa jednak pracy nad relayerem, indexerem i portfelem dla Amoy**.
+
+**Dla was polecałbym wariant 1**, jeśli priorytetem jest ograniczenie pracy. **Wariant 2**, jeśli chcecie mocniejszą prezentację bez zmiany architektury. Kotwiczenie jest sensowne, ale na tym etapie może oznaczać więcej nowych funkcji niż jednorazowe demo obecnego kontraktu.

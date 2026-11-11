@@ -1,5 +1,10 @@
 # Plan pierwszego tygodnia implementacji (bez frontendu)
 
+> Plan historyczny. Od 2026-11-11 zakres środowisk określa
+> [DEC-17](../../../decisions/local-blockchain-scope.md): system Anvil/Kubo,
+> Amoy tylko jako dodatkowe demo kontraktu. Aktualny termin startu frontendu
+> i dalsze zadania: [tydzień 3](../week3/week3-plan.md).
+
 **Status:** plan roboczy dla 4 osób, tydzień 1 z 12. Zakłada zmiany z
 [changes-v2.md](../../../project/changes-v2.md) i podział z [team-split.md](../../team-split.md).
 **Frontend nie jest realizowany w tygodniu 1** (decyzja 2026-10-27): T005 i T032

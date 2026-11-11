@@ -4,6 +4,13 @@
 3 strony, odczytane 2026-10-26. Dokument źródłowy pozostaje bez zmian.
 Przy sprzeczności z wcześniejszym README pierwszeństwo ma PDF.
 
+**Zmiana wykonawcza 2026-11-11:** [wariant 1 / DEC-17](../decisions/local-blockchain-scope.md).
+Pełna aplikacja działa na Anvil/Kubo, a Polygon Amoy służy wyłącznie do
+dodatkowego jednorazowego dema kontraktu. Nie zmieniamy PDF ani nie twierdzimy,
+że lokalny węzeł zapewnia niezależną publiczną decentralizację.
+To jawne ograniczenie prototypu; zgodność tak zawężonej demonstracji z oczekiwaniami
+prowadzącego należy potwierdzić, nie zakładać na podstawie samego dema Amoy.
+
 ## Zakres i interpretacja
 
 Wprowadzenie PDF mówi szeroko o łańcuchu dostaw od półproduktów do dystrybucji.
@@ -30,8 +37,9 @@ fizycznej. Zmieniamy sposób rejestrowania, przechowywania i weryfikacji danych.
 
 ## Co zachowano
 
-Solidity/Polygon, Foundry/Anvil, IPFS/Pinata, symulator Python i REST są
-zgodne z PDF. Java/Spring, React/TypeScript, PostgreSQL, JCS i EIP-712
+Zachowujemy Solidity/EVM, Foundry/Anvil, IPFS (Kubo), symulator Python i REST;
+Polygon Amoy pozostaje tylko pokazem kontraktu, Pinata nie jest wymagana.
+Java/Spring, React/TypeScript, PostgreSQL, JCS i EIP-712
 pozostają decyzjami wykonawczymi z wcześniejszego README: PDF ich nie zabrania,
 ale nie należy przedstawiać ich jako wymagań wprost z PDF.
 Jedna instancja backendu/relayera nie zmienia faktu, że rejestr jest on-chain,
@@ -55,8 +63,9 @@ a raporty w IPFS. Nie oznacza jednak decentralizacji każdej części systemu.
    Podpisy mogą być argumentem transakcji do weryfikacji, nie muszą być storage.
 5. Panel operatora obejmuje zmianę statusu przez właściwe zgłoszenie/approval,
    nie bezpośrednią edycję projekcji i nie tylko bierny podgląd.
-6. Wstępny plan obejmuje 12 tygodni, MVP lokalne i końcową demonstrację testnet;
-   smoke deploy na Amoy jest już w tygodniu 1.
+6. Plan obejmuje 12 tygodni i pełne MVP lokalne. Po DEC-17 dodatkowe demo
+   testnet dotyczy tylko kontraktu, nie całej aplikacji; wcześniejszy smoke
+   pozostaje materiałem historycznym.
 7. Zmiany v2 z 2026-10-27 (brak nonce, off-chain approval, rejestr stacji,
    token Bearer, `StageRejected`) opisuje [changes-v2](changes-v2.md); w razie
    sprzeczności ten dokument ma pierwszeństwo przed starszym tekstem.
@@ -66,6 +75,6 @@ a raporty w IPFS. Nie oznacza jednak decentralizacji każdej części systemu.
 Konkretnych etapów i limitów pomiarowych, formatu certyfikatu, TTL podpisów,
 finalności, uwierzytelnienia API i dokładnego wariantu dwóch podpisów.
 Wybory wykonawcze są jawne w [decyzjach](../decisions/decisions.md). „Darmowy testnet” nie gwarantuje
-bezterminowej darmowej Pinaty/RPC ani dostępności faucet; przed demonstracją
-sprawdź limity kont i testowe środki na gaz. DPP nie oznacza certyfikacji
+dostępności RPC ani faucetu; przed dodatkowym demem kontraktu sprawdź limity
+i testowe środki na gaz, bez kupowania prawdziwych tokenów. DPP nie oznacza certyfikacji
 zgodności z regulacjami UE ani gotowego liczenia śladu węglowego.

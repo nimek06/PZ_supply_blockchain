@@ -1,7 +1,7 @@
 # Testy i kryteria odbioru
 
-To lista testów do napisania. Obecna struktura nie zawiera jeszcze runnerów
-ani testów aplikacji. Testy muszą sprawdzać wymaganie, nie samo HTTP 200.
+To docelowa macierz odbioru, nie raport wykonanych testów. Istniejące zestawy
+po tygodniu 2 zachowujemy i rozszerzamy. Testy muszą sprawdzać wymaganie, nie samo HTTP 200.
 Szczegółowe przypadki pięciu obszarów są na końcu
 [reguł produkcji](../rules/production-rules.md), [dwóch kluczy](../rules/quality-approval.md),
 [certyfikatów](../rules/station-identity.md) i [uprawnień](../rules/access-control.md).
@@ -36,8 +36,8 @@ H2 jako dowodu zgodności SQL i blokad PostgreSQL. Testy nie mogą dotykać
 produkcyjnej bazy ani używać prawdziwych tokenów. TestContainers wymaga Dockera.
 Testy HTTP używają stubów magazynu raportów i RPC dla awarii; lokalna integracja
 blockchain korzysta z Anvil, a IPFS z Kubo. CI nie wymaga dostępu do publicznej
-sieci Amoy ani Pinaty. Integracja pionowa na Amoy i prawdziwej Pinacie jest
-ręczna (tydzień 5) i w próbie demo (tydzień 10).
+sieci Amoy ani Pinaty. Cały odbiór aplikacji i próba prezentacji odbywają się
+na Anvil/Kubo (DEC-17). Nie wymagamy testów backendu/frontendu/indexera na Amoy.
 
 ## Odbiór pełnej ścieżki
 
@@ -72,6 +72,24 @@ ręczna (tydzień 5) i w próbie demo (tydzień 10).
 Osoba 4 koordynuje testy integracyjne i raport demonstracji; każdy autor
 odpowiada za testy własnego modułu. Kryteria pochodzą z
 [wymagań MVP](../project/spec.md), a wymagania źródłowe z [mapy PDF](../project/source-alignment.md).
+
+## Dodatkowe jednorazowe demo kontraktu Amoy (T029, tydzień 10)
+
+To osobny pokaz, nie warunek lokalnego odbioru powyżej ani test w CI.
+
+1. Użyj osobnych kont testowych (nigdy publicznych kluczy Anvila), RPC Amoy
+   i testowego POL z faucetu. Nie kupuj prawdziwych tokenów.
+2. Skryptem wdróż kontrakt, nadaj role, zarejestruj stacje i utwórz osobną partię.
+3. Wykonaj etapy 0..3, z niezależnym podpisem operatora QA na etapie 2.
+   Podpisy muszą dotyczyć domeny Amoy i adresu tego wdrożenia.
+4. Sprawdź receipts, eventy i końcowy `getBatch`. Zapisz datę, adres kontraktu,
+   numery bloków, hashe transakcji i linki do eksploratora oraz jawne ograniczenia.
+5. Jeśli używasz CID raportu z Kubo, nie deklaruj jego dostępności w publicznym
+   IPFS bez sprawdzenia. Demo kontraktu nie wymaga Pinaty.
+
+Istniejący smoke jednego etapu wymaga rozszerzenia do pełnej partii przed
+oznaczeniem T029 jako wykonanego. Brak RPC/faucetu lub niewykonane etapy należy
+odnotować; screenshot nie zastępuje udokumentowanego przebiegu.
 
 ## Gdzie umieszczać testy
 

@@ -11,6 +11,10 @@ a nie nową fizyczną infrastrukturą. Zmiany v2: [changes-v2](../project/change
 
 ## 1. Architektura aplikacji
 
+Diagram przedstawia obowiązującą lokalną aplikację (DEC-17). Dodatkowe demo
+kontraktu na Amoy jest oddzielnym skryptem i nie korzysta z jej backendu,
+frontendu ani indexera. Nie ma połączenia Anvil ↔ Amoy.
+
 Strzałka oznacza inicjatora wywołania, a nie kierunek importu.
 Odpowiedź wraca tym samym połączeniem. Indexer odpytuje RPC; kontrakt
 nie wywołuje HTTP do backendu.
@@ -33,9 +37,9 @@ flowchart TD
         IndexerA["Indexer zdarzen"]
     end
     DatabaseA[("PostgreSQL")]
-    StorageA["Kubo lokalnie albo Pinata API"]
+    StorageA["Lokalne Kubo API"]
     GatewayA["IPFS Gateway"]
-    RpcA["EVM RPC - Anvil albo Amoy"]
+    RpcA["EVM RPC - Anvil 31337"]
     ContractA["Kontrakt SupplyChain"]
     VisitorA -->|"Odczyt bez portfela"| FrontendA
     OperatorA -->|"Panel i decyzje QA"| FrontendA
@@ -65,8 +69,8 @@ flowchart TD
 | Baza | PostgreSQL + Flyway + JPA | zadania, próby, approval, projekcje i checkpoint |
 | Symulator | Python 3.11+, Pydantic, eth-account, httpx | podpisane dane i scenariusze |
 | Frontend | React 18/19, TypeScript, Vite, Wagmi v2/Viem | UI, podpis approval operatora i paszport |
-| Raporty | Kubo (lokalnie, CI) i Pinata (demo), publiczny gateway IPFS | zapis i odczyt JSON |
-| Sieć | Anvil 31337 / Polygon Amoy 80002 | lokalna i testowa egzekucja EVM |
+| Raporty | Kubo i osiągalny lokalny gateway IPFS (rozwój, testy, demo) | zapis i odczyt JSON |
+| Sieć | Anvil 31337 | cała aplikacja; Amoy 80002 tylko jako dodatkowy skrypt dema kontraktu |
 
 Dokładne wersje są do przypięcia podczas inicjalizacji, nie wynikają ze znaku `+`.
 Nie ma osobnego serwera kolejek i osobnego mikroserwisu indexera.
@@ -77,7 +81,7 @@ Magazyn raportów zapisuje dane, gateway je odczytuje; brak strzałki między ni
 
 Tutaj strzałka oznacza zależność/import albo implementację wskazanego interfejsu,
 **nie** fizyczne wywołanie HTTP. W runtime aplikacja wywoła port, a Spring
-podstawi adapter. Pozwala to testować przypadki użycia bez RPC i Pinaty.
+podstawi adapter. Pozwala to testować przypadki użycia bez rzeczywistego RPC i Kubo.
 
 <!-- mermaid-checked: no \n, no em-dash/en-dash, no {} in labels, subgraphs are id["label"], arrows are -->|"label"|, all subgraphs closed by end, ids unique -->
 ```mermaid
@@ -118,7 +122,7 @@ flowchart LR
 | ProcessStageCommand | kroki pinowania, QA i wysłania | jedna długa transakcja SQL obejmująca RPC |
 | ChainGateway / ReportStorage | interfejsy aplikacji | Web3j Response w modelu domenowym |
 | Web3jChainGateway | kodowanie ABI, odczyt ról/rejestru, podpis i wysyłka tx, receipt/logi | `.send()`/`DefaultGasProvider`, uznanie timeout za dowód niewysłania |
-| ReportStorage (Kubo/Pinata) | zapis bajtów JCS i walidacja CID (v0/v1) | sukces z pustym CID |
+| ReportStorage (Kubo) | zapis bajtów JCS i walidacja CID (v0/v1) | sukces z pustym CID |
 | CommandRepository | trwałość i constraints | deduplikacja wyłącznie w pamięci |
 | RelayerWorker | lease, wznawianie i pojedynczy writer | wielowątkowe przydzielanie nonce konta |
 | ChainEventIndexer | kanoniczna historia, checkpoint, okno ponownego skanu | brak cofania projekcji po reorg |
@@ -181,7 +185,7 @@ API wewnątrz jednego procesu nie potrzebuje brokera ani połączenia HTTP.
 | symulator -> backend | REST JSON 8080 | raport + EIP-712, login/status | podpis stacji; token Bearer dla prywatnego GET |
 | symulator -> RPC | JSON-RPC 8545 | odczyt stanu partii i domeny | brak klucza relayera; jawny błąd RPC |
 | backend -> PostgreSQL | PostgreSQL 5432 | zadania, próby, approval, projekcja | osobne konto bazy, brak publicznego portu w deploymencie |
-| backend -> magazyn raportów | Kubo API (lokalnie, port do weryfikacji) / Pinata HTTPS 443 | bajty JCS raportu | JWT Pinaty tylko na serwerze; timeout/401/429/5xx |
+| backend -> magazyn raportów | lokalne Kubo API (port z Compose) | bajty JCS raportu | API Kubo niewystawione publicznie; timeout/4xx/5xx |
 | backend -> RPC | JSON-RPC 8545 / HTTPS 443 | role, rejestr stacji, stan, tx, receipt, logi | klucz relayera tylko do podpisu; RPC nigdy nie dostaje go jako JSON |
 | portfel operatora zmiany -> frontend | `eth_signTypedData_v4` | podpis `StageApproval` | QA_INSPECTOR_ROLE, inny adres niż stacja; bez transakcji i gazu |
 | frontend -> gateway | HTTP lokalnie / HTTPS 443 | raport z CID | publiczne; limit rozmiaru, hash i schema |

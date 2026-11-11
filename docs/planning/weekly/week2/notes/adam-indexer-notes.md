@@ -1,5 +1,10 @@
 # Tydzień 2 - notatka Adama: spike indexera
 
+> Materiał historyczny. Po [DEC-17](../../../../decisions/local-blockchain-scope.md)
+> z 2026-11-11 implementujemy tylko lokalny indexer: `latest` + 1 potwierdzenie,
+> okno ponownego skanu i porównanie hash bloku. Propozycja `finalized` i pomiary
+> Amoy poniżej nie są wymaganiami MVP; pozostają wynikami badania.
+
 **Data:** 2026-11-09.
 **Sieci:**
 - Polygon Amoy, chainId `80002`: tylko odczyt przez publiczne RPC (publicnode, tenderly);

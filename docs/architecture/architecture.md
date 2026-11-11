@@ -9,6 +9,12 @@ modelowa linia bez przebudowy fizycznej infrastruktury, 12 tygodni,
 certyfikowane tożsamości stacji i dwa klucze przy zamknięciu kontroli.
 Uwzględnia zmiany [v2](../project/changes-v2.md) z 2026-10-27; podział prac: [team-split](../planning/team-split.md).
 
+**Środowisko po DEC-17 (2026-11-11):** cała aplikacja na Anvilu (31337),
+raporty w Kubo. Dodatkowe demo kontraktu Amoy to osobny przebieg skryptem,
+nie drugie środowisko aplikacji. Bez Pinaty, mostu i kotwiczenia.
+Indexer: `latest` + 1 potwierdzenie, z zachowaniem okna ponownego skanu
+i wykrywania reorgu. Szczegóły: [wybrany zakres](../decisions/local-blockchain-scope.md).
+
 ## Granice modułów
 
 | Część | Może | Nie powinna |
@@ -81,7 +87,8 @@ stan reguł (role, rejestr stacji, nextStage, skróty odrzuceń). Pełny JSON, c
 i surowe pomiary pozostają off-chain. Eventy także kosztują gaz:
 nie przenoś do nich pełnych raportów zamiast do storage.
 
-Publiczne są odczyty paszportu. Tworzenie partii i operacje administracyjne
+Publiczne są odczyty paszportu w udostępnionym lokalnym środowisku, nie globalny
+rejestr Polygon. Tworzenie partii i operacje administracyjne
 wymagają autoryzacji. Jeśli backend przyjmuje operacje operatora/QA, potrzebuje
 uwierzytelnionego użytkownika: SIWE wydaje token Bearer (bez cookie i CSRF).
 Samo połączenie MetaMask nie loguje do backendu.

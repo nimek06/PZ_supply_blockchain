@@ -4,14 +4,19 @@
 zespół potwierdza ją na spotkaniu startowym.
 Źródło nadrzędne: [opis PDF](../../Opis_Projectu%20%283%29.pdf);
 [mapa zgodności](source-alignment.md) wyjaśnia interpretację zakresu.
-Nie przeprowadzono
-inwentaryzacji działającej aplikacji: kod wykonawczy jeszcze nie istnieje.
+**Aktualizacja zakresu 2026-11-11:** [DEC-17, wariant 1](../decisions/local-blockchain-scope.md).
+Stan implementacji po tygodniu 2 opisuje [podsumowanie](../planning/weekly/week2/week2-summary.md);
+poniższe wymagania pozostają kryteriami docelowymi, nie raportem ukończenia.
 
 ## Zakres MVP
 
 Jedna sekwencyjna linia produkcyjna, jeden kontrakt, jeden backend, jeden
 relayer i czteroosobowy zespół. W zakresie jest 14 wymagań poniżej.
-MVP obejmuje lokalną demonstrację i późniejsze wdrożenie testowe na Amoy.
+MVP obejmuje pełną lokalną demonstrację na Anvilu (31337) z Kubo.
+Na Amoy (80002) planujemy dodatkowe jednorazowe demo samego kontraktu skryptem,
+z pełnym przebiegiem osobnej partii; nie wymagamy tam backendu, UI ani indexera.
+Pinata, synchronizacja sieci i kotwiczenie wyników nie wchodzą w zakres.
+Niedostępność Amoy nie blokuje lokalnego odbioru; wynik dema zapisujemy jawnie.
 Nie obejmuje produkcyjnego SLA, płatności, handlu tokenami, NFT, wielu zakładów,
 równoległych gałęzi technologicznych, proxy kontraktu ani Kubernetes.
 PWA/offline i powiadomienia push są rozszerzeniami, nie zależnościami MVP.
@@ -55,6 +60,9 @@ Negatywnego wyniku stacji nie można obejść zatwierdzeniem inspektora.
 
 Użytkownik bez portfela otwiera paszport z identyfikatora lub QR, czyta historię
 i weryfikuje integralność raportu względem potwierdzonego zdarzenia.
+„Publiczna” oznacza odczyt bez logowania w udostępnionym lokalnym środowisku,
+nie globalną dostępność ani niezależny rejestr Polygon. QR musi wskazywać URL
+osiągalny z urządzenia; lokalny łańcuch i Kubo pozostają pod kontrolą zespołu.
 
 **Odbiór:** poprawny raport jest zgodny, podmieniony powoduje jawny błąd,
 a brak partii nie jest prezentowany jako pusta, poprawna historia.
@@ -111,6 +119,8 @@ ukończonego etapu; reorganizacja usuwa niekanoniczny wpis z historii.
    drugi podpis od tego samego adresu nie spełnia wymogu niezależności.
 8. Każda aktywna stacja demonstracyjna ma zweryfikowany certyfikat.
 
+Odbiór wymagań 1–8 powyżej odbywa się lokalnie. Demo Amoy pokazuje działanie
+kontraktu, a nie pełną integrację aplikacji lub publiczne przechowanie raportów.
 Nie deklarujemy czasu potwierdzenia publicznej sieci ani liczby użytkowników
 bez pomiarów. Cele wydajności i limity produkcyjne są decyzją przed wdrożeniem
 innym niż demonstracyjne.

@@ -15,7 +15,13 @@ Tu opisujemy ustalenia wspólne, nie implementujemy aplikacji.
 | [guides/](guides/) | przewodnik pracy i strategia testów |
 | [planning/](planning/) | plan 12 tygodni, podział zadań i [plany tygodniowe](planning/weekly/README.md) |
 
-Otwarte propozycje: [tylko lokalny blockchain, bez Amoy](decisions/local-blockchain-scope.md).
+**Wybrany zakres (2026-11-11):** [wariant 1 — lokalny system i jednorazowe demo
+kontraktu Amoy](decisions/local-blockchain-scope.md). Cała aplikacja na Anvil/Kubo,
+bez obowiązku wdrożenia jej na Amoy i bez Pinaty; DEC-17 ma pierwszeństwo
+nad wcześniejszymi zapisami o środowiskach.
+
+**Teraz realizujemy:** [tydzień 3](planning/weekly/week3/week3-plan.md)
+i [tydzień 4](planning/weekly/week4/week4-plan.md).
 
 ## Zmiany v2 i plan startu
 
@@ -41,7 +47,8 @@ Recovery (DEC-09) jest zamknięte w wariancie C uproszczonym.
 
 Parametry fizyczne produktu nie są wymyślone. Profile pomiarów e-bike (DEC-02,
 zatwierdzone 2026-11-02, wartości demonstracyjne) i wartości czasowe (DEC-11) są
-potwierdzone w [decisions](decisions/decisions.md); DEC-07 (potwierdzenia) czeka na pomiary z Amoy.
+potwierdzone w [decisions](decisions/decisions.md); DEC-07 zamknięta dla Anvila:
+`latest` i 1 potwierdzenie, bez zależności od pomiarów Amoy.
 Dokumenty nie zastępują istniejącego
 [Stack_Tech.md](../Stack_Tech.md): uszczegóławiają reguły wykonania w jego
 technologiach. Poglądowe skróty z opisu stosu nie definiują ABI ani finalności.
@@ -56,7 +63,8 @@ technologiach. Poglądowe skróty z opisu stosu nie definiują ABI ani finalnoś
 6. [data-model.md](architecture/data-model.md): relacje, źródła prawdy i statusy.
 7. [station-identity.md](rules/station-identity.md): klucze i certyfikaty stacji.
 8. [decisions.md](decisions/decisions.md): rejestr decyzji.
-9. [plan.md](planning/plan.md): 12 tygodni, [team-split.md](planning/team-split.md), [week1-plan.md](planning/weekly/week1/week1-plan.md) i [week2-plan.md](planning/weekly/week2/week2-plan.md).
+9. [plan.md](planning/plan.md): 12 tygodni, [team-split.md](planning/team-split.md)
+   i [plany tygodniowe](planning/weekly/README.md), w tym bieżące tygodnie 3 i 4.
 
 ## Instrukcje wykonawcze
 

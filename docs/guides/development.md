@@ -7,10 +7,14 @@
   wersja Node jest wspierana przez Vite).
 - Python 3.11+ w venv (suita testów symulatora, w tym `eth-account`, przechodzi na 3.12, 3.13 i 3.14);
   Docker z Compose do PostgreSQL, Anvil i Kubo.
-- Konto Pinaty i RPC Amoy: smoke deploy na Amoy już w tygodniu 1, pełna
-  integracja w tygodniu 5 ([plan tygodnia 1](../planning/weekly/week1/week1-plan.md)).
+- Do aplikacji nie potrzeba konta Pinaty, publicznego RPC ani kupowania tokenów.
+  Anvil dostarcza konta z fikcyjnym saldem; klucze deweloperskie tylko lokalnie.
+- Wyłącznie do dodatkowego skryptu dema Amoy w tygodniu 10: RPC, osobne konta
+  testowe i testowy POL z faucetu. Szczegóły: [wariant 1](../decisions/local-blockchain-scope.md).
 
-**Manifestów i aplikacji jeszcze nie ma.** Najpierw wykonaj inicjalizację poniżej.
+**Stan po tygodniu 2:** backend, kontrakty, symulator i adapter Kubo już istnieją
+([podsumowanie](../planning/weekly/week2/week2-summary.md)). Instrukcje inicjalizacji
+poniżej stosuj tylko do brakujących elementów, przede wszystkim frontendu.
 Nie uruchamiaj generatora na całym repozytorium ani opcji nadpisującej README.
 Generatory, które wymagają pustego folderu, uruchamiaj w tymczasowym katalogu;
 przenieś wyłącznie potrzebne pliki po sprawdzeniu konfliktów i zachowaj instrukcje.
@@ -20,7 +24,7 @@ przenieś wyłącznie potrzebne pliki po sprawdzeniu konfliktów i zachowaj inst
 ### Kontrakty
 
 W `contracts/` dodaj `foundry.toml`, przypnij kompilator, **jawny `evm_version`**
-(sprawdź go na Amoy w smoke deploy) i zależności OpenZeppelin/forge-std.
+(dla dodatkowego dema sprawdź zgodność z Amoy) i zależności OpenZeppelin/forge-std.
 Foundry ma używać istniejących `src`, `test`, `script`.
 Sposób instalacji bibliotek musi być odtwarzalny; zapisz dokładne wersje/revizje.
 Nie kopiuj kodu OpenZeppelin ręcznie. ABI i bytecode eksportuj przez
@@ -65,8 +69,15 @@ Wybierz i udokumentuj jeden sposób przypinania/odtwarzania zależności.
 Dodaj Compose dla PostgreSQL, lokalnego Anvil i Kubo w `infrastructure/local/`.
 API, frontend i symulator początkowo uruchamiaj w osobnych terminalach.
 Dodaj `.env.example` z pustymi wartościami sekretów i opisem zmiennych.
-Zewnętrzną Pinatę/RPC zastępuj Kubo/Anvil lub kontrolowanym stubem w testach, nie
-niewidocznym fallbackiem w kodzie produkcyjnym.
+Kubo/Anvil to docelowe środowisko aplikacji także na pokazie, nie fallback.
+W testach awarii stosuj kontrolowane stuby. Nie dodawaj adaptera Pinata ani
+automatycznego przełączania na publiczne RPC.
+
+Lokalny portfel pozostaje potrzebny do SIWE i podpisów QA, nie do opłacania
+transakcji użytkownika. Dodaj sieć Anvil (31337) i używaj kont tylko testowych.
+Na telefonie `localhost` oznacza telefon: URL aplikacji, gateway i RPC muszą być
+osiągalne w LAN, a kamera wymaga HTTPS. Nie wystawiaj publicznie RPC Anvila ani
+API administracyjnego Kubo.
 
 ## Komendy po inicjalizacji
 
@@ -98,13 +109,15 @@ Podział zadań: [team-split](../planning/team-split.md); pierwszy tydzień: [we
    [plan 12 tygodni](../planning/plan.md). Potwierdźcie zmiany v2 i decyzje.
 2. Osoba 4 generuje wektory (`StageCompletion`, `StageApproval`, certyfikat);
    osoby 1, 2 i 3 weryfikują je w Solidity, Javie i TS.
-3. Osoba 1 implementuje kontrakt, testuje, wdraża lokalnie i na Amoy (smoke),
-   eksportuje ABI/adres.
+3. Osoba 1 rozwija kontrakt, testuje, wdraża lokalnie i eksportuje ABI/adres.
 4. Osoba 2 zaczyna od walidacji i trwałego `202`, potem dodaje IPFS i worker.
 5. Osoba 4 zaczyna od jednego podpisanego zgłoszenia, potem buduje scenariusze.
 6. Osoba 3 tworzy widoki na wspólnych fixture'ach; nie wymyśla innego formatu API.
 7. Zespół uruchamia jeden pełny przepływ, restart workera, błędny podpis i QA fail.
-8. Po lokalnym odbiorze (tydzień 5) powtarza go na Amoy z prawdziwą Pinatą.
+8. Lokalny odbiór pionowy w tygodniu 5, próba pełnej prezentacji w tygodniu 10.
+   Osoba 1 wykonuje osobne dodatkowe demo kontraktu Amoy skryptem (T029),
+   bez wdrażania backendu/frontendu/indexera i bez Pinaty. Wyniki albo przeszkody
+   zapisuje jawnie; nie blokuje to lokalnego MVP.
 
 Backend i kontrakty mają osiągnąć podstawową integrację w tygodniach 4-5.
 Osoba 4 koordynuje również testy systemowe i dokumentację, nie tylko symulator.

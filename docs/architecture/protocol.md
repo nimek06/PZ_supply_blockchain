@@ -76,7 +76,7 @@ Proponowana domena:
 |---|---|
 | `name` | `SupplyChain` |
 | `version` | `1` |
-| `chainId` | `31337` lokalnie przy domyślnej konfiguracji Anvil; `80002` dla Amoy |
+| `chainId` | `31337` dla aplikacji na Anvilu; `80002` tylko w osobnym skrypcie dema kontraktu Amoy (DEC-17), nigdy do ponownego użycia podpisów lokalnych |
 | `verifyingContract` | rzeczywisty adres wdrożonego kontraktu |
 
 Primary type `StageCompletion`, **kolejność pól jest częścią specyfikacji**:
@@ -228,7 +228,8 @@ go dla danego `(chainId, relayerAddress)`. Samo `@Async` lub równoległe
 Zapisuj hash i parametry podpisanej transakcji przed wysłaniem; transakcję
 podpisuje własny kod (Web3j do kodowania wywołania i podpisu, **bez `.send()`**
 i bez `DefaultGasProvider`). Opłaty: EIP-1559 z konfigurowalnym minimalnym
-priority fee (Polygon wymaga wysokiego progu - zweryfikuj wartość dla Amoy).
+priority fee dobranym dla lokalnego Anvila. Historyczny próg Amoy nie jest
+wymogiem aplikacji; bieżące opłaty Amoy obsługuje tylko osobny skrypt dema (DEC-17).
 Nieznany wynik RPC wymaga odszukania tej transakcji i ponownego wysłania
 identycznych bajtów. Fee-bump/replacement nie jest zaimplementowany w MVP;
 zablokowana transakcja to procedura ręczna. Retry nie może wykonać

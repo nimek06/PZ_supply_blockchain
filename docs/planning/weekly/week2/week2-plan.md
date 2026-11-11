@@ -1,5 +1,11 @@
 # Plan drugiego tygodnia implementacji (bez frontendu)
 
+> Plan historyczny, nie aktualna lista zaległości. Wyniki:
+> [podsumowanie tygodnia 2](week2-summary.md).
+> Od 2026-11-11 [DEC-17](../../../decisions/local-blockchain-scope.md) znosi
+> obowiązek Pinaty i pełnej integracji Amoy; dalsza praca:
+> [tydzień 3](../week3/week3-plan.md), [tydzień 4](../week4/week4-plan.md).
+
 **Status:** plan roboczy dla 4 osób, tydzień 2 z 12. Kontynuacja
 [week1-plan.md](../week1/week1-plan.md); stan tygodnia 1: [week1-summary.md](../week1/week1-summary.md).
 Zadania z [team-split](../../team-split.md), zakres i kolejność z [plan.md](../../plan.md).
