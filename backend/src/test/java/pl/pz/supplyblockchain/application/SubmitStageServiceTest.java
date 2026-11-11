@@ -21,6 +21,8 @@ import pl.pz.supplyblockchain.application.ports.CommandRepository;
 import pl.pz.supplyblockchain.application.ports.NewStageCommand;
 import pl.pz.supplyblockchain.application.ports.ReportCanonicalizer;
 import pl.pz.supplyblockchain.application.ports.StageCompletionVerifier;
+import pl.pz.supplyblockchain.application.ports.StationCertificateRepository;
+import pl.pz.supplyblockchain.application.ports.StationCertificateVerifier;
 import pl.pz.supplyblockchain.config.ChainProperties;
 import pl.pz.supplyblockchain.domain.CommandOutcome;
 import pl.pz.supplyblockchain.domain.CommandStatus;
@@ -38,6 +40,8 @@ class SubmitStageServiceTest {
     private final ReportCanonicalizer reportCanonicalizer = mock(ReportCanonicalizer.class);
     private final StageCompletionVerifier signatureVerifier = mock(StageCompletionVerifier.class);
     private final ProfileValidator profileValidator = mock(ProfileValidator.class);
+    private final StationCertificateRepository certificateRepository = mock(StationCertificateRepository.class);
+    private final StationCertificateVerifier certificateVerifier = mock(StationCertificateVerifier.class);
     private final ChainProperties chainProperties = new ChainProperties(
             31337, "0x5fbdb2315678afecb367f032d93f642f64180aa3", "SupplyChain", "1", 3600);
     private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1800000000L), ZoneOffset.UTC);
@@ -53,7 +57,15 @@ class SubmitStageServiceTest {
     @BeforeEach
     void setUp() {
         service = new SubmitStageService(
-                commandRepository, reportCanonicalizer, signatureVerifier, profileValidator, chainProperties, clock);
+                commandRepository, reportCanonicalizer, signatureVerifier, profileValidator,
+                certificateRepository, certificateVerifier, chainProperties, clock);
+        when(certificateRepository.findById(certificateId)).thenReturn(
+                Optional.of(new pl.pz.supplyblockchain.domain.StationCertificate(
+                        certificateId, stationAddress, "{}", Instant.ofEpochSecond(1800000000L))));
+        when(certificateVerifier.verifyForReport(any(), any(), any(Integer.class))).thenReturn(
+                new pl.pz.supplyblockchain.domain.StationIdentityVerification(
+                        pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.OK,
+                        "ok", null, null, null));
     }
 
     private TelemetryReport sampleReport() {
@@ -230,5 +242,74 @@ class SubmitStageServiceTest {
         StageCommand result = service.submit(command);
 
         assertThat(result.status()).isEqualTo(CommandStatus.ACCEPTED);
+    }
+
+    @Test
+    void submitRejectsMissingStationCertificate() {
+        long deadline = 1800000600L;
+        SubmitStageCommand command = sampleCommand(deadline);
+
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(new SignatureVerification(stationAddress, digest));
+        when(commandRepository.findBySignedPayloadDigest(any(), any())).thenReturn(Optional.empty());
+        when(certificateRepository.findById(certificateId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.submit(command))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(ErrorCode.CERTIFICATE_INVALID));
+    }
+
+    @Test
+    void submitRejectsInactiveStationCertificate() {
+        long deadline = 1800000600L;
+        SubmitStageCommand command = sampleCommand(deadline);
+
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(new SignatureVerification(stationAddress, digest));
+        when(commandRepository.findBySignedPayloadDigest(any(), any())).thenReturn(Optional.empty());
+        when(certificateVerifier.verifyForReport(any(), any(), any(Integer.class))).thenReturn(
+                new pl.pz.supplyblockchain.domain.StationIdentityVerification(
+                        pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.NOT_REGISTERED,
+                        "station not registered", null, null, null));
+
+        assertThatThrownBy(() -> service.submit(command))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(ErrorCode.STATION_NOT_ACTIVE));
+    }
+
+    @Test
+    void submitRejectsExpiredStationCertificate() {
+        long deadline = 1800000600L;
+        SubmitStageCommand command = sampleCommand(deadline);
+
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(new SignatureVerification(stationAddress, digest));
+        when(commandRepository.findBySignedPayloadDigest(any(), any())).thenReturn(Optional.empty());
+        when(certificateVerifier.verifyForReport(any(), any(), any(Integer.class))).thenReturn(
+                new pl.pz.supplyblockchain.domain.StationIdentityVerification(
+                        pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.EXPIRED,
+                        "certificate expired", null, null, null));
+
+        assertThatThrownBy(() -> service.submit(command))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(ErrorCode.CERTIFICATE_INVALID));
+    }
+
+    @Test
+    void submitRejectsStageNotAllowedByCertificate() {
+        long deadline = 1800000600L;
+        SubmitStageCommand command = sampleCommand(deadline);
+
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(new SignatureVerification(stationAddress, digest));
+        when(commandRepository.findBySignedPayloadDigest(any(), any())).thenReturn(Optional.empty());
+        when(certificateVerifier.verifyForReport(any(), any(), any(Integer.class))).thenReturn(
+                new pl.pz.supplyblockchain.domain.StationIdentityVerification(
+                        pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.STAGE_NOT_ALLOWED,
+                        "stage not allowed", null, null, null));
+
+        assertThatThrownBy(() -> service.submit(command))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(ErrorCode.STAGE_NOT_ALLOWED));
     }
 }

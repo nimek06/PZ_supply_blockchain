@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import pl.pz.supplyblockchain.application.ports.StationRegistryException;
 import pl.pz.supplyblockchain.domain.DomainException;
 import pl.pz.supplyblockchain.domain.ErrorCode;
 
@@ -55,6 +56,16 @@ public class ApiExceptionHandler {
                 request));
     }
 
+    @ExceptionHandler(StationRegistryException.class)
+    ResponseEntity<ProblemDetail> handleStationRegistry(
+            StationRegistryException exception, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problem(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "station registry is unavailable",
+                ErrorCode.DEPENDENCY_UNAVAILABLE.name(),
+                request));
+    }
+
     @ExceptionHandler(NoResourceFoundException.class)
     ResponseEntity<ProblemDetail> handleNoResource(
             NoResourceFoundException exception, HttpServletRequest request) {
@@ -92,7 +103,9 @@ public class ApiExceptionHandler {
         return switch (code) {
             case INVALID_REQUEST, SCHEMA_VIOLATION, DEADLINE_EXPIRED, DEADLINE_TOO_FAR -> HttpStatus.BAD_REQUEST;
             case PROFILE_VIOLATION -> HttpStatus.UNPROCESSABLE_ENTITY;
-            case INVALID_SIGNATURE, SIGNER_MISMATCH, FORBIDDEN, ROLE_MISSING -> HttpStatus.FORBIDDEN;
+            case INVALID_SIGNATURE, SIGNER_MISMATCH, FORBIDDEN, ROLE_MISSING,
+                    STATION_NOT_ACTIVE, CERTIFICATE_INVALID, REGISTRY_MISMATCH,
+                    STAGE_NOT_ALLOWED -> HttpStatus.FORBIDDEN;
             case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED;
             case UNEXPECTED_STAGE, STAGE_ALREADY_PENDING, STAGE_ALREADY_COMPLETED, CHALLENGE_USED_OR_EXPIRED,
                     IDEMPOTENCY_CONFLICT -> HttpStatus.CONFLICT;
