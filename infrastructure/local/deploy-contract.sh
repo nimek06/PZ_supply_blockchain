@@ -3,6 +3,7 @@
 # - kontrakty są zamontowane tylko do odczytu, out/cache/broadcast idą do wolumenu
 # - jeśli kontrakt już jest pod oczekiwanym adresem, deploy jest pomijany
 # - stacja z shared/fixtures/station-certificate.json (registryCall), RegisterStation sam pomija powtórkę
+# - OPERATOR_ROLE dla OPERATOR_ADDRESS (tworzenie partii z UI), pomijane, jeśli konto już ją ma
 # - klucz to publiczny klucz Anvil #0, tylko dla lokalnego łańcucha
 set -euo pipefail
 
@@ -47,3 +48,15 @@ ADMIN_PRIVATE_KEY="$DEPLOYER_PRIVATE_KEY" SUPPLY_CHAIN_ADDRESS="$expected" \
   STATION_EXPIRES_AT="$STATION_EXPIRES_AT" STATION_STAGE_MASK="$STATION_STAGE_MASK" \
   forge script script/RegisterStation.s.sol --rpc-url "$rpc" --broadcast
 echo "stacja $STATION_ADDRESS zarejestrowana (etapy: maska $STATION_STAGE_MASK)"
+
+# rola operatora produkcji: bez niej POST /batches zwraca 403 ROLE_MISSING
+if [[ -n "${OPERATOR_ADDRESS:-}" ]]; then
+  operator_role="$(cast keccak OPERATOR_ROLE)"
+  if [[ "$(cast call "$expected" 'hasRole(bytes32,address)(bool)' "$operator_role" "$OPERATOR_ADDRESS" --rpc-url "$rpc")" == "true" ]]; then
+    echo "$OPERATOR_ADDRESS już ma OPERATOR_ROLE"
+  else
+    cast send "$expected" 'grantRole(bytes32,address)' "$operator_role" "$OPERATOR_ADDRESS" \
+      --private-key "$DEPLOYER_PRIVATE_KEY" --rpc-url "$rpc" > /dev/null
+    echo "OPERATOR_ROLE nadana dla $OPERATOR_ADDRESS"
+  fi
+fi

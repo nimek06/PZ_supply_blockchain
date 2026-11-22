@@ -47,7 +47,8 @@ Ręcznie: `cast chain-id --rpc-url http://127.0.0.1:8545`, `curl -X POST http://
 Kontrakt wdraża i stację rejestruje jednorazowa usługa `deploy` (`deploy-contract.sh`):
 - czeka na Anvila, odpala `DeploySupplyChain.s.sol` i kończy się
 - adres zawsze `0x5FbDB2315678afecb367f032d93F642f64180aa3` (Anvil #0, nonce 0), czyli `CONTRACT_ADDRESS` dla backendu
-- role: admin i relayer to Anvil #0, `QA_INSPECTOR_ROLE` ma Anvil #2 (operator z wektora podpisów)
+- role: admin i relayer to Anvil #0, `QA_INSPECTOR_ROLE` ma Anvil #2 (operator z wektora podpisów),
+  `OPERATOR_ROLE` ma Anvil #3 `0x90F79bf6EB2c4f870365E785982E1f101E93b906` (tworzenie partii z frontendu)
 - jeśli kontrakt już jest, nic nie robi, więc `up -d` można odpalać wiele razy
 - pierwszy start pobiera kompilator solc, potem jest w wolumenie `foundry-data`
 - `contracts/` jest zamontowane tylko do odczytu, w repo nic się nie zmienia
