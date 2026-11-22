@@ -41,15 +41,16 @@ Stan po skrypcie (publiczne klucze deweloperskie Anvila):
 
 | Konto Anvil | Rola |
 |---|---|
-| #0 `0xf39F…2266` | `DEFAULT_ADMIN_ROLE`, wystawca certyfikatu testowego, domyślnie relayer |
+| #0 `0xf39F…2266` | `DEFAULT_ADMIN_ROLE`, wystawca certyfikatu testowego |
 | #1 `0x7099…79C8` | stacja ST-001: `stageMask` 15, `expiresAt` 1831536000 |
 | #2 `0x3C44…93BC` | `QA_INSPECTOR_ROLE` (operator zmiany) |
+| #3 `0x90F7…3906` | `RELAYER_ROLE` |
 
 Na czystym łańcuchu kontrakt trafia pod `0x5FbDB2315678afecb367f032d93F642f64180aa3`.
 Tego adresu używają fixture'y i `application-local.yaml`. Skrypt kończy się linią
 `Backend: CHAIN_ID=31337 CONTRACT_ADDRESS=…`. Inny relayer ustawisz zmienną
-`LOCAL_RELAYER_ADDRESS`. Musi to być konto różne od stacji i od QA
-([access-control](../../docs/access-control.md)).
+`LOCAL_RELAYER_ADDRESS`. Musi to być konto różne od admina, stacji i QA
+([access-control](../../docs/rules/access-control.md)).
 
 **Ponowne uruchomienie.** Skrypt odnajduje ostatnie wdrożenie zapisane w `broadcast/`.
 Sprawdza receipt, kod kontraktu i initcode zbudowany z bieżącego `src/`. Jeśli wszystko
@@ -60,7 +61,7 @@ tworzy.
 - chainId jest różny od 31337;
 - kod w `src/` różni się od wdrożonego;
 - konto #0 ma już transakcje, a `broadcast/` nie zna wdrożenia;
-- relayer jest tym samym kontem co stacja albo QA.
+- adresy administratora, relayera, stacji i QA nie są różne.
 
 **Nowy kontrakt** tworzysz tylko świadomie:
 - `--fresh` – kontrakt dostaje nowy adres. Ustaw wtedy `CONTRACT_ADDRESS`. Podpisy

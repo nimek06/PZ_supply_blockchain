@@ -47,8 +47,9 @@ Ręcznie: `cast chain-id --rpc-url http://127.0.0.1:8545`, `curl -X POST http://
 Kontrakt wdraża i stację rejestruje jednorazowa usługa `deploy` (`deploy-contract.sh`):
 - czeka na Anvila, odpala `DeploySupplyChain.s.sol` i kończy się
 - adres zawsze `0x5FbDB2315678afecb367f032d93F642f64180aa3` (Anvil #0, nonce 0), czyli `CONTRACT_ADDRESS` dla backendu
-- role: admin i relayer to Anvil #0, `QA_INSPECTOR_ROLE` ma Anvil #2 (operator z wektora podpisów)
-- jeśli kontrakt już jest, nic nie robi, więc `up -d` można odpalać wiele razy
+- role: admin/wystawca certyfikatu to Anvil #0, stacja to #1, `QA_INSPECTOR_ROLE` ma #2, a `RELAYER_ROLE` #3
+- wszystkie cztery adresy są rozdzielone; relayer zmienisz przez `LOCAL_RELAYER_ADDRESS` w `.env`
+- przy ponownym uruchomieniu sprawdza i uzupełnia role oraz idempotentną rejestrację stacji
 - pierwszy start pobiera kompilator solc, potem jest w wolumenie `foundry-data`
 - `contracts/` jest zamontowane tylko do odczytu, w repo nic się nie zmienia
 - rejestruje stację testową z `shared/fixtures/station-certificate.json` (Anvil #1, `ST-001`, wszystkie etapy), więc stacja z fixture'ów jest od razu aktywna
