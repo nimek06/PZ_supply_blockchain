@@ -14,8 +14,10 @@ Certyfikat JSON (weryfikator w Javie: osoba 1) musi wskazać ten sam adres co re
 `StationCertificate(bytes32 payloadHash)` w domenie `SupplyChainStationRegistry`/`1` z chainId
 i verifyingContract z certyfikatu, odzyskuje wystawcę, sprawdza allowlistę i wdrożenie
 (`StationCertificatePolicy`), okno ważności oraz `getStation` przez `Web3jStationRegistry`
-(`eth_call` na `latest`, ścisłe dekodowanie ABI). Beany i allowlista w konfiguracji powstają
-przy wpięciu w odbiór raportu.
+(`eth_call` na `latest`, ścisłe dekodowanie ABI). `StationCertificateConfig` tworzy porty
+`StationCertificateVerifier` i `StationRegistry` na podstawie `supplychain.chain` oraz
+`supplychain.station.trusted-issuers`; `SubmitStageService` wywołuje weryfikator dla każdego
+nowego zgłoszenia i odrzuca błędy rejestru jako niedostępność zależności, nie pozytywny wynik.
 Zamknięcie kontroli wymaga też `StageApproval` operatora (z adresem innym niż stacja);
 podpis relayera nie jest drugim dowodem QA.
 EIP-712 jest zaimplementowany ręcznie (jedna stała struktura: Keccak + odzyskanie adresu)
