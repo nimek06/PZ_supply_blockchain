@@ -47,6 +47,14 @@ supplychain:
     url: ${CHAIN_RPC_URL:http://127.0.0.1:8545}
   relayer:
     min-tip-gwei: ${RELAYER_MIN_TIP_GWEI:30}
+    private-key: ${RELAYER_PRIVATE_KEY:}
+    worker:
+      enabled: ${RELAYER_WORKER_ENABLED:false}
+      poll-interval-ms: ${RELAYER_WORKER_POLL_INTERVAL_MS:2000}
+      lease-seconds: ${RELAYER_WORKER_LEASE_SECONDS:30}
+      retry-backoff-seconds: ${RELAYER_WORKER_RETRY_BACKOFF_SECONDS:5}
+      gas-margin-percent: ${RELAYER_WORKER_GAS_MARGIN_PERCENT:120}
+      lease-owner: ${RELAYER_WORKER_LEASE_OWNER:}
   station:
     trusted-issuers: "${STATION_TRUSTED_ISSUERS:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}"
   auth:
