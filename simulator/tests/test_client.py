@@ -277,6 +277,38 @@ def test_get_command_reads_status_from_protocol_path() -> None:
     assert str(request.url) == f"{BASE_URL}/api/v1/commands/{COMMAND_ID}"
 
 
+def test_command_status_reads_failure_code() -> None:
+    """`FAILED` niesie powód w polu `failureCode` (nazwa z OpenAPI i backendu)."""
+    backend = FakeBackend(command_status("FAILED", failureCode="REVERT"))
+
+    with backend.client() as client:
+        status = client.get_command(COMMAND_ID)
+
+    assert status.status == "FAILED"
+    assert status.failureCode == "REVERT"
+    assert status.is_terminal() is True
+
+
+def test_command_accepted_reads_type_and_status() -> None:
+    """`202` niesie `type` i `status` zgodnie z OpenAPI."""
+    response = httpx.Response(
+        202,
+        json={
+            "commandId": COMMAND_ID,
+            "type": "STAGE",
+            "status": "ACCEPTED",
+            "statusUrl": f"/api/v1/commands/{COMMAND_ID}",
+        },
+    )
+    backend = FakeBackend(response)
+
+    with backend.client() as client:
+        result = client.submit_stage(BATCH_ID, submission())
+
+    assert result.type == "STAGE"
+    assert result.status == "ACCEPTED"
+
+
 def test_confirmed_rejected_command_is_terminal_and_does_not_move_batch() -> None:
     backend = FakeBackend(command_status("CONFIRMED", outcome="REJECTED"))
 

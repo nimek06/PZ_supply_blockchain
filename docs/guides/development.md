@@ -12,9 +12,10 @@
 - Wyłącznie do dodatkowego skryptu dema Amoy w tygodniu 10: RPC, osobne konta
   testowe i testowy POL z faucetu. Szczegóły: [wariant 1](../decisions/local-blockchain-scope.md).
 
-**Stan po tygodniu 2:** backend, kontrakty, symulator i adapter Kubo już istnieją
-([podsumowanie](../planning/weekly/week2/week2-summary.md)). Instrukcje inicjalizacji
-poniżej stosuj tylko do brakujących elementów, przede wszystkim frontendu.
+**Stan po tygodniu 3:** istnieją backend (z indexerem), kontrakty, symulator, adapter
+Kubo i frontend ([podsumowanie](../planning/weekly/week3/week3-summary.md)). Lokalny
+przebieg E2E stawiamy harnessem (sekcja „Lokalny przebieg E2E”); instrukcje
+inicjalizacji poniżej dotyczą już tylko brakujących elementów.
 Nie uruchamiaj generatora na całym repozytorium ani opcji nadpisującej README.
 Generatory, które wymagają pustego folderu, uruchamiaj w tymczasowym katalogu;
 przenieś wyłącznie potrzebne pliki po sprawdzeniu konfliktów i zachowaj instrukcje.
@@ -78,6 +79,27 @@ transakcji użytkownika. Dodaj sieć Anvil (31337) i używaj kont tylko testowyc
 Na telefonie `localhost` oznacza telefon: URL aplikacji, gateway i RPC muszą być
 osiągalne w LAN, a kamera wymaga HTTPS. Nie wystawiaj publicznie RPC Anvila ani
 API administracyjnego Kubo.
+
+## Lokalny przebieg E2E
+
+Kanoniczne uruchomienie pionu lokalnego (PostgreSQL, Anvil, Kubo, kontrakty, backend,
+stacja, symulator) opisuje
+[backend/scripts/running-local-e2e.md](../../backend/scripts/running-local-e2e.md):
+
+```bash
+cp infrastructure/local/.env.example infrastructure/local/.env   # raz; ustaw POSTGRES_PASSWORD
+./backend/scripts/local-e2e/run-e2e.sh
+```
+
+Wymagania: Docker + `docker compose` (użytkownik w grupie `docker`, bez `sudo`),
+JDK 21, Python 3, `jq`, `curl`, `shasum`. Runner resetuje łańcuch Anvil i odtwarza bazy
+`supplychain_e2e` oraz `supplychain_e2e_test`. Po zakończeniu kontenery zostają
+uruchomione — `cd infrastructure/local && docker compose down` je zatrzyma (wolumeny
+zostaną); `docker compose down -v` jest nieodwracalnym resetem danych.
+
+Po tygodniu 3 harness nie włącza workera/relayera, więc kroki kończą się na trwałym
+`202` (`ACCEPTED`) bez `outcome`; potwierdzony pion on-chain (worker, indexer,
+projekcje) to tydzień 4. Wyniki i jawnie otwarte punkty: [week3-summary](../planning/weekly/week3/week3-summary.md).
 
 ## Komendy po inicjalizacji
 
