@@ -43,6 +43,10 @@ docker compose down             # zatrzymuje usługi, ZACHOWUJE dane (wolumeny)
 
 Health checki: PostgreSQL (`pg_isready`), Anvil (`cast chain-id` = 31337), Kubo (`ipfs id`).
 Ręcznie: `cast chain-id --rpc-url http://127.0.0.1:8545`, `curl -X POST http://127.0.0.1:5001/api/v0/id`.
+Lokalny backend indeksuje zdarzenia po ustawieniu `CHAIN_INDEXER_ENABLED=true`;
+`CHAIN_DEPLOYMENT_BLOCK` powinien wskazywać pole `.deploymentBlock` z
+`shared/deployments/local.json`. Skrypt `backend/scripts/local-e2e/start-backend.sh`
+ustawia obie wartości automatycznie.
 
 Kontrakt wdraża i stację rejestruje jednorazowa usługa `deploy` (`deploy-contract.sh`):
 - czeka na Anvila, odpala `DeploySupplyChain.s.sol` i kończy się
@@ -75,6 +79,9 @@ TEST_DB_USER=$POSTGRES_USER TEST_DB_PASSWORD=$POSTGRES_PASSWORD ./mvnw verify
 łańcuch od bloku 0, a kontrakt, role, stacje i partie znikają. **PostgreSQL zostaje**, więc po restarcie
 Anvila baza opisuje łańcuch, którego już nie ma (checkpoint indexera wskazuje nieistniejące bloki,
 polecenia mają `txHash` z poprzedniego łańcucha). Nic nie czyści się automatycznie.
+Jeżeli indexer działał, wykryje zmianę hashy, cofnie projekcje i oznaczy wcześniej
+potwierdzone, odłączone polecenia jako `FAILED/CHAIN_REORG`; ponowne indeksowanie
+zacznie się od wspólnego checkpointu albo bloku wdrożenia przy głębokim reorgu.
 
 Kontrakt i stacja wracają po `docker compose up -d` (usługa `deploy` odpali się znowu). Baza nie, więc wybierz jedno:
 

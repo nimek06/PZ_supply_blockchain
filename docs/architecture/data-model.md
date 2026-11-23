@@ -70,10 +70,11 @@ flowchart LR
 | qa_approvals | UUID, command_id FK, operator_address, approval_deadline, signature, created_at, status | jedno aktywne ważne approval na polecenie; ten sam operator idempotentnie, inny operator przy ważnym approval: konflikt |
 | transaction_attempts | UUID, command_id FK, relayer_address, tx_nonce, tx_hash, signed_tx, calldata_hash, fee parameters, broadcast_at, receipt_block/hash/status | unikalny tx_hash; ponowne wysłanie dotyczy identycznych bajtów (bez fee-bump w MVP) |
 | auth_challenges / auth_sessions | challenge: adres, domena, nonce SIWE, expiry, used_at; sesja: skrót SHA-256 tokenu, adres, expiry, last_seen, revoked_at | challenge jednorazowy i atomowo zużywany; w bazie tylko skrót tokenu |
-| chain_events | deployment, tx_hash, log_index, block_number/hash, tx_index, event_type, payload, canonical | identyfikacja obserwacji obejmuje block_hash; jedna aktywna kanoniczna wersja logicznego logu |
-| indexer_checkpoints | deployment, stream, scanned_block_number/hash | jeden aktywny checkpoint na strumień/deployment; zapis razem z zastosowaniem logów |
-| batch_projections | deployment + batch_id, batch_number, next_stage, completed, last_event_position | odbudowa z BatchCreated i kolejnych zdarzeń |
-| stage_projections | deployment + batch_id + stage_id + report_hash, outcome (COMPLETED/REJECTED), station, qa_operator, cid, tx_hash, log_index, block_hash | jeden kanoniczny COMPLETED na etap w liniowej marszrucie; REJECTED może być wiele |
+| chain_events | deployment, block_hash, log_index, block_number, tx_index, tx_hash, event_type, payload, command_id, canonical | identyfikacja obserwacji obejmuje block_hash; jedna aktywna kanoniczna wersja logicznego logu |
+| indexer_checkpoints | deployment, stream, scanned_block_number/hash, updated_at | jeden aktywny checkpoint na strumień/deployment; zapis razem z eventami i projekcjami |
+| indexer_block_anchors | deployment, block_number/hash | ostatnie 64 kotwice do wykrywania reorgu; starszy/nieznany rollback wymaga pełnego reskanu i diagnostyki |
+| batch_projections | deployment + batch_id, batch_number, next_stage, completed, last_event_position | odbudowa z BatchCreated i kolejnych kanonicznych zdarzeń |
+| stage_projections | deployment + batch_id + stage_id + report_hash, outcome (COMPLETED/REJECTED), station, qa_operator, cid, tx_hash, log_index, block_hash | tylko kanoniczne wyniki; REJECTED nie przesuwa etapu |
 | station_certificates | certificate_id/serial, station_id, station_address, issuer, signed_certificate, issued_at, expires_at, allowed_stage_ids, chain_sync_status | zaufany wystawca, unikalny serial; FK certificate_id z polecenia STAGE; ACTIVE tylko gdy zgodny z rejestrem on-chain |
 
 Rekordy challenge i sesji (V2-06): losowy token Bearer jest zwracany raz,

@@ -6,6 +6,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 require_tools java curl
 
 address=$(contract_address)
+deployment_block=$(jq -er '.deploymentBlock' "$DEPLOYMENTS_FILE")
 
 info "Buduję i uruchamiam backend (log: $BACKEND_LOG)"
 cd "$BACKEND_DIR"
@@ -15,6 +16,8 @@ DB_USER="$POSTGRES_USER" \
 DB_PASSWORD="$POSTGRES_PASSWORD" \
 CHAIN_RPC_URL="$RPC_URL" \
 CONTRACT_ADDRESS="$address" \
+CHAIN_DEPLOYMENT_BLOCK="$deployment_block" \
+CHAIN_INDEXER_ENABLED=true \
 STATION_TRUSTED_ISSUERS="0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" \
 java -jar "$BACKEND_DIR/target/supply-blockchain-backend-0.1.0-SNAPSHOT.jar" > "$BACKEND_LOG" 2>&1 &
 backend_pid=$!

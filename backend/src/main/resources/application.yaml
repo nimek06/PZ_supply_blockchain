@@ -45,6 +45,13 @@ supplychain:
     max-deadline-window-seconds: ${MAX_DEADLINE_WINDOW_SECONDS:3600}
   rpc:
     url: ${CHAIN_RPC_URL:http://127.0.0.1:8545}
+  indexer:
+    enabled: ${CHAIN_INDEXER_ENABLED:false}
+    deployment-block: ${CHAIN_DEPLOYMENT_BLOCK:1}
+    poll-interval-ms: ${CHAIN_INDEXER_POLL_INTERVAL_MS:2000}
+    block-range: ${CHAIN_INDEXER_BLOCK_RANGE:10000}
+    reorg-window-blocks: ${CHAIN_INDEXER_REORG_WINDOW_BLOCKS:64}
+    stale-after-seconds: ${CHAIN_INDEXER_STALE_AFTER_SECONDS:10}
   relayer:
     min-tip-gwei: ${RELAYER_MIN_TIP_GWEI:30}
     private-key: ${RELAYER_PRIVATE_KEY:}
