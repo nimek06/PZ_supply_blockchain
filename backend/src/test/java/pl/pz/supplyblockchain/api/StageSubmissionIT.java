@@ -290,6 +290,29 @@ class StageSubmissionIT {
     }
 
     @Test
+    void failedCommandWithDefiniteSendRejectionCanBeReplacedAfterDeadline() throws Exception {
+        String batchId = vector.get("report").get("batchId").asString();
+        int stageId = vector.get("report").get("stageId").asInt();
+        UUID failedId = UUID.randomUUID();
+        long deadline = 1800000600L;
+        insertCommand(failedId, batchId, stageId, OLD_DIGEST, deadline, null,
+                "FAILED", "SEND_REJECTED", null, null);
+        insertAttempt(failedId, null);
+        when(confirmedBlockTime.confirmedTimestamp()).thenReturn(deadline + 1);
+
+        mockMvc.perform(post("/api/v1/batches/{batchId}/stages", batchId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(stageBody("stageCompletion")))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").value("ACCEPTED"));
+
+        assertThat(commandCount(batchId)).isEqualTo(2);
+        assertThat(jdbc.queryForObject(
+                "SELECT status FROM commands WHERE id = ?", String.class, failedId))
+                .isEqualTo("FAILED");
+    }
+
+    @Test
     void failedCommandBeforeConfirmedDeadlineReturns409() throws Exception {
         String batchId = vector.get("report").get("batchId").asString();
         int stageId = vector.get("report").get("stageId").asInt();

@@ -20,4 +20,19 @@ public record TransactionAttempt(
         String receiptBlockHash,
         TransactionReceiptStatus receiptStatus,
         Instant createdAt) {
+
+    public TransactionAttempt withBroadcastAt(Instant broadcastAt) {
+        return new TransactionAttempt(
+                id, commandId, relayerAddress, txNonce, txHash, signedTx, calldataHash,
+                maxPriorityFeePerGas, maxFeePerGas, gasLimit, broadcastAt,
+                receiptBlock, receiptBlockHash, receiptStatus, createdAt);
+    }
+
+    public TransactionAttempt withReceipt(
+            long blockNumber, String blockHash, TransactionReceiptStatus status) {
+        return new TransactionAttempt(
+                id, commandId, relayerAddress, txNonce, txHash, signedTx, calldataHash,
+                maxPriorityFeePerGas, maxFeePerGas, gasLimit, broadcastAt,
+                blockNumber, blockHash, status, createdAt);
+    }
 }

@@ -37,6 +37,7 @@ import pl.pz.supplyblockchain.domain.TelemetryReport;
 public class SubmitStageService {
 
     private static final Pattern BYTES32 = Pattern.compile("^0x[0-9a-fA-F]{64}$");
+    private static final String DEFINITE_SEND_REJECTION = "SEND_REJECTED";
 
     private final CommandRepository commandRepository;
     private final ReportCanonicalizer reportCanonicalizer;
@@ -212,7 +213,11 @@ public class SubmitStageService {
         }
         if (latest.status() == CommandStatus.FAILED) {
             long retryAfter = replacementThreshold(latest);
-            if (attemptRepository.hasUnresolvedAttempts(latest.id())) {
+            // A definitive RPC send rejection means the signed bytes never entered the mempool.
+            // Such an attempt is historically useful, but it cannot land later and must not block
+            // the next signed report after the old deadline.
+            if (attemptRepository.hasUnresolvedAttempts(latest.id())
+                    && !DEFINITE_SEND_REJECTION.equalsIgnoreCase(latest.failureCode())) {
                 throw new DomainException(ErrorCode.STAGE_ALREADY_PENDING,
                         "the previous command has unresolved transaction attempts", retryAfter);
             }

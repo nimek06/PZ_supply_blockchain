@@ -24,6 +24,12 @@ public class JpaTransactionAttemptRepository implements TransactionAttemptReposi
     }
 
     @Override
+    @Transactional
+    public TransactionAttempt update(TransactionAttempt attempt) {
+        return repository.save(TransactionAttemptEntity.from(attempt)).toDomain();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Optional<TransactionAttempt> findById(UUID id) {
         return repository.findById(id).map(TransactionAttemptEntity::toDomain);

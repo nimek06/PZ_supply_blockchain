@@ -495,6 +495,32 @@ class SubmitStageServiceTest {
     }
 
     @Test
+    void submitAllowsReplacementAfterDefiniteSendRejection() {
+        StageCommand failed = failedCommand(1800000600L, null, true, "SEND_REJECTED");
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(true);
+        when(confirmedBlockTime.confirmedTimestamp()).thenReturn(1800000601L);
+        when(commandRepository.saveNew(any())).thenAnswer(
+                invocation -> ((NewStageCommand) invocation.getArgument(0)).command());
+
+        StageCommand result = service.submit(sampleCommand(1800000600L));
+
+        assertThat(result.status()).isEqualTo(CommandStatus.ACCEPTED);
+    }
+
+    @Test
+    void submitRejectsUnresolvedAttemptsUnlessSendWasDefinitelyRejected() {
+        StageCommand failed = failedCommand(1800000600L, null, true, "DEADLINE_EXPIRED");
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.submit(sampleCommand(1800000600L)))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code())
+                        .isEqualTo(ErrorCode.STAGE_ALREADY_PENDING));
+    }
+
+    @Test
     void submitUsesRetryAllowedAfterAsHigherFailedThreshold() {
         StageCommand failed = failedCommand(1800000600L, 1800001200L);
         stubReplacement(failed);
@@ -561,10 +587,15 @@ class SubmitStageServiceTest {
     }
 
     private StageCommand failedCommand(long deadline, Long retryAllowedAfter, boolean qaPassed) {
+        return failedCommand(deadline, retryAllowedAfter, qaPassed, "DEADLINE_EXPIRED");
+    }
+
+    private StageCommand failedCommand(
+            long deadline, Long retryAllowedAfter, boolean qaPassed, String failureCode) {
         return new StageCommand(
                 UUID.randomUUID(), CommandType.STAGE, stationAddress, batchId, null, 2,
                 stationAddress, certificateId, reportHash, "0xotherdigest", deadline, qaPassed,
-                CommandStatus.FAILED, null, null, "DEADLINE_EXPIRED", null, retryAllowedAfter,
+                CommandStatus.FAILED, null, null, failureCode, null, retryAllowedAfter,
                 Instant.ofEpochSecond(1800000000L), Instant.ofEpochSecond(1800000000L));
     }
 }

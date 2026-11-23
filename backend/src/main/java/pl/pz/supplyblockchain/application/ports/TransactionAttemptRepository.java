@@ -9,6 +9,8 @@ public interface TransactionAttemptRepository {
 
     TransactionAttempt save(TransactionAttempt attempt);
 
+    TransactionAttempt update(TransactionAttempt attempt);
+
     Optional<TransactionAttempt> findById(UUID id);
 
     Optional<TransactionAttempt> findByTxHash(String txHash);
