@@ -24,6 +24,8 @@ STATION_KEY="${STATION_KEY:-$E2E_WORKDIR/station.key}"
 STATION_CERT="${STATION_CERT:-$E2E_WORKDIR/station-certificate.json}"
 BACKEND_LOG="${BACKEND_LOG:-$E2E_WORKDIR/backend.log}"
 BACKEND_PID_FILE="$E2E_WORKDIR/backend.pid"
+SIMULATOR_VENV="$E2E_WORKDIR/simulator-venv"
+SIMULATOR_PYTHON="$SIMULATOR_VENV/bin/python"
 
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 POSTGRES_USER="${POSTGRES_USER:-supplychain}"
@@ -43,14 +45,52 @@ ANVIL_STATION_KEY="${ANVIL_STATION_KEY:-0x59c6995e998f97a5a0044966f0945389dc9e86
 STATION_ADDRESS="${STATION_ADDRESS:-0x70997970C51812dc3A010C7d01b50e0d17dc79C8}"
 STATION_REFERENCE="${STATION_REFERENCE:-ST-001}"
 
-info() { echo "==> $*"; }
-warn() { echo "UWAGA: $*" >&2; }
-die() { echo "error: $*" >&2; exit 1; }
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+  COLOR_INFO=$'\033[1;36m'
+  COLOR_SUCCESS=$'\033[1;32m'
+  COLOR_WARN=$'\033[1;33m'
+  COLOR_ERROR=$'\033[1;31m'
+  COLOR_RESET=$'\033[0m'
+else
+  COLOR_INFO=""
+  COLOR_SUCCESS=""
+  COLOR_WARN=""
+  COLOR_ERROR=""
+  COLOR_RESET=""
+fi
+
+info() { printf '%s==>%s %s\n' "$COLOR_INFO" "$COLOR_RESET" "$*"; }
+warn() { printf '%sUWAGA:%s %s\n' "$COLOR_WARN" "$COLOR_RESET" "$*" >&2; }
+die() { printf '%serror:%s %s\n' "$COLOR_ERROR" "$COLOR_RESET" "$*" >&2; exit 1; }
 
 require_tools() {
   for tool in "$@"; do
     command -v "$tool" >/dev/null 2>&1 || die "brak narzędzia: $tool"
   done
+}
+
+postgres_psql() {
+  docker compose -f "$COMPOSE_DIR/compose.yaml" exec -T postgres \
+    psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" "$@"
+}
+
+prepare_simulator_venv() {
+  if [[ ! -x "$SIMULATOR_PYTHON" ]]; then
+    info "Tworzę środowisko Pythona E2E: $SIMULATOR_VENV"
+    python3 -m venv "$SIMULATOR_VENV"
+  fi
+  if ! "$SIMULATOR_PYTHON" -m pip --version >/dev/null 2>&1; then
+    info "Przygotowuję pip w środowisku E2E"
+    "$SIMULATOR_PYTHON" -m ensurepip
+  fi
+  if ! "$SIMULATOR_PYTHON" -c \
+    'import supply_chain_simulator; from importlib.metadata import distribution; distribution("supply-chain-simulator")' \
+    >/dev/null 2>&1 || ! "$SIMULATOR_PYTHON" -m pip check; then
+    info "Instaluję symulator i jego zależności w środowisku E2E"
+    "$SIMULATOR_PYTHON" -m pip install -e "$SIMULATOR_DIR"
+    "$SIMULATOR_PYTHON" -m pip check
+    "$SIMULATOR_PYTHON" -c 'import supply_chain_simulator'
+  fi
 }
 
 wait_for_healthy() {

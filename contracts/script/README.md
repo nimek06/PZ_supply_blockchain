@@ -76,9 +76,11 @@ ustawia wszystkie zmienne skryptów Forge.
 w sieci `pz-supply_default` (zmienna `COMPOSE_NETWORK`). Repozytorium jest zamontowane
 pod tą samą ścieżką co na hoście. RPC to domyślnie `http://anvil:8545`. Na hoście
 potrzebne są `jq` i `shasum`. Bez flagi skrypt sam wybiera obraz, gdy nie znajdzie
-Foundry. Ten tryb sprawdzono tylko atrapą `docker` (te same wywołania), bez prawdziwego
-demona. Na Linuksie z UID innym niż 1000 możliwe są problemy z uprawnieniami
-do `out/`, `cache/` i `broadcast/`.
+Foundry. Cache i pliki odzyskiwania tego trybu są w wolumenie
+`pz-supply-foundry-home`, niezależnie od `contracts/cache/` na hoście. Nie usuwaj
+ich automatycznie po przerwanym deployu: mogą być potrzebne do odzyskania transakcji.
+Na Linuksie z UID innym niż 1000 możliwe są problemy z uprawnieniami do `out/`
+i `broadcast/`.
 
 ## Smoke na Amoy jednym poleceniem
 
