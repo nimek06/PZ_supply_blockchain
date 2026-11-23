@@ -92,6 +92,7 @@ if [[ $use_docker == 1 ]]; then
   docker network inspect "$network" >/dev/null 2>&1 ||
     die "brak sieci $network - najpierw: cd infrastructure/local && docker compose up -d"
   RPC_URL="${RPC_URL:-http://anvil:8545}"
+  # Cache Forge jest w wolumenie: na bind mount macOS pliki odzyskiwania mogą powodować EBADF.
   # Repo pod tą samą ścieżką co na hoście; katalog domowy w wolumenie, żeby solc pobrać raz.
   # Zmienne skryptów przekazujemy jawnie, inaczej forge w kontenerze sięgnąłby do contracts/.env.
   foundry_run() {
@@ -99,6 +100,7 @@ if [[ $use_docker == 1 ]]; then
     shift
     docker run --rm --network "$network" -v "$root:$root" -w "$PWD" \
       -v pz-supply-foundry-home:/home/foundry \
+      -e FOUNDRY_CACHE_PATH=/home/foundry/local-deploy-cache \
       -e DEPLOYER_PRIVATE_KEY -e EXPECTED_CHAIN_ID -e RELAYER_ADDRESS -e QA_INSPECTOR_ADDRESS \
       -e ADMIN_ADDRESS -e MAX_DEADLINE_WINDOW -e ADMIN_PRIVATE_KEY -e SUPPLY_CHAIN_ADDRESS \
       -e STATION_ADDRESS -e STATION_ID -e STATION_EXPIRES_AT -e STATION_STAGE_MASK \

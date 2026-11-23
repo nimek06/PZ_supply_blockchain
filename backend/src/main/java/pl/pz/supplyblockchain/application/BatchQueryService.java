@@ -1,72 +1,55 @@
 package pl.pz.supplyblockchain.application;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.springframework.stereotype.Service;
 import pl.pz.supplyblockchain.application.batch.BatchView;
-import pl.pz.supplyblockchain.application.ports.CommandRepository;
+import pl.pz.supplyblockchain.application.ports.BatchProjection;
+import pl.pz.supplyblockchain.application.ports.BatchProjectionRepository;
 import pl.pz.supplyblockchain.config.ChainProperties;
-import pl.pz.supplyblockchain.domain.BatchId;
-import pl.pz.supplyblockchain.domain.BatchNumber;
 import pl.pz.supplyblockchain.domain.DomainException;
 import pl.pz.supplyblockchain.domain.ErrorCode;
-import pl.pz.supplyblockchain.domain.StageCommand;
+import pl.pz.supplyblockchain.domain.BatchId;
+import pl.pz.supplyblockchain.domain.BatchNumber;
 
-/**
- * Read model for a batch. The indexer is not implemented yet, so only locally confirmed stage
- * commands are visible and the projection is always marked stale.
- */
 @Service
 public class BatchQueryService {
 
-    private static final int FIRST_STAGE = 0;
-    private static final int LAST_STAGE = 3;
-    private static final long LAST_INDEXED_BLOCK = 0L;
     private static final long REQUIRED_CONFIRMATIONS = 1L;
 
-    private final CommandRepository commandRepository;
+    private final BatchProjectionRepository projectionRepository;
     private final ChainProperties chainProperties;
 
-    public BatchQueryService(CommandRepository commandRepository, ChainProperties chainProperties) {
-        this.commandRepository = commandRepository;
+    public BatchQueryService(
+            BatchProjectionRepository projectionRepository, ChainProperties chainProperties) {
+        this.projectionRepository = projectionRepository;
         this.chainProperties = chainProperties;
     }
 
     public BatchView findByBatchId(String batchId) {
         String normalized = parseBatchId(batchId);
-        StageCommand createCommand = commandRepository
-                .findCreateBatch(chainProperties.deploymentId(), normalized)
+        BatchProjection projection = projectionRepository
+                .findByBatchId(chainProperties.deploymentId(), normalized)
                 .orElseThrow(BatchQueryService::notFound);
-        return toView(createCommand);
+        return toView(projection);
     }
 
     public BatchView findByBatchNumber(String batchNumber) {
         String normalized = parseBatchNumber(batchNumber);
-        StageCommand createCommand = commandRepository
-                .findCreateBatchByNumber(chainProperties.deploymentId(), normalized)
+        BatchProjection projection = projectionRepository
+                .findByBatchNumber(chainProperties.deploymentId(), normalized)
                 .orElseThrow(BatchQueryService::notFound);
-        return toView(createCommand);
+        return toView(projection);
     }
 
-    private BatchView toView(StageCommand createCommand) {
-        Set<Integer> completedStages = new HashSet<>(commandRepository.findConfirmedAcceptedStageIds(
-                chainProperties.deploymentId(), createCommand.batchId()));
-        boolean completed = completedStages.containsAll(
-                Set.of(FIRST_STAGE, FIRST_STAGE + 1, FIRST_STAGE + 2, LAST_STAGE));
-        Integer nextStage = null;
-        if (!completed) {
-            nextStage = FIRST_STAGE;
-            while (completedStages.contains(nextStage)) {
-                nextStage++;
-            }
-        }
+    private static BatchView toView(BatchProjection projection) {
         return new BatchView(
-                createCommand.batchId(),
-                createCommand.batchNumber(),
-                completed,
-                nextStage,
+                projection.batchId(),
+                projection.batchNumber(),
+                projection.completed(),
+                projection.completed() ? null : projection.nextStage(),
                 new BatchView.ProjectionFreshness(
-                        LAST_INDEXED_BLOCK, REQUIRED_CONFIRMATIONS, true));
+                        projection.lastIndexedBlock(),
+                        REQUIRED_CONFIRMATIONS,
+                        projection.stale()));
     }
 
     private static String parseBatchId(String value) {

@@ -3,16 +3,13 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-require_tools python3 jq
+require_tools docker python3 jq
 
 address=$(contract_address)
 
 info "Przygotowuję venv symulatora"
 cd "$SIMULATOR_DIR"
-if [[ ! -x .venv/bin/python ]]; then
-  python3 -m venv .venv
-  .venv/bin/pip install -q -e .
-fi
+prepare_simulator_venv
 
 info "Tworzę klucz stacji w $STATION_KEY"
 mkdir -p "$(dirname "$STATION_KEY")"
@@ -22,7 +19,7 @@ EOF
 chmod 600 "$STATION_KEY"
 
 info "Wystawiam certyfikat stacji"
-ADMIN_PRIVATE_KEY="$ANVIL_ADMIN_KEY" .venv/bin/python -m supply_chain_simulator \
+ADMIN_PRIVATE_KEY="$ANVIL_ADMIN_KEY" "$SIMULATOR_PYTHON" -m supply_chain_simulator \
   --issue-certificate \
   --station-address "$STATION_ADDRESS" \
   --station-id "$STATION_REFERENCE" \
@@ -70,6 +67,6 @@ ON CONFLICT (certificate_id) DO UPDATE SET
   created_at = EXCLUDED.created_at;
 """)
 PY
-PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "$E2E_WORKDIR/insert_cert.sql"
+postgres_psql < "$E2E_WORKDIR/insert_cert.sql"
 
 info "Stacja gotowa: $STATION_ADDRESS"
