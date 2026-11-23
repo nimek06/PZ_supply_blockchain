@@ -91,7 +91,7 @@ def make_api(*, terminal_status: str | None = "CONFIRMED") -> tuple[SimulatorApi
             return httpx.Response(200, json={"commandId": command_id, "status": "PINNING"})
         if terminal_status == "FAILED":
             return httpx.Response(
-                200, json={"commandId": command_id, "status": "FAILED", "errorCode": "REVERT"}
+                200, json={"commandId": command_id, "status": "FAILED", "failureCode": "REVERT"}
             )
         outcome = "ACCEPTED" if state["qa"].get(command_id) else "REJECTED"
         return httpx.Response(

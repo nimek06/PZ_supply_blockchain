@@ -186,7 +186,7 @@ class Runner:
         if not status.is_confirmed():
             raise RunnerError(
                 f"etap {step.stageId}: polecenie {status.commandId} zakończone jako "
-                f"{status.status} (errorCode={status.errorCode})"
+                f"{status.status} (failureCode={status.failureCode})"
             )
         if status.outcome != expected_outcome:
             raise RunnerError(

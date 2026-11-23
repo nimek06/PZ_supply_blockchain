@@ -10,10 +10,12 @@ uproszczony): ponawiamy **identyczne** żądanie, dlatego retry wysyła te same
 bajty i nie zależy od czasu. Kody `4xx` (poza `429`) nie są ponawiane - błędny
 podpis, nieaktywna stacja i konflikt etapu nie poprawią się same.
 
-Szkic: `shared/schemas/openapi.yaml` (T002) jeszcze nie istnieje, więc modele
-odpowiedzi są odporne na rozszerzenia (`extra="allow"`): nowe pole w odpowiedzi
-nie może wyłączyć symulatora. Lista statusów polecenia jest natomiast
-walidowana wobec modelu stanów z `docs/data-model.md` (fail-closed).
+Modele odpowiedzi odpowiadają `shared/schemas/openapi.yaml` (`CommandAccepted`,
+`CommandStatus`), a mimo to przyjmują dodatkowe pola (`extra="allow"`): nowe
+pole w odpowiedzi nie może wyłączyć symulatora. Nazwa pola błędu to
+`failureCode` (tak w OpenAPI i w `CommandStatusResponse` backendu), a lista
+statusów polecenia jest walidowana wobec modelu stanów z `docs/data-model.md`
+(fail-closed).
 """
 
 from __future__ import annotations
@@ -124,9 +126,13 @@ class CommandAccepted(ResponseModel):
     """Odpowiedź `202`: polecenie przyjęte, jeszcze nie potwierdzone.
 
     Samo `202` nie jest zakończeniem etapu - status sprawdza `get_command`.
+    OpenAPI wymaga pól `commandId`, `type`, `status` i `statusUrl`; trzymamy je
+    opcjonalnie tylko po to, żeby dodatkowe/brakujące pole nie wyłączyło
+    symulatora (odpowiedź należy do backendu).
     """
 
     commandId: str
+    type: str | None = None
     status: str | None = None
     statusUrl: str | None = None
 
@@ -135,11 +141,13 @@ class CommandStatus(ResponseModel):
     """`200 CommandStatus`: stan polecenia, wynik i terminy wznowienia."""
 
     commandId: str
+    type: str | None = None
     status: CommandState
     outcome: Outcome | None = None
     retryAt: SafeInt | None = None
     retryAllowedAfter: SafeInt | None = None
-    errorCode: str | None = None
+    #: Powód zakończenia `FAILED`; nazwa jak w OpenAPI i backendzie (`failureCode`).
+    failureCode: str | None = None
 
     def is_terminal(self) -> bool:
         """Czy polecenie się zakończyło (`CONFIRMED`/`FAILED`)?"""
