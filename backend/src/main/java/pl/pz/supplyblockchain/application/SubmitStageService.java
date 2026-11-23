@@ -11,12 +11,14 @@ import org.springframework.stereotype.Service;
 import pl.pz.supplyblockchain.application.commands.SubmitStageCommand;
 import pl.pz.supplyblockchain.application.ports.CanonicalReport;
 import pl.pz.supplyblockchain.application.ports.CommandRepository;
+import pl.pz.supplyblockchain.application.ports.ConfirmedBlockTimeSource;
 import pl.pz.supplyblockchain.application.ports.DuplicateCommandException;
 import pl.pz.supplyblockchain.application.ports.NewStageCommand;
 import pl.pz.supplyblockchain.application.ports.ReportCanonicalizer;
 import pl.pz.supplyblockchain.application.ports.StageCompletionVerifier;
 import pl.pz.supplyblockchain.application.ports.StationCertificateRepository;
 import pl.pz.supplyblockchain.application.ports.StationCertificateVerifier;
+import pl.pz.supplyblockchain.application.ports.TransactionAttemptRepository;
 import pl.pz.supplyblockchain.config.ChainProperties;
 import pl.pz.supplyblockchain.domain.CommandOutcome;
 import pl.pz.supplyblockchain.domain.CommandStatus;
@@ -42,6 +44,8 @@ public class SubmitStageService {
     private final ProfileValidator profileValidator;
     private final StationCertificateRepository certificateRepository;
     private final StationCertificateVerifier certificateVerifier;
+    private final TransactionAttemptRepository attemptRepository;
+    private final ConfirmedBlockTimeSource confirmedBlockTime;
     private final ChainProperties chainProperties;
     private final Clock clock;
 
@@ -52,6 +56,8 @@ public class SubmitStageService {
             ProfileValidator profileValidator,
             StationCertificateRepository certificateRepository,
             StationCertificateVerifier certificateVerifier,
+            TransactionAttemptRepository attemptRepository,
+            ConfirmedBlockTimeSource confirmedBlockTime,
             ChainProperties chainProperties,
             Clock clock) {
         this.commandRepository = commandRepository;
@@ -60,6 +66,8 @@ public class SubmitStageService {
         this.profileValidator = profileValidator;
         this.certificateRepository = certificateRepository;
         this.certificateVerifier = certificateVerifier;
+        this.attemptRepository = attemptRepository;
+        this.confirmedBlockTime = confirmedBlockTime;
         this.chainProperties = chainProperties;
         this.clock = clock;
     }
@@ -99,13 +107,6 @@ public class SubmitStageService {
             }
         });
 
-        DeploymentId deploymentId = chainProperties.deploymentId();
-        Optional<StageCommand> sameDigest =
-                commandRepository.findBySignedPayloadDigest(deploymentId, verification.digest());
-        if (sameDigest.isPresent()) {
-            return sameDigest.get();
-        }
-
         profileValidator.validate(report);
 
         StationCertificate certificate = certificateRepository
@@ -120,6 +121,15 @@ public class SubmitStageService {
             throw new DomainException(
                     mapCertificateReason(certVerification.reason()),
                     certVerification.detail());
+        }
+
+        // Replay is looked up after the current station proof, but before deadline/stage checks:
+        // a revoked or unavailable station must not receive a command id from an old signature.
+        DeploymentId deploymentId = chainProperties.deploymentId();
+        Optional<StageCommand> sameDigest =
+                commandRepository.findBySignedPayloadDigest(deploymentId, verification.digest());
+        if (sameDigest.isPresent()) {
+            return sameDigest.get();
         }
 
         long now = clock.instant().getEpochSecond();
@@ -192,22 +202,43 @@ public class SubmitStageService {
             return;
         }
         if (latest.status() == CommandStatus.CONFIRMED) {
-            if (latest.outcome() == CommandOutcome.ACCEPTED) {
-                throw new DomainException(ErrorCode.STAGE_ALREADY_COMPLETED,
-                        "stage has already been completed on-chain");
+            if (latest.outcome() == CommandOutcome.REJECTED) {
+                return;
             }
-            return;
+            throw new DomainException(ErrorCode.STAGE_ALREADY_COMPLETED,
+                    latest.outcome() == CommandOutcome.ACCEPTED
+                            ? "stage has already been completed on-chain"
+                            : "confirmed command has no recognized outcome");
         }
         if (latest.status() == CommandStatus.FAILED) {
-            long retryAfter = latest.retryAllowedAfter() == null ? latest.deadline() : latest.retryAllowedAfter();
-            if (now <= retryAfter) {
+            long retryAfter = replacementThreshold(latest);
+            if (attemptRepository.hasUnresolvedAttempts(latest.id())) {
                 throw new DomainException(ErrorCode.STAGE_ALREADY_PENDING,
-                        "the previous signed attempt has not expired yet", retryAfter);
+                        "the previous command has unresolved transaction attempts", retryAfter);
+            }
+            // A rejected QA report never moves the batch, so its signature cannot block the stage.
+            if (Boolean.FALSE.equals(latest.qaPassed())) {
+                return;
+            }
+            long confirmedNow = confirmedBlockTime.confirmedTimestamp();
+            if (confirmedNow <= retryAfter) {
+                throw new DomainException(ErrorCode.STAGE_ALREADY_PENDING,
+                        "the confirmed block has not passed the previous deadline yet", retryAfter);
             }
             return;
         }
         throw new DomainException(ErrorCode.STAGE_ALREADY_PENDING,
                 "stage already has an active command", latest.retryAllowedAfter());
+    }
+
+    /**
+     * The old signature is unusable only after the confirmed chain time passes its deadline.
+     * {@code retryAllowedAfter} may raise the threshold but never lowers the signed deadline.
+     */
+    private static long replacementThreshold(StageCommand command) {
+        long deadline = command.deadline();
+        Long retryAllowedAfter = command.retryAllowedAfter();
+        return retryAllowedAfter == null ? deadline : Math.max(deadline, retryAllowedAfter);
     }
 
     private static ErrorCode mapCertificateReason(StationIdentityVerification.Reason reason) {

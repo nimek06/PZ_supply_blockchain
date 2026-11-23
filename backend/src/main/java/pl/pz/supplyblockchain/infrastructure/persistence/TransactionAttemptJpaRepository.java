@@ -10,4 +10,6 @@ interface TransactionAttemptJpaRepository extends JpaRepository<TransactionAttem
     Optional<TransactionAttemptEntity> findByTxHash(String txHash);
 
     List<TransactionAttemptEntity> findByCommandIdOrderByCreatedAtDesc(UUID commandId);
+
+    boolean existsByCommandIdAndReceiptStatusIsNull(UUID commandId);
 }

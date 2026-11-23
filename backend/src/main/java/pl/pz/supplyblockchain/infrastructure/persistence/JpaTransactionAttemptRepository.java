@@ -42,4 +42,10 @@ public class JpaTransactionAttemptRepository implements TransactionAttemptReposi
                 .map(TransactionAttemptEntity::toDomain)
                 .toList();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasUnresolvedAttempts(UUID commandId) {
+        return repository.existsByCommandIdAndReceiptStatusIsNull(commandId);
+    }
 }
