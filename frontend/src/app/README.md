@@ -3,7 +3,7 @@
 **Języki:** TypeScript/TSX, CSS.
 
 Plan: `App.tsx`, `router.tsx`, `providers.tsx`, `styles.css`.
-Tutaj łącz QueryClientProvider, konfigurację Wagmi i RainbowKit (`projectId` WalletConnect/Reown) oraz router.
+Tutaj łącz QueryClientProvider, konfigurację Wagmi, sesję SIWE (`session.tsx`) oraz router.
 QueryClient ma być stabilny, nie tworzony przy każdym renderze.
 
 Planowane widoki: publiczny `/passport/:batchNumber`, operator `/operator`

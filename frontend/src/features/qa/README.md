@@ -1,6 +1,6 @@
 # Panel operatora zmiany - kontrola QA
 
-**Język:** TypeScript/TSX; Wagmi/Viem i RainbowKit.
+**Język:** TypeScript/TSX; Wagmi/Viem.
 
 Plan: `QaPage.tsx`, lista etapów czekających na kontrolę,
 `QaApprovalForm.tsx` i hook podpisu approval.

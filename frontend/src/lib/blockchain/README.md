@@ -1,9 +1,9 @@
 # Portfele i kontrakt
 
-**Język:** TypeScript; Wagmi v2, Viem, RainbowKit.
+**Język:** TypeScript; Wagmi v3, Viem.
 
-Plan: `chains.ts`, `wagmiConfig.ts` (RainbowKit `projectId`), `contract.ts`, `typedData.ts`.
-Użyj poprawnej sieci lokalnej i Amoy, publicznej konfiguracji adresu,
+Plan: `chains.ts`, `wagmiConfig.ts` (konektor `injected`), `contract.ts`, `typedData.ts`.
+Użyj sieci lokalnej (Amoy poza aplikacją, DEC-17), publicznej konfiguracji adresu,
 ABI z shared/abi oraz typowanych argumentów.
 Big integers przekaż jako `bigint`, nie `number`.
 

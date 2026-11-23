@@ -4,7 +4,7 @@
 # Zasady z docs/testing.md: CI nie wymaga dostępu do Amoy ani Pinaty, testy
 # Pythona nie używają sieci, a job backendu startuje dopiero po inicjalizacji
 # Mavena (bez pom.xml job przechodzi z komunikatem, nie udaje zielonych testów).
-# Job frontendu dochodzi w tygodniu 2 razem z T005/T032.
+# Job frontendu: lint, testy (w tym wspólny wektor podpisu) i build z type-checkiem.
 name: CI
 
 on:
@@ -91,3 +91,31 @@ jobs:
       - name: Testy backendu
         if: hashFiles('backend/pom.xml') != ''
         run: ./mvnw -B -ntp verify
+
+  frontend:
+    name: frontend (npm)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node z frontend/.nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalacja z lockfile
+        run: npm ci
+      - name: Typy API zgodne z shared/schemas/openapi.yaml
+        run: |
+          npm run gen:api
+          git diff --exit-code -- src/lib/api/schema.gen.ts
+      - name: Lint
+        run: npm run lint
+      - name: Testy
+        run: npm run test -- --run
+      - name: Build z type-checkiem
+        run: npm run build
