@@ -9,10 +9,10 @@ Kontynuacja: [tydzień 4](../../week4/plans/adam-plan.md).
 
 ## Zadania
 
-- [ ] W3-01 [Plan:3.1] T013: sprawdzić istniejący lokalny deploy, ABI i dane
+- [x] W3-01 [Plan:3.1] T013: sprawdzić istniejący lokalny deploy, ABI i dane
   wdrożenia. Domknąć role administratora, relayera, stacji i QA oraz rejestrację
   stacji etapów 0..3. Ponowne uruchomienie nie może niejawnie resetować danych.
-- [ ] W3-02 [Plan:3.1] T010: domknąć konfigurację istniejącego weryfikatora
+- [x] W3-02 [Plan:3.1] T010: domknąć konfigurację istniejącego weryfikatora
   certyfikatu, polityki i odczytu rejestru dla rzeczywistego lokalnego wdrożenia.
   Przekazać Mikołajowi port `StationCertificateVerifier` i sposób interpretacji
   wyniku `StationIdentityVerification`; nie pisać drugiego weryfikatora.

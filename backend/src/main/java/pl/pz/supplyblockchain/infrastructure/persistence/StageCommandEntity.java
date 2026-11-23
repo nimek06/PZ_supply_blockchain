@@ -189,4 +189,12 @@ class StageCommandEntity {
     String requestHash() {
         return requestHash;
     }
+
+    byte[] reportJcs() {
+        return reportJcs;
+    }
+
+    String stationSignature() {
+        return stationSignature;
+    }
 }

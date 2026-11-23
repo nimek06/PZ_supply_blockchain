@@ -5,11 +5,19 @@ Krótka instrukcja uruchomienia pełnej ścieżki:
 
 ## Wymagania
 
+- Linux, macOS lub Windows z **WSL2** (uruchomienie w powłoce Bash WSL, nie PowerShell);
+  na Windows włącz integrację Docker Desktop z wybraną dystrybucją WSL
+- Bash, `curl` i `git` oraz zależności kontraktów (`git submodule update --init`)
 - Docker + `docker compose`
 - JDK 21
-- Python 3.11+ (do venv symulatora)
+- Python 3.11+ z modułem `venv` (do symulatora)
 - `jq`, `shasum`
 - `forge`/`cast` **nie są wymagane** — używamy obrazu Foundry
+- `psql` na hoście **nie jest wymagany** — używamy klienta z kontenera PostgreSQL
+
+W WSL zalecany jest checkout w systemie plików Linuksa (np. `~/projects/`);
+JDK, Python, `jq` i `shasum` muszą być dostępne w tej samej powłoce WSL.
+Natywne uruchomienie w PowerShell/CMD nie jest obsługiwane.
 
 ## Szybki start
 
@@ -20,6 +28,17 @@ cp infrastructure/local/.env.example infrastructure/local/.env
 # edytuj infrastructure/local/.env (hasło, port Postgres)
 ./backend/scripts/local-e2e/run-e2e.sh
 ```
+
+Runner pokazuje postęp w pięciu krokach (`[1/5]`–`[5/5]`), czas i status
+każdego kroku oraz czytelne podsumowanie; kolory włącza tylko w terminalu.
+Użyj `NO_COLOR=1`, aby je wyłączyć, albo `--help`, aby zobaczyć skróconą
+pomoc. W razie błędu wypisze krok, na którym przebieg się zatrzymał.
+
+**Uwaga:** runner resetuje Anvila i odtwarza bazy `supplychain_e2e` oraz
+`supplychain_e2e_test`. Pozostałe dane PostgreSQL nie są czyszczone.
+Po zakończeniu usługa backendu jest zatrzymywana, ale kontenery Compose
+pozostają uruchomione; zakończ je przez `cd infrastructure/local &&
+docker compose down` (wolumeny zostaną zachowane).
 
 Po zakończeniu zobaczysz:
 
@@ -89,8 +108,14 @@ Domyślnie skrypt tworzy katalog w `backend/scripts/tmp/e2e-run-<timestamp>` i t
 - klucz stacji (`station.key`, uprawnienia `0600`)
 - certyfikat stacji (`station-certificate.json`)
 - log backendu (`backend.log`)
+- osobne środowisko `simulator-venv` z zainstalowanym pakietem symulatora
 
-Każde uruchomienie `run-e2e.sh` ma swój unikalny katalog. Gdy uruchamiasz kroki osobno, domyślny katalog to `backend/scripts/tmp/e2e-run-<timestamp>`.
+Runner nie zmienia `simulator/.venv`. Przy pierwszym przygotowaniu środowiska
+E2E instaluje zależności projektu przez pip, co może wymagać dostępu do sieci.
+
+Każde uruchomienie `run-e2e.sh` ma swój unikalny katalog. Uruchamiając kroki
+osobno, ustaw tę samą zmienną `E2E_WORKDIR` dla wszystkich kroków, aby
+współdzieliły środowisko, certyfikat i log.
 
 Katalog `backend/scripts/tmp/` jest w `.gitignore` — nie trafi do repozytorium.
 

@@ -7,7 +7,7 @@ address=$(contract_address)
 
 info "Uruchamiam scenariusz E2E"
 cd "$SIMULATOR_DIR"
-.venv/bin/python -m supply_chain_simulator \
+"$SIMULATOR_PYTHON" -m supply_chain_simulator \
   --scenario scenarios/ebike-happy-path.yaml \
   --backend-url "$BACKEND_URL" \
   --rpc-url "$RPC_URL" \

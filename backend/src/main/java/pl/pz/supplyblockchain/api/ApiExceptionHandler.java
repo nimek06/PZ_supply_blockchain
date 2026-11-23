@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import pl.pz.supplyblockchain.application.ports.ChainUnavailableException;
 import pl.pz.supplyblockchain.application.ports.StationRegistryException;
 import pl.pz.supplyblockchain.domain.DomainException;
 import pl.pz.supplyblockchain.domain.ErrorCode;
@@ -62,6 +63,16 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problem(
                 HttpStatus.SERVICE_UNAVAILABLE,
                 "station registry is unavailable",
+                ErrorCode.DEPENDENCY_UNAVAILABLE.name(),
+                request));
+    }
+
+    @ExceptionHandler(ChainUnavailableException.class)
+    ResponseEntity<ProblemDetail> handleChainUnavailable(
+            ChainUnavailableException exception, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problem(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "blockchain head is unavailable",
                 ErrorCode.DEPENDENCY_UNAVAILABLE.name(),
                 request));
     }

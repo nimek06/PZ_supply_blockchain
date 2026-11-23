@@ -7,6 +7,9 @@ spring:
 supplychain:
   chain:
     contract-address: ${CONTRACT_ADDRESS:0x5fbdb2315678afecb367f032d93f642f64180aa3}
+  indexer:
+    enabled: ${CHAIN_INDEXER_ENABLED:true}
+    deployment-block: ${CHAIN_DEPLOYMENT_BLOCK:1}
   auth:
     domain: ${AUTH_DOMAIN:localhost}
     uri: ${AUTH_URI:http://localhost:5173}

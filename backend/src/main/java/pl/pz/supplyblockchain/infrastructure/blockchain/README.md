@@ -1,8 +1,8 @@
 # Blockchain i indexer
 
-**Język:** Java 21; Web3j tylko do kodowania wywołań i podpisu transakcji.
+**Język:** Java 21; Web3j obsługuje RPC, kodowanie wywołań i podpis transakcji.
 
-Plan: `Web3jChainGateway`, `Eip712SignatureVerifier`, `RelayerTransactionSender`,
+Plan: `Web3jRelayerChainGateway`, `Web3jEip712Verifier`, `RelayerTransactionSender`,
 `ChainEventIndexer` (indexer: osoba 1). Kodowanie wywołań z ABI (opcjonalnie wygenerowany
 wrapper w `target/generated-sources/`, bez ręcznej edycji); nie używaj `.send()`
 z wrappera ani `DefaultGasProvider`.
@@ -14,8 +14,10 @@ Certyfikat JSON (weryfikator w Javie: osoba 1) musi wskazać ten sam adres co re
 `StationCertificate(bytes32 payloadHash)` w domenie `SupplyChainStationRegistry`/`1` z chainId
 i verifyingContract z certyfikatu, odzyskuje wystawcę, sprawdza allowlistę i wdrożenie
 (`StationCertificatePolicy`), okno ważności oraz `getStation` przez `Web3jStationRegistry`
-(`eth_call` na `latest`, ścisłe dekodowanie ABI). Beany i allowlista w konfiguracji powstają
-przy wpięciu w odbiór raportu.
+(`eth_call` na `latest`, ścisłe dekodowanie ABI). `StationCertificateConfig` tworzy porty
+`StationCertificateVerifier` i `StationRegistry` na podstawie `supplychain.chain` oraz
+`supplychain.station.trusted-issuers`; `SubmitStageService` wywołuje weryfikator dla każdego
+nowego zgłoszenia i odrzuca błędy rejestru jako niedostępność zależności, nie pozytywny wynik.
 Zamknięcie kontroli wymaga też `StageApproval` operatora (z adresem innym niż stacja);
 podpis relayera nie jest drugim dowodem QA.
 EIP-712 jest zaimplementowany ręcznie (jedna stała struktura: Keccak + odzyskanie adresu)
@@ -26,13 +28,24 @@ dostawca opłat EIP-1559 z konfigurowalnym minimalnym tipem. Zapisz podpisaną t
 przed wysłaniem; po timeoucie wyślij ponownie identyczne bajty i uzgodnij hash.
 Bez fee-bump/replacement w MVP; zablokowana transakcja: procedura ręczna.
 
-Indexer czyta logi oknami od deployment block i zapisuje checkpoint z numerem i hashem bloku.
-Okno ma maksymalnie 10 000 bloków, bo taki jest limit publicznego RPC Amoy.
-Obserwację logu identyfikują chainId, contract, blockHash i logIndex. Po reorg ta sama tx może
-trafić do innego bloku, z innym blockHash i logIndex. Dlatego txHash służy tylko do łączenia logu
-z poleceniem.
-Bez pełnej odbudowy po reorg: głębokość potwierdzeń + okno ponownego skanu
-ostatnich N bloków z porównaniem block hash. Zdarzenia: `StageCompleted`, `StageRejected`,
-`BatchCreated`, `StationRegistered`, `StationRevoked`.
-Testy: stub RPC dla błędów i Anvil (reorg: `evm_snapshot`/`evm_revert`).
-Pomiary Amoy, scenariusze reorgu i projekt cyklu: `docs/weekly_plans/week2/adam-indexer-notes.md`.
+Lokalny `ChainEventIndexer` działa po włączeniu `supplychain.indexer.enabled` i odmawia
+pracy na chainId innym niż 31337. `deployment-block` bierze się z `deploymentBlock`
+wdrożenia; lokalny runner przekazuje go jako `CHAIN_DEPLOYMENT_BLOCK`.
+Indexer skanuje `latest` (wliczony blok to jedno wymagane potwierdzenie), zakresami
+do 10 000 bloków i wyłącznie logi `BatchCreated`, `StageCompleted`, `StageRejected`
+z skonfigurowanego adresu kontraktu. Kolejność to
+`(blockNumber, transactionIndex, logIndex)`.
+
+V7 przechowuje surowe logi, projekcje batch/stage, checkpoint i ostatnie 64 kotwice.
+Zapis zakresu jest atomowy. Reorg wycofuje niekanoniczne eventy, odbudowuje projekcje
+i oznacza odłączone, wcześniej potwierdzone polecenia jako `FAILED/CHAIN_REORG`;
+indexer potwierdza polecenie tylko po dopasowaniu danych eventu do próby
+transakcyjnej i polecenia. Worker nie nadaje `CONFIRMED` z receiptu.
+Świeżość projekcji wygasa po 10 sekundach bez poprawnego cyklu indeksowania.
+Lokalny runner ustawia `CHAIN_INDEXER_ENABLED=true` i przekazuje
+`CHAIN_DEPLOYMENT_BLOCK` z `shared/deployments/local.json`. Przy ręcznym starcie
+backendu ustaw te zmienne oraz `CHAIN_RPC_URL` i `CONTRACT_ADDRESS`.
+
+Testy dekodera i odczytu są w testach jednostkowych; `ChainEventStoreIT` wymaga
+`TEST_DB_URL` i sprawdza atomowość/deduplikację/rollback na PostgreSQL.
+Testy na Anvil powinny dodatkowo obejmować `evm_snapshot`/`evm_revert`.

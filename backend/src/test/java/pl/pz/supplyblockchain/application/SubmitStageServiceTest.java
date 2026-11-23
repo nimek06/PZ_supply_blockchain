@@ -4,25 +4,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pl.pz.supplyblockchain.application.commands.SubmitStageCommand;
+import pl.pz.supplyblockchain.application.ports.ChainUnavailableException;
 import pl.pz.supplyblockchain.application.ports.CanonicalReport;
 import pl.pz.supplyblockchain.application.ports.CommandRepository;
+import pl.pz.supplyblockchain.application.ports.ConfirmedBlockTimeSource;
 import pl.pz.supplyblockchain.application.ports.NewStageCommand;
 import pl.pz.supplyblockchain.application.ports.ReportCanonicalizer;
 import pl.pz.supplyblockchain.application.ports.StageCompletionVerifier;
 import pl.pz.supplyblockchain.application.ports.StationCertificateRepository;
 import pl.pz.supplyblockchain.application.ports.StationCertificateVerifier;
+import pl.pz.supplyblockchain.application.ports.StationRegistryException;
+import pl.pz.supplyblockchain.application.ports.TransactionAttemptRepository;
 import pl.pz.supplyblockchain.config.ChainProperties;
 import pl.pz.supplyblockchain.domain.CommandOutcome;
 import pl.pz.supplyblockchain.domain.CommandStatus;
@@ -42,6 +48,8 @@ class SubmitStageServiceTest {
     private final ProfileValidator profileValidator = mock(ProfileValidator.class);
     private final StationCertificateRepository certificateRepository = mock(StationCertificateRepository.class);
     private final StationCertificateVerifier certificateVerifier = mock(StationCertificateVerifier.class);
+    private final TransactionAttemptRepository attemptRepository = mock(TransactionAttemptRepository.class);
+    private final ConfirmedBlockTimeSource confirmedBlockTime = mock(ConfirmedBlockTimeSource.class);
     private final ChainProperties chainProperties = new ChainProperties(
             31337, "0x5fbdb2315678afecb367f032d93f642f64180aa3", "SupplyChain", "1", 3600);
     private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1800000000L), ZoneOffset.UTC);
@@ -58,7 +66,8 @@ class SubmitStageServiceTest {
     void setUp() {
         service = new SubmitStageService(
                 commandRepository, reportCanonicalizer, signatureVerifier, profileValidator,
-                certificateRepository, certificateVerifier, chainProperties, clock);
+                certificateRepository, certificateVerifier, attemptRepository, confirmedBlockTime,
+                chainProperties, clock);
         when(certificateRepository.findById(certificateId)).thenReturn(
                 Optional.of(new pl.pz.supplyblockchain.domain.StationCertificate(
                         certificateId, stationAddress, "{}", Instant.ofEpochSecond(1800000000L))));
@@ -108,6 +117,7 @@ class SubmitStageServiceTest {
 
         assertThat(result.batchId()).isEqualTo(batchId);
         assertThat(result.status()).isEqualTo(CommandStatus.ACCEPTED);
+        assertThat(result.ownerAddress()).isEqualTo(stationAddress);
         assertThat(result.signedPayloadDigest()).isEqualTo(digest);
         verify(commandRepository).saveNew(any());
     }
@@ -181,6 +191,69 @@ class SubmitStageServiceTest {
         StageCommand result = service.submit(command);
 
         assertThat(result.id()).isEqualTo(existing.id());
+    }
+
+    @Test
+    void submitRejectsReplayWhenStationIsNoLongerActive() {
+        record Case(pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason reason,
+                    ErrorCode code) {
+        }
+        List<Case> cases = List.of(
+                new Case(pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.REVOKED,
+                        ErrorCode.STATION_NOT_ACTIVE),
+                new Case(pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.EXPIRED,
+                        ErrorCode.CERTIFICATE_INVALID));
+
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(new SignatureVerification(stationAddress, digest));
+
+        for (Case testCase : cases) {
+            when(certificateVerifier.verifyForReport(any(), any(), any(Integer.class))).thenReturn(
+                    new pl.pz.supplyblockchain.domain.StationIdentityVerification(
+                            testCase.reason(), "rejected", null, null, null));
+
+            assertThatThrownBy(() -> service.submit(sampleCommand(1800000600L)))
+                    .isInstanceOf(DomainException.class)
+                    .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(testCase.code()));
+        }
+
+        verify(commandRepository, never()).findBySignedPayloadDigest(any(), any());
+    }
+
+    @Test
+    void submitRejectsReplayWhenStationRegistryIsUnavailable() {
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(new SignatureVerification(stationAddress, digest));
+        when(certificateVerifier.verifyForReport(any(), any(), any(Integer.class))).thenThrow(
+                new StationRegistryException(StationRegistryException.Reason.UNAVAILABLE, "rpc down", null));
+
+        assertThatThrownBy(() -> service.submit(sampleCommand(1800000600L)))
+                .isInstanceOf(StationRegistryException.class);
+
+        verify(commandRepository, never()).findBySignedPayloadDigest(any(), any());
+    }
+
+    @Test
+    void submitRejectsConfirmedCommandWithoutOutcome() {
+        long deadline = 1800000600L;
+        StageCommand confirmed = new StageCommand(
+                UUID.randomUUID(), CommandType.STAGE, stationAddress, batchId, null, 2,
+                stationAddress, "0xcert", reportHash, "0xotherdigest", deadline, true,
+                CommandStatus.CONFIRMED, null, "bafy", null, null, null,
+                Instant.ofEpochSecond(1800000000L), Instant.ofEpochSecond(1800000000L));
+
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(new SignatureVerification(stationAddress, digest));
+        when(commandRepository.findBySignedPayloadDigest(any(), any())).thenReturn(Optional.empty());
+        when(commandRepository.findLatestStageCommand(any(), any(), any(Integer.class)))
+                .thenReturn(Optional.of(confirmed));
+
+        assertThatThrownBy(() -> service.submit(sampleCommand(deadline)))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code())
+                        .isEqualTo(ErrorCode.STAGE_ALREADY_COMPLETED));
+
+        verify(commandRepository, never()).saveNew(any());
     }
 
     @Test
@@ -311,5 +384,218 @@ class SubmitStageServiceTest {
         assertThatThrownBy(() -> service.submit(command))
                 .isInstanceOf(DomainException.class)
                 .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(ErrorCode.STAGE_NOT_ALLOWED));
+    }
+
+    @Test
+    void submitRejectsTokenThatDoesNotBelongToReportSigner() {
+        SubmitStageCommand command = new SubmitStageCommand(
+                batchId, sampleReport(), certificateId, reportHash, 1800000600L, "0xsig",
+                Optional.of("0x3c44cdd05a9000f507687041266870c569253590"));
+
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(
+                new SignatureVerification(stationAddress, digest));
+
+        assertThatThrownBy(() -> service.submit(command))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(ErrorCode.SIGNER_MISMATCH));
+    }
+
+    @Test
+    void submitRejectsInvalidCertificateReasons() {
+        record Case(pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason reason,
+                    ErrorCode code) {
+        }
+        var cases = java.util.List.of(
+                new Case(pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.UNTRUSTED_ISSUER,
+                        ErrorCode.CERTIFICATE_INVALID),
+                new Case(pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.WRONG_DEPLOYMENT,
+                        ErrorCode.CERTIFICATE_INVALID),
+                new Case(pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.NOT_YET_VALID,
+                        ErrorCode.CERTIFICATE_INVALID),
+                new Case(pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.REVOKED,
+                        ErrorCode.STATION_NOT_ACTIVE),
+                new Case(pl.pz.supplyblockchain.domain.StationIdentityVerification.Reason.REGISTRY_MISMATCH,
+                        ErrorCode.REGISTRY_MISMATCH));
+
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(
+                new SignatureVerification(stationAddress, digest));
+        when(commandRepository.findBySignedPayloadDigest(any(), any())).thenReturn(Optional.empty());
+
+        for (Case testCase : cases) {
+            when(certificateVerifier.verifyForReport(any(), any(), any(Integer.class))).thenReturn(
+                    new pl.pz.supplyblockchain.domain.StationIdentityVerification(
+                            testCase.reason(), "rejected", null, null, null));
+
+            assertThatThrownBy(() -> service.submit(sampleCommand(1800000600L)))
+                    .isInstanceOf(DomainException.class)
+                    .satisfies(e -> assertThat(((DomainException) e).code()).isEqualTo(testCase.code()));
+        }
+    }
+
+    @Test
+    void submitPropagatesStationRegistryUnavailability() {
+        SubmitStageCommand command = sampleCommand(1800000600L);
+
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(
+                new SignatureVerification(stationAddress, digest));
+        when(commandRepository.findBySignedPayloadDigest(any(), any())).thenReturn(Optional.empty());
+        when(certificateVerifier.verifyForReport(any(), any(), any(Integer.class))).thenThrow(
+                new StationRegistryException(StationRegistryException.Reason.UNAVAILABLE, "rpc down", null));
+
+        assertThatThrownBy(() -> service.submit(command))
+                .isInstanceOf(StationRegistryException.class);
+    }
+
+    @Test
+    void submitRejectsFailedCommandWithUnresolvedAttempts() {
+        StageCommand failed = failedCommand(1800000600L, null);
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.submit(sampleCommand(1800000600L)))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> {
+                    DomainException domain = (DomainException) e;
+                    assertThat(domain.code()).isEqualTo(ErrorCode.STAGE_ALREADY_PENDING);
+                    assertThat(domain.retryAllowedAfter()).isEqualTo(1800000600L);
+                });
+    }
+
+    @Test
+    void submitRejectsFailedCommandBeforeConfirmedDeadline() {
+        StageCommand failed = failedCommand(1800000600L, null);
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(false);
+        when(confirmedBlockTime.confirmedTimestamp()).thenReturn(1800000600L);
+
+        assertThatThrownBy(() -> service.submit(sampleCommand(1800000600L)))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> {
+                    DomainException domain = (DomainException) e;
+                    assertThat(domain.code()).isEqualTo(ErrorCode.STAGE_ALREADY_PENDING);
+                    assertThat(domain.retryAllowedAfter()).isEqualTo(1800000600L);
+                });
+    }
+
+    @Test
+    void submitAllowsFailedReplacementAfterConfirmedDeadline() {
+        StageCommand failed = failedCommand(1800000600L, null);
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(false);
+        when(confirmedBlockTime.confirmedTimestamp()).thenReturn(1800000601L);
+        when(commandRepository.saveNew(any())).thenAnswer(
+                invocation -> ((NewStageCommand) invocation.getArgument(0)).command());
+
+        StageCommand result = service.submit(sampleCommand(1800000600L));
+
+        assertThat(result.status()).isEqualTo(CommandStatus.ACCEPTED);
+    }
+
+    @Test
+    void submitAllowsReplacementAfterDefiniteSendRejection() {
+        StageCommand failed = failedCommand(1800000600L, null, true, "SEND_REJECTED");
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(true);
+        when(confirmedBlockTime.confirmedTimestamp()).thenReturn(1800000601L);
+        when(commandRepository.saveNew(any())).thenAnswer(
+                invocation -> ((NewStageCommand) invocation.getArgument(0)).command());
+
+        StageCommand result = service.submit(sampleCommand(1800000600L));
+
+        assertThat(result.status()).isEqualTo(CommandStatus.ACCEPTED);
+    }
+
+    @Test
+    void submitRejectsUnresolvedAttemptsUnlessSendWasDefinitelyRejected() {
+        StageCommand failed = failedCommand(1800000600L, null, true, "DEADLINE_EXPIRED");
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.submit(sampleCommand(1800000600L)))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).code())
+                        .isEqualTo(ErrorCode.STAGE_ALREADY_PENDING));
+    }
+
+    @Test
+    void submitUsesRetryAllowedAfterAsHigherFailedThreshold() {
+        StageCommand failed = failedCommand(1800000600L, 1800001200L);
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(false);
+        when(confirmedBlockTime.confirmedTimestamp()).thenReturn(1800000900L);
+
+        assertThatThrownBy(() -> service.submit(sampleCommand(1800000600L)))
+                .isInstanceOf(DomainException.class)
+                .satisfies(e -> assertThat(((DomainException) e).retryAllowedAfter()).isEqualTo(1800001200L));
+    }
+
+    @Test
+    void submitAllowsFailedReplacementAfterRetryAllowedAfter() {
+        StageCommand failed = failedCommand(1800000600L, 1800001200L);
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(false);
+        when(confirmedBlockTime.confirmedTimestamp()).thenReturn(1800001201L);
+        when(commandRepository.saveNew(any())).thenAnswer(
+                invocation -> ((NewStageCommand) invocation.getArgument(0)).command());
+
+        StageCommand result = service.submit(sampleCommand(1800000600L));
+
+        assertThat(result.status()).isEqualTo(CommandStatus.ACCEPTED);
+    }
+
+    @Test
+    void submitAllowsImmediateReplacementOfFailedQaRejectedCommand() {
+        StageCommand failed = failedCommand(1800000600L, null, false);
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(false);
+        when(commandRepository.saveNew(any())).thenAnswer(
+                invocation -> ((NewStageCommand) invocation.getArgument(0)).command());
+
+        StageCommand result = service.submit(sampleCommand(1800000600L));
+
+        assertThat(result.status()).isEqualTo(CommandStatus.ACCEPTED);
+        org.mockito.Mockito.verifyNoInteractions(confirmedBlockTime);
+    }
+
+    @Test
+    void submitFailsClosedWhenConfirmedTimeIsUnavailable() {
+        StageCommand failed = failedCommand(1800000600L, null);
+        stubReplacement(failed);
+        when(attemptRepository.hasUnresolvedAttempts(failed.id())).thenReturn(false);
+        when(confirmedBlockTime.confirmedTimestamp()).thenThrow(
+                new ChainUnavailableException("rpc down", null));
+
+        assertThatThrownBy(() -> service.submit(sampleCommand(1800000600L)))
+                .isInstanceOf(ChainUnavailableException.class);
+    }
+
+    private void stubReplacement(StageCommand latest) {
+        when(reportCanonicalizer.canonicalize(any())).thenReturn(
+                new CanonicalReport("{}".getBytes(), reportHash));
+        when(signatureVerifier.verifyCompletion(any(), any())).thenReturn(
+                new SignatureVerification(stationAddress, digest));
+        when(commandRepository.findBySignedPayloadDigest(any(), any())).thenReturn(Optional.empty());
+        when(commandRepository.findLatestStageCommand(any(), any(), any(Integer.class)))
+                .thenReturn(Optional.of(latest));
+    }
+
+    private StageCommand failedCommand(long deadline, Long retryAllowedAfter) {
+        return failedCommand(deadline, retryAllowedAfter, true);
+    }
+
+    private StageCommand failedCommand(long deadline, Long retryAllowedAfter, boolean qaPassed) {
+        return failedCommand(deadline, retryAllowedAfter, qaPassed, "DEADLINE_EXPIRED");
+    }
+
+    private StageCommand failedCommand(
+            long deadline, Long retryAllowedAfter, boolean qaPassed, String failureCode) {
+        return new StageCommand(
+                UUID.randomUUID(), CommandType.STAGE, stationAddress, batchId, null, 2,
+                stationAddress, certificateId, reportHash, "0xotherdigest", deadline, qaPassed,
+                CommandStatus.FAILED, null, null, failureCode, null, retryAllowedAfter,
+                Instant.ofEpochSecond(1800000000L), Instant.ofEpochSecond(1800000000L));
     }
 }

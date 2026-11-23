@@ -8,7 +8,7 @@
 #   contracts/script/deploy-local.sh --fresh    świadomie nowy kontrakt (nowy adres)
 # Zmienne (opcjonalne):
 #   RPC_URL                domyślnie http://127.0.0.1:${ANVIL_PORT:-8545}, z --docker http://anvil:8545
-#   LOCAL_RELAYER_ADDRESS  konto z RELAYER_ROLE (domyślnie Anvil #0, jak w DeploySupplyChain)
+#   LOCAL_RELAYER_ADDRESS  konto z RELAYER_ROLE (domyślnie Anvil #3; oddzielone od admina)
 #   COMPOSE_NETWORK        sieć Compose dla --docker (domyślnie pz-supply_default)
 #
 # Ponowne uruchomienie nie tworzy nowego kontraktu: jeśli ostatnie wdrożenie z broadcast/
@@ -41,11 +41,12 @@ readonly LOCAL_CHAIN_ID=31337
 # Publiczne klucze deweloperskie Anvila ("test test ... junk") - tylko dla chainId 31337.
 readonly ANVIL_ADMIN_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 readonly ANVIL_ADMIN=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 # #0: admin i wystawca
+readonly ANVIL_RELAYER=0x90F79bf6EB2c4f870365E785982E1f101E93b906 # #3: relayer
 readonly ANVIL_QA=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC    # #2: operator zmiany (QA)
 readonly FIXTURE_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3 # #0 przy nonce 0
 readonly foundry_image=ghcr.io/foundry-rs/foundry:v1.8.6          # jak w compose.yaml
 readonly DEADLINE_WINDOW=3600
-relayer="${LOCAL_RELAYER_ADDRESS:-$ANVIL_ADMIN}"
+relayer="${LOCAL_RELAYER_ADDRESS:-$ANVIL_RELAYER}"
 
 command -v jq >/dev/null || die "brak jq (macOS 15+ ma wbudowany; inaczej brew/apt install jq)"
 command -v shasum >/dev/null || die "brak shasum (potrzebny w export-deployment.sh)"
@@ -60,10 +61,18 @@ station_expires=$(jq -er '.registryCall.expiresAt' "$fixture")
 station_mask=$(jq -er '.registryCall.stageMask' "$fixture")
 
 [[ $relayer =~ ^0x[0-9a-fA-F]{40}$ ]] || die "LOCAL_RELAYER_ADDRESS ma zły format: $relayer"
-case "$(lower "$relayer")" in
-  "$(lower "$station")" | "$(lower "$ANVIL_QA")")
-    die "relayer musi mieć inny klucz niż stacja i operator QA (docs/access-control.md)" ;;
-esac
+[[ $station_mask == 15 ]] || die "certyfikat testowy musi zezwalać na etapy 0..3 (stageMask=15)"
+for address in "$ANVIL_ADMIN" "$ANVIL_QA" "$station"; do
+  [[ $address =~ ^0x[0-9a-fA-F]{40}$ ]] || die "niepoprawny adres konta lokalnego: $address"
+done
+for address in "$ANVIL_ADMIN" "$ANVIL_QA" "$station"; do
+  [[ $(lower "$relayer") != "$(lower "$address")" ]] ||
+    die "admin, relayer, stacja i QA muszą używać oddzielnych adresów"
+done
+[[ $(lower "$ANVIL_ADMIN") != "$(lower "$ANVIL_QA")" &&
+   $(lower "$ANVIL_ADMIN") != "$(lower "$station")" &&
+   $(lower "$ANVIL_QA") != "$(lower "$station")" ]] ||
+  die "admin, relayer, stacja i QA muszą używać oddzielnych adresów"
 
 if [[ $use_docker == auto ]]; then
   [[ -d $HOME/.foundry/bin ]] && PATH="$HOME/.foundry/bin:$PATH"
@@ -83,6 +92,7 @@ if [[ $use_docker == 1 ]]; then
   docker network inspect "$network" >/dev/null 2>&1 ||
     die "brak sieci $network - najpierw: cd infrastructure/local && docker compose up -d"
   RPC_URL="${RPC_URL:-http://anvil:8545}"
+  # Cache Forge jest w wolumenie: na bind mount macOS pliki odzyskiwania mogą powodować EBADF.
   # Repo pod tą samą ścieżką co na hoście; katalog domowy w wolumenie, żeby solc pobrać raz.
   # Zmienne skryptów przekazujemy jawnie, inaczej forge w kontenerze sięgnąłby do contracts/.env.
   foundry_run() {
@@ -90,6 +100,7 @@ if [[ $use_docker == 1 ]]; then
     shift
     docker run --rm --network "$network" -v "$root:$root" -w "$PWD" \
       -v pz-supply-foundry-home:/home/foundry \
+      -e FOUNDRY_CACHE_PATH=/home/foundry/local-deploy-cache \
       -e DEPLOYER_PRIVATE_KEY -e EXPECTED_CHAIN_ID -e RELAYER_ADDRESS -e QA_INSPECTOR_ADDRESS \
       -e ADMIN_ADDRESS -e MAX_DEADLINE_WINDOW -e ADMIN_PRIVATE_KEY -e SUPPLY_CHAIN_ADDRESS \
       -e STATION_ADDRESS -e STATION_ID -e STATION_EXPIRES_AT -e STATION_STAGE_MASK \
@@ -181,10 +192,20 @@ grant_if_missing() {
     --private-key "$ANVIL_ADMIN_KEY" --rpc-url "$RPC_URL" >/dev/null
   has_role "$role" "$2" || die "nie udało się nadać $1 kontu $2"
 }
+revoke_if_present() {
+  local role
+  role=$(cast call "$address" "$1()(bytes32)" --rpc-url "$RPC_URL")
+  has_role "$role" "$2" || return 0
+  info "Odbieram $1 kontu $2 (oddzielam konto relayera od admina)"
+  cast send "$address" "revokeRole(bytes32,address)" "$role" "$2" \
+    --private-key "$ANVIL_ADMIN_KEY" --rpc-url "$RPC_URL" >/dev/null
+  ! has_role "$role" "$2" || die "nie udało się odebrać $1 kontu $2"
+}
 
 has_role 0x0000000000000000000000000000000000000000000000000000000000000000 "$ANVIL_ADMIN" ||
   die "Anvil #0 nie ma DEFAULT_ADMIN_ROLE w $address - nowy kontrakt: --fresh albo restart Anvila"
 grant_if_missing RELAYER_ROLE "$relayer"
+revoke_if_present RELAYER_ROLE "$ANVIL_ADMIN"
 grant_if_missing QA_INSPECTOR_ROLE "$ANVIL_QA"
 
 info "Stacja ST-001 zgodnie z registryCall z shared/fixtures/station-certificate.json"

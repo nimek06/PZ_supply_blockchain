@@ -2,22 +2,22 @@
 
 **Cel:** lokalny indexer i kanoniczne projekcje, które potwierdzają rzeczywiste
 utworzenie partii i etap 0.
-**Status:** plan, nie raport wykonania.
+**Status:** wykonanie i odbiór techniczny zakończone; przegląd zespołowy pozostaje do potwierdzenia.
 Plan nadrzędny: [tydzień 4](../week4-plan.md), sekcja P4.1.
 Wejście: [Twój tydzień 3](../../week3/plans/adam-plan.md).
 Zakres: [wariant 1 / DEC-17](../../../../decisions/local-blockchain-scope.md).
 
 ## Zadania
 
-- [ ] W4-01 [Plan:4.1] T019: dodać lokalny `ChainEventIndexer` dla logów
+- [x] W4-01 [Plan:4.1] T019: dodać lokalny `ChainEventIndexer` dla logów
   `BatchCreated`, `StageCompleted`, `StageRejected`, od bloku wdrożenia.
   Filtrować kontrakt/deployment, zachować kolejność
   `(blockNumber, transactionIndex, logIndex)` i deduplikację.
-- [ ] W4-02 [Plan:4.1] T019: dodać persistence projekcji/checkpointu i nową
+- [x] W4-02 [Plan:4.1] T019: dodać persistence projekcji/checkpointu i nową
   migrację uzgodnioną z Mikołajem. Eventy, projekcje, wynik skorelowanego
   polecenia i checkpoint zapisywać atomowo. Odrzucenie oznacza `REJECTED`,
   bez przesunięcia etapu; samo wysłanie/receipt workera nie daje `CONFIRMED`.
-- [ ] W4-03 [Plan:4.1] T019/T024: podłączyć rzeczywiste projekcje/freshness
+- [x] W4-03 [Plan:4.1] T019/T024: podłączyć rzeczywiste projekcje/freshness
   do `BatchQueryService` i statusu polecenia. Po zmianie hash bloku usunąć
   niekanoniczne skutki i uzgodnić statusy w oknie ponownego skanu.
 
@@ -58,3 +58,19 @@ Wymagania: REQ-002/004/005/006/008/012; mapowanie w planie wspólnym.
 
 **Poza zakresem:** indexer Amoy, `finalized`, pełne API historii/paginacja
 (tygodnie 6–7) i dodatkowe demo Polygon (tydzień 10).
+
+## Postęp implementacji
+
+- W4-01–W4-03: lokalny indexer, atomowa persystencja zdarzeń/projekcji/checkpointu
+  w migracji V7, korelacja poleceń, freshness i odczyt `BatchQueryService` są
+  zaimplementowane.
+- `mvn -q verify` na dedykowanej bazie PostgreSQL 16 w Dockerze zakończył się
+  powodzeniem; obejmuje test persystencji, deduplikacji, odrzucenia etapu
+  i rollbacku po reorgu.
+- Odbiór runtime na Anvil 31337: rzeczywisty `BatchCreated` pojawił się
+  w projekcji i `GET /api/v1/batch-numbers/{batchNumber}` zwrócił
+  `nextStage: 0`, `requiredConfirmations: 1` i `stale: false`.
+  Po `evm_revert` indexer cofnął checkpoint do wspólnego bloku, usunął
+  niekanoniczny event/projekcję, a ten sam endpoint zwrócił 404.
+- Formalny przegląd przypisany w planie (Java/SQL i scenariusz reorgu)
+  nie był wykonywany w tej sesji; wymaga potwierdzenia zespołu.
