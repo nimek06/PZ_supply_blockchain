@@ -12,6 +12,7 @@ from supply_chain_simulator.scenario import (
     ScenarioError,
     default_scenarios_directory,
     load_scenario,
+    override_batch_number,
 )
 
 
@@ -136,3 +137,41 @@ def test_unknown_outcome_is_rejected(tmp_path: Path) -> None:
     data["steps"][0]["expect"]["outcome"] = "MAYBE"
     with pytest.raises(ScenarioError):
         load_scenario(write_scenario(tmp_path, data))
+
+
+def test_next_stage_and_error_code_are_optional_fields(tmp_path: Path) -> None:
+    data = base_scenario()
+    data["steps"][0]["expect"] = {"nextStage": 1}
+    scenario = load_scenario(write_scenario(tmp_path, data))
+    assert scenario.steps[0].expect.nextStage == 1
+    assert scenario.steps[0].expect.errorCode is None
+
+
+def test_negative_step_may_repeat_a_stage(tmp_path: Path) -> None:
+    """Krok negatywny nie przesuwa licznika etapów, więc może powtórzyć etap 0."""
+    data = base_scenario()
+    data["steps"] = [
+        {"stageId": 0, "expect": {"nextStage": 1}},
+        {"stageId": 0, "expect": {"httpStatus": 409, "errorCode": "STAGE_ALREADY_COMPLETED"}},
+    ]
+    scenario = load_scenario(write_scenario(tmp_path, data))
+    assert [step.stageId for step in scenario.steps] == [0, 0]
+    assert scenario.steps[1].expect.errorCode == "STAGE_ALREADY_COMPLETED"
+
+
+def test_negative_only_scenario_is_allowed(tmp_path: Path) -> None:
+    data = base_scenario()
+    data["steps"] = [{"stageId": 2, "expect": {"httpStatus": 422, "errorCode": "PROFILE_VIOLATION"}}]
+    scenario = load_scenario(write_scenario(tmp_path, data))
+    assert scenario.steps[0].expect.httpStatus == 422
+
+
+def test_override_batch_number_recomputes_batch_id() -> None:
+    scenario = override_batch_number(happy_path(), "B-2026-0010")
+    assert scenario.batchNumber == "B-2026-0010"
+    assert scenario.batch_id() == keccak256_text("B-2026-0010")
+
+
+def test_override_batch_number_rejects_bad_value() -> None:
+    with pytest.raises(ScenarioError):
+        override_batch_number(happy_path(), "2026-0010")

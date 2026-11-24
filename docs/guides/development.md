@@ -101,6 +101,27 @@ Po tygodniu 3 harness nie włącza workera/relayera, więc kroki kończą się n
 `202` (`ACCEPTED`) bez `outcome`; potwierdzony pion on-chain (worker, indexer,
 projekcje) to tydzień 4. Wyniki i jawnie otwarte punkty: [week3-summary](../planning/weekly/week3/week3-summary.md).
 
+### Pion partia → etap 0 (tydzień 4)
+
+Worker/relayer i indexer włączamy razem z backendem:
+
+```bash
+RELAYER_WORKER_ENABLED=true RELAYER_PRIVATE_KEY=<klucz Anvil #3> \
+CHAIN_INDEXER_ENABLED=true \
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+Pion wykonuje `simulator/scripts/run-vertical.sh`: operator tworzy partię przez SIWE
+(`create-batch.sh`), stacja zgłasza etap 0 i czeka na `nextStage=1` z publicznej
+projekcji. Wyniki, dowody i lista braków:
+[week4-summary](../planning/weekly/week4/week4-summary.md) oraz `simulator/scenarios/README.md`.
+
+**Stan 2026-11-24:** sender relayera (`Eip1559TransactionSigner`) podpisuje transakcję
+typu `0x04` (EIP-7702) zamiast `0x02` (EIP-1559), więc worker kończy polecenia
+`FAILED SEND_REJECTED` i automatyczny pion nie dochodzi do `nextStage=1`. Harness nie
+nadaje też `OPERATOR_ROLE` (robi to tylko Compose `deploy`). Szczegóły i poprawka:
+[week4-summary](../planning/weekly/week4/week4-summary.md).
+
 ## Komendy po inicjalizacji
 
 Uruchamiaj każdą grupę z katalogu jej modułu. Skrypty npm i entry point Python

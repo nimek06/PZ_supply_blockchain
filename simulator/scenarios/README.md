@@ -23,6 +23,43 @@ Podpisu operatora nie generuj kluczem stacji ukrytym pod inną nazwą.
 Uruchomienie: `python -m supply_chain_simulator --scenario scenarios/ebike-happy-path.yaml
 --backend-url ... --rpc-url ... --verifying-contract ... --station-key ... --certificate ...`.
 
+## Tryby i scenariusze (tydzień 4)
+
+- `ebike-happy-path.yaml`, `ebike-qa-fail.yaml` — **accept-only**: każdy krok kończy
+  się na `202` (`status=ACCEPTED`), bez `outcome` i `nextStage`. Działają bez workera.
+- `ebike-vertical.yaml` — **pion**: etap 0 partii utworzonej przez operatora i
+  czekanie, aż publiczna projekcja pokaże `nextStage=1`. Wymaga workera/relayera
+  i indexera; bez nich runner zgłosi brak potwierdzenia w limicie czasu.
+- `ebike-repeat-completed-stage.yaml` — **krok negatywny**: po potwierdzeniu etapu 0
+  ponowne zgłoszenie tego samego etapu ma dać `409 STAGE_ALREADY_COMPLETED`.
+
+Numer partii nadaje backend, więc dla pionu podaj go przez `--batch-number`
+(albo użyj `scripts/run-vertical.sh`, które tworzy partię i uruchamia scenariusz).
+
+Pola oczekiwań kroku: `httpStatus` (domyślnie `202`), `outcome` (wynik polecenia,
+wymaga tokenu), `nextStage` (potwierdzenie etapu w projekcji) i `errorCode`
+(oczekiwany kod odrzucenia dla kroku negatywnego). Krok ze `httpStatus != 202` jest
+krokiem negatywnym: nie czeka na potwierdzenie i nie przesuwa partii.
+
+## Wynik W4-11 (2026-11-24)
+
+Sprawdzone na realnym stosie (Anvil 31337, Kubo, PostgreSQL) przez `run-vertical.sh`
+oraz `cast`:
+
+| Sprawdzenie | Wynik |
+|---|---|
+| login SIWE operatora + `POST /batches` | `202`, polecenie utworzone (`58e5fa00…`) |
+| indexer: `BatchCreated` → projekcja | `GET /batch-numbers/B-2026-0100` → `nextStage: 0`, `stale: false` |
+| `completeStage` etapu 0 (podpis stacji + CID z Kubo) | `getBatch` → `nextStage = 1`; projekcja → `nextStage: 1` |
+| CID/hash | bajty z Kubo (279 B) → Keccak == `reportHash` == `stage_projections.report_hash` |
+| tryb czekania runnera | `etap 0: qaPassed=True status=ACCEPTED outcome=None nextStage=1` |
+
+**Blokada automatycznego pionu (W4-04):** sender relayera podpisuje transakcję typu
+`0x04` (EIP-7702) zamiast `0x02` (EIP-1559) i z pomieszanymi polami, więc Anvil ją
+odrzuca, a polecenia kończą `FAILED SEND_REJECTED`; żadna transakcja nie trafia do
+łańcucha. Poprawka: użyć przeciążenia EIP-1559 bez `authorizationList`. Szczegóły:
+[week4-summary](../../docs/planning/weekly/week4/week4-summary.md).
+
 ## Wynik W3-11 (2026-11-23)
 
 Kanoniczne uruchomienie: `backend/scripts/local-e2e/run-e2e.sh` (stos Compose, kontrakt,

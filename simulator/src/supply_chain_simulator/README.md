@@ -20,8 +20,8 @@ Moduły pakietu (stan 2026-11-23 - gotowe: `__init__`, `__main__`, `cli`, `model
 | `telemetry.py` | deterministyczne pomiary etapów 0..3; reguły `qaPassed`, tryb `force_qa_fail` |
 | `scenario.py` | modele scenariusza YAML (kolejne etapy, oczekiwania) i loader |
 | `chain.py` | odczyt stanu z kontraktu przez `eth_call` (`getBatch`, `getStation`, DEC-10) |
-| `client.py` | HTTP, timeout, idempotentne retry, status polecenia |
-| `runner.py` | kolejność kroków i tryb auto/interaktywny |
+| `client.py` | HTTP: zgłoszenie etapu, status polecenia, login SIWE, tworzenie partii, publiczna projekcja partii |
+| `runner.py` | kolejność kroków, tryby: accept-only, oczekiwanie na `nextStage`, kroki negatywne |
 
 Najpierw model i test podpisu, potem HTTP, na końcu pętla/scenariusze.
 Nie łącz całej aplikacji w jeden skrypt. Użyj API EIP-712 eth-account zgodnego
@@ -52,6 +52,14 @@ Modele żądań są ścisłe (`extra="forbid"`), a modele odpowiedzi przyjmują 
 pola, bo odpowiedź należy do backendu. Nazwy pól odpowiedzi są zgodne z
 `shared/schemas/openapi.yaml` (`commandId`, `type`, `status`, `statusUrl`,
 `outcome`, `retryAllowedAfter`, a powód błędu to `failureCode` - nie `errorCode`).
+
+Klient obsługuje też login SIWE (`create_challenge` + `create_session`; podpis
+EIP-191 przez `signing.sign_siwe_message` - to jedyne miejsce z `encode_defunct`),
+tworzenie partii przez operatora (`create_batch` z `Idempotency-Key`) oraz publiczny
+odczyt projekcji partii (`get_batch_projection`, bez tokenu). Runner po `202` potrafi
+poczekać na `nextStage` z publicznej projekcji (tryb pionu) albo obsłużyć krok
+negatywny (`httpStatus != 202` z oczekiwanym `errorCode`). Numer partii nadaje
+backend, dlatego CLI ma `--batch-number`.
 
 Kanoniczne uruchomienie lokalne opisuje `backend/scripts/running-local-e2e.md`
 (`backend/scripts/local-e2e/run-e2e.sh`): stawia stos, kontrakty, backend i stację,

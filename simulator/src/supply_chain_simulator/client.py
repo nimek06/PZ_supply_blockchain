@@ -54,6 +54,11 @@ DEFAULT_MAX_BACKOFF_SECONDS = 5.0
 
 STAGES_PATH = "/api/v1/batches/{batch_id}/stages"
 COMMANDS_PATH = "/api/v1/commands/{command_id}"
+BATCHES_PATH = "/api/v1/batches"
+BATCH_PATH = "/api/v1/batches/{batch_id}"
+CHALLENGES_PATH = "/api/v1/auth/challenges"
+SESSIONS_PATH = "/api/v1/auth/sessions"
+ADDRESS_PATTERN = r"^0x[0-9a-fA-F]{40}$"
 
 HTTP_OK = 200
 HTTP_ACCEPTED = 202
@@ -135,6 +140,9 @@ class CommandAccepted(ResponseModel):
     type: str | None = None
     status: str | None = None
     statusUrl: str | None = None
+    #: Wypełniane tylko dla `CREATE_BATCH` (numer i skrót nowej partii).
+    batchId: str | None = None
+    batchNumber: str | None = None
 
 
 class CommandStatus(ResponseModel):
@@ -160,6 +168,42 @@ class CommandStatus(ResponseModel):
     def is_rejected(self) -> bool:
         """Czy raport został odrzucony (`qaPassed=false`), czyli partia bez zmiany?"""
         return self.status == "CONFIRMED" and self.outcome == "REJECTED"
+
+
+class AuthChallenge(ResponseModel):
+    """`200 AuthChallenge`: wiadomość SIWE (EIP-4361) do podpisu EIP-191 i wygaśnięcie."""
+
+    challengeId: str
+    message: str
+    expiresAt: SafeInt
+
+
+class AuthSession(ResponseModel):
+    """`200 AuthSession`: token Bearer wydany raz; w bazie tylko jego skrót SHA-256."""
+
+    token: str
+    tokenType: str | None = None
+    address: str | None = None
+    expiresAt: SafeInt | None = None
+    idleTimeoutSeconds: SafeInt | None = None
+
+
+class BatchProjection(ResponseModel):
+    """Aktualność projekcji partii: ostatni zindeksowany blok i wymagane potwierdzenia."""
+
+    lastIndexedBlock: SafeInt
+    requiredConfirmations: SafeInt
+    stale: bool | None = None
+
+
+class BatchResponse(ResponseModel):
+    """`200 BatchResponse`: publiczna projekcja partii (bez logowania)."""
+
+    batchId: str
+    batchNumber: str
+    completed: bool
+    nextStage: SafeInt | None = None
+    projection: BatchProjection
 
 
 class StageSubmission(StrictModel):
@@ -331,6 +375,79 @@ class SimulatorApiClient:
         )
         return self._parse(response, CommandStatus, "200 CommandStatus")
 
+    def create_challenge(self, address: str) -> AuthChallenge:
+        """Pobiera wiadomość SIWE do podpisu (`POST /api/v1/auth/challenges`).
+
+        Challenge jest jednorazowy; adres podajemy małymi literami, tak jak
+        zapisuje go backend. Podpis tworzy `signing.sign_siwe_message` (EIP-191).
+        """
+        normalized = address.strip().lower() if isinstance(address, str) else ""
+        if not re.fullmatch(ADDRESS_PATTERN, normalized):
+            raise ValueError("address musi być adresem 0x + 40 znaków hex")
+        response = self._request(
+            "POST",
+            CHALLENGES_PATH,
+            body={"address": normalized},
+            expected_status=HTTP_OK,
+        )
+        return self._parse(response, AuthChallenge, "200 AuthChallenge")
+
+    def create_session(self, challenge_id: str, message: str, signature: str) -> AuthSession:
+        """Wymienia podpisany challenge na token Bearer (`POST /api/v1/auth/sessions`).
+
+        Token zwracamy raz; klient trzyma go w pamięci (nie w plikach ani logach).
+        """
+        text = challenge_id.strip() if isinstance(challenge_id, str) else ""
+        if not text:
+            raise ValueError("challengeId nie może być pusty")
+        if not isinstance(message, str) or not message:
+            raise ValueError("message nie może być puste")
+        response = self._request(
+            "POST",
+            SESSIONS_PATH,
+            body={"challengeId": text, "message": message, "signature": signature},
+            expected_status=HTTP_OK,
+        )
+        return self._parse(response, AuthSession, "200 AuthSession")
+
+    def create_batch(self, idempotency_key: str) -> CommandAccepted:
+        """Tworzy partię (`POST /api/v1/batches`); wymaga tokenu i `Idempotency-Key`.
+
+        Backend sam nadaje numer `B-RRRR-NNNN`; odpowiedź `202` zawiera `batchNumber`
+        i `batchId`. Ponowienie tego samego klucza z tą samą treścią zwraca to samo
+        polecenie, a z inną treścią - `409 IDEMPOTENCY_CONFLICT`.
+        """
+        if self._token is None:
+            raise ValueError("tworzenie partii wymaga tokenu Bearer operatora")
+        key = idempotency_key.strip() if isinstance(idempotency_key, str) else ""
+        if not 8 <= len(key) <= 128:
+            raise ValueError("Idempotency-Key musi mieć 8..128 znaków")
+        response = self._request(
+            "POST",
+            BATCHES_PATH,
+            body={},
+            expected_status=HTTP_ACCEPTED,
+            extra_headers={"Idempotency-Key": key},
+        )
+        return self._parse(response, CommandAccepted, "202 CommandAccepted")
+
+    def get_batch_projection(self, batch_id: str) -> BatchResponse:
+        """Odczytuje publiczną projekcję partii (`GET /api/v1/batches/{batchId}`).
+
+        Endpoint nie wymaga tokenu. `nextStage` jest `None` dla zakończonej partii,
+        a `projection.stale` mówi, czy indexer nadąża - na tej podstawie runner
+        czeka na potwierdzenie bez oznaczania niezweryfikowanego stanu jako gotowego.
+        """
+        text = batch_id.strip().lower() if isinstance(batch_id, str) else ""
+        if not re.fullmatch(HEX_32_PATTERN, text):
+            raise ValueError("batchId musi być 0x + 64 znaki hex")
+        response = self._request(
+            "GET",
+            BATCH_PATH.format(batch_id=text),
+            expected_status=HTTP_OK,
+        )
+        return self._parse(response, BatchResponse, "200 BatchResponse")
+
     def close(self) -> None:
         """Zamyka klienta HTTP, jeśli należy do tego obiektu."""
         if self._owns_client:
@@ -370,6 +487,7 @@ class SimulatorApiClient:
         *,
         body: dict[str, object] | None = None,
         expected_status: int,
+        extra_headers: dict[str, str] | None = None,
     ) -> httpx.Response:
         """Wykonuje żądanie i ponawia je identycznie po awarii przejściowej.
 
@@ -380,11 +498,14 @@ class SimulatorApiClient:
         while True:
             attempt += 1
             try:
+                headers = self._headers()
+                if extra_headers:
+                    headers.update(extra_headers)
                 response = self._client.request(
                     method,
                     self._base_url + path,
                     json=body,
-                    headers=self._headers(),
+                    headers=headers,
                 )
             except httpx.TimeoutException:
                 failure = f"timeout {self._timeout:g}s na {path}"

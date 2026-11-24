@@ -378,6 +378,112 @@ def test_command_status_url_uses_protocol_path() -> None:
     assert SimulatorApiClient("https://backend.test/").base_url == BASE_URL
 
 
+def test_create_challenge_posts_lowercased_address() -> None:
+    backend = FakeBackend(
+        httpx.Response(
+            200, json={"challengeId": "chal-1", "message": "siwe msg", "expiresAt": 1_800_000_300}
+        )
+    )
+    with backend.client() as client:
+        challenge = client.create_challenge("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
+
+    assert challenge.challengeId == "chal-1"
+    assert challenge.message == "siwe msg"
+    request = backend.requests[0]
+    assert request.method == "POST"
+    assert str(request.url) == BASE_URL + "/api/v1/auth/challenges"
+    assert json.loads(backend.bodies[0]) == {
+        "address": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+    }
+
+
+def test_create_challenge_rejects_bad_address() -> None:
+    backend = FakeBackend(httpx.Response(200, json={}))
+    with pytest.raises(ValueError):
+        backend.client().create_challenge("localhost")
+    assert backend.requests == []
+
+
+def test_create_session_returns_token() -> None:
+    backend = FakeBackend(
+        httpx.Response(200, json={"token": "tok", "tokenType": "Bearer", "address": "0xab"})
+    )
+    with backend.client() as client:
+        session = client.create_session("chal-1", "siwe msg", "0x" + "11" * 65)
+
+    assert session.token == "tok"
+    assert str(backend.requests[0].url) == BASE_URL + "/api/v1/auth/sessions"
+    assert json.loads(backend.bodies[0])["challengeId"] == "chal-1"
+
+
+def test_create_batch_sends_idempotency_key_and_reads_batch_fields() -> None:
+    response = httpx.Response(
+        202,
+        json={
+            "commandId": COMMAND_ID,
+            "type": "CREATE_BATCH",
+            "status": "ACCEPTED",
+            "statusUrl": f"/api/v1/commands/{COMMAND_ID}",
+            "batchNumber": "B-2026-0001",
+            "batchId": "0x" + "aa" * 32,
+        },
+    )
+    backend = FakeBackend(response)
+    with backend.client() as client:
+        accepted = client.create_batch("operator-intent-0001")
+
+    assert accepted.batchNumber == "B-2026-0001"
+    assert accepted.batchId == "0x" + "aa" * 32
+    request = backend.requests[0]
+    assert request.method == "POST"
+    assert str(request.url) == BASE_URL + "/api/v1/batches"
+    assert request.headers["Idempotency-Key"] == "operator-intent-0001"
+    assert request.headers["Authorization"] == "Bearer test-token"
+    assert backend.bodies[0] == b"{}"
+
+
+def test_create_batch_requires_token_and_valid_key() -> None:
+    backend = FakeBackend(httpx.Response(202, json={"commandId": COMMAND_ID}))
+    without_token = SimulatorApiClient(
+        BASE_URL, client=httpx.Client(transport=httpx.MockTransport(backend))
+    )
+
+    with pytest.raises(ValueError):
+        without_token.create_batch("operator-intent-0001")
+    with pytest.raises(ValueError):
+        backend.client().create_batch("short")
+    assert backend.requests == []
+
+
+def test_get_batch_projection_reads_public_projection() -> None:
+    response = httpx.Response(
+        200,
+        json={
+            "batchId": "0x" + "aa" * 32,
+            "batchNumber": "B-2026-0001",
+            "completed": False,
+            "nextStage": 1,
+            "projection": {"lastIndexedBlock": 12, "requiredConfirmations": 1, "stale": False},
+        },
+    )
+    backend = FakeBackend(response)
+    with backend.client() as client:
+        batch = client.get_batch_projection("0x" + "AA" * 32)
+
+    assert batch.nextStage == 1
+    assert batch.projection.stale is False
+    request = backend.requests[0]
+    assert request.method == "GET"
+    assert str(request.url) == BASE_URL + "/api/v1/batches/0x" + "aa" * 32
+
+
+def test_get_batch_projection_rejects_bad_id() -> None:
+    backend = FakeBackend(httpx.Response(200, json={}))
+    with pytest.raises(ValueError):
+        backend.client().get_batch_projection("B-2026-0001")
+    assert backend.requests == []
+
+
 def test_invalid_client_arguments_are_rejected() -> None:
     with pytest.raises(ValueError):
         SimulatorApiClient("localhost:8080")

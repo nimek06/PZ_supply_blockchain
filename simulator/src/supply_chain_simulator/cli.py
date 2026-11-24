@@ -169,6 +169,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--certificate", metavar="PATH", help="plik certyfikatu stacji (JSON)")
     parser.add_argument(
+        "--batch-number",
+        metavar="B-RRRR-NNNN",
+        help="nadpisz numer partii ze scenariusza (np. numer nadany przez backend)",
+    )
+    parser.add_argument(
         "--seed", type=int, metavar="INT", help="seed pomiarów (domyślnie z scenariusza)"
     )
     parser.add_argument(
@@ -176,6 +181,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--token-env", metavar="NAME", help="zmienna środowiskowa z tokenem Bearer (nie wypisywany)"
+    )
+    parser.add_argument(
+        "--wait-attempts",
+        type=int,
+        default=6,
+        metavar="INT",
+        help="ile razy sprawdzić potwierdzenie/status przed błędem (tryb --scenario)",
+    )
+    parser.add_argument(
+        "--wait-interval",
+        type=float,
+        default=1.0,
+        metavar="SECONDS",
+        help="przerwa między próbami potwierdzenia/statusu (tryb --scenario)",
     )
     parser.add_argument(
         "--dry-run",
@@ -324,7 +343,7 @@ def _run_mode(args: argparse.Namespace) -> int:
         load_station_key,
     )
     from supply_chain_simulator.runner import Runner, RunnerError
-    from supply_chain_simulator.scenario import ScenarioError, load_scenario
+    from supply_chain_simulator.scenario import ScenarioError, load_scenario, override_batch_number
 
     required = [
         ("--station-key", args.station_key),
@@ -353,6 +372,8 @@ def _run_mode(args: argparse.Namespace) -> int:
 
     try:
         scenario = load_scenario(args.scenario)
+        if args.batch_number:
+            scenario = override_batch_number(scenario, args.batch_number)
         station_key = load_station_key(Path(args.station_key))
         certificate = load_certificate(Path(args.certificate))
         assert_station_ready(certificate, station_key)
@@ -399,6 +420,8 @@ def _run_mode(args: argparse.Namespace) -> int:
             certificate=certificate,
             api=api,
             chain=chain,
+            poll_attempts=args.wait_attempts,
+            poll_interval=args.wait_interval,
         ).run()
     except (RunnerError, ApiError) as exc:
         print(f"error: przebieg nie powiódł się: {exc}", file=sys.stderr)
@@ -409,9 +432,12 @@ def _run_mode(args: argparse.Namespace) -> int:
 
     print(f"scenariusz {result.scenario}: partia {result.batch_id} ({len(result.steps)} kroki)")
     for step in result.steps:
+        extra = ""
+        if step.http_status != 202:
+            extra = f" http={step.http_status} error={step.error_code}"
         print(
             f"  etap {step.stage_id}: qaPassed={step.qa_passed} status={step.status} "
-            f"outcome={step.outcome} nextStage={step.next_stage}"
+            f"outcome={step.outcome} nextStage={step.next_stage}{extra}"
         )
     return EXIT_OK
 
