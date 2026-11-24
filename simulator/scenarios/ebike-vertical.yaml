@@ -1,0 +1,17 @@
+scenarioVersion: 1
+name: ebike-vertical
+description: >-
+  Pion lokalny: etap 0 partii utworzonej przez operatora i czekanie, aż publiczna
+  projekcja partii pokaże nextStage=1. Numer partii nadaje backend, więc podaj go
+  przez `--batch-number` (albo skorzystaj z `scripts/run-vertical.sh`). Wymaga
+  włączonego workera/relayera i indexera - bez nich runner zgłosi brak
+  potwierdzenia w limicie czasu, co nie jest błędem scenariusza, tylko brakiem pionu.
+batchNumber: B-2026-0001
+station:
+  reference: ST-001
+seed: 20261123
+steps:
+  - stageId: 0
+    expect:
+      httpStatus: 202
+      nextStage: 1

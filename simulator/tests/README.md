@@ -6,14 +6,17 @@ Plan: `test_models.py`, `test_signing.py`, `test_client.py`, `test_runner.py`.
 Użyj fixture'ów testowych dla zegara, seeda i testowego signera.
 Mock/stub klienta HTTP ma sprawdzać body, status, timeout i liczbę żądań.
 
-**Stan 2026-11-23:** gotowe `test_cli.py`, `test_models.py`, `test_canonical.py`,
+**Stan 2026-11-24:** gotowe `test_cli.py`, `test_models.py`, `test_canonical.py`,
 `test_signing.py`, `test_signature_vector.py`, `test_negative_fixtures.py`,
 `test_certificate.py`, `test_certificate_fixture.py`, `test_certificate_negatives.py`,
 `test_identity.py`, `test_profiles.py`, `test_telemetry.py`, `test_scenario.py`,
 `test_config.py`, `test_chain.py`, `test_runner.py`, `test_cli_scenario.py` i `test_client.py`
 (klient na transporcie `httpx.MockTransport` - bez sieci i bez prawdziwego snu).
-Pola odpowiedzi (`type`, `status`, `statusUrl`, `failureCode`) są sprawdzane wobec
-`shared/schemas/openapi.yaml`.
+Klient: pola odpowiedzi (`type`, `status`, `statusUrl`, `failureCode`) wobec
+`shared/schemas/openapi.yaml`, login SIWE (`create_challenge`/`create_session`),
+`create_batch` (wymaga tokenu i `Idempotency-Key`) i `get_batch_projection`.
+Runner: tryb oczekiwania na `nextStage` (w tym `404` przed potwierdzeniem partii,
+timeout i zakończoną partię) oraz kroki negatywne (`httpStatus` + `errorCode`).
 
 Kanoniczne uruchomienie lokalne (stos + kontrakty + backend + stacja + scenariusz)
 opisuje `backend/scripts/running-local-e2e.md`; te testy pozostają jednostkowe

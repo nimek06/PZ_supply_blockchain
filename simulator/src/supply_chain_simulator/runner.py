@@ -19,11 +19,18 @@ from dataclasses import dataclass
 
 from supply_chain_simulator.canonical import report_hash
 from supply_chain_simulator.chain import ChainReader
-from supply_chain_simulator.client import CommandStatus, SimulatorApiClient, build_stage_submission
+from supply_chain_simulator.client import (
+    ApiError,
+    CommandStatus,
+    SimulatorApiClient,
+    StageSubmission,
+    build_stage_submission,
+)
 from supply_chain_simulator.config import SimulatorConfig
 from supply_chain_simulator.identity import StationKeyFile
 from supply_chain_simulator.models import (
     Eip712Domain,
+    Report,
     StageCompletionMessage,
     StationCertificate,
 )
@@ -53,6 +60,10 @@ class StepResult:
     status: str
     outcome: str | None
     next_stage: int | None
+    #: Status HTTP odpowiedzi; dla kroku negatywnego różny od 202.
+    http_status: int = EXPECTED_HTTP_STATUS
+    #: Stabilny kod domenowy odrzucenia (dla kroków negatywnych).
+    error_code: str | None = None
 
 
 @dataclass(frozen=True)
@@ -106,16 +117,19 @@ class Runner:
         self._sleep = sleep
 
     def run(self) -> RunResult:
-        """Wykonuje wszystkie kroki scenariusza i zwraca ich wyniki."""
+        """Wykonuje wszystkie kroki scenariusza i zwraca ich wyniki.
+
+        Krok ze `expect.httpStatus != 202` jest krokiem negatywnym: zgłoszenie ma
+        zostać odrzucone (opcjonalnie konkretnym `errorCode`) i nie czeka na
+        potwierdzenie. Krok pozytywny może po `202` czekać na `nextStage`
+        (tryb E2E), na wynik polecenia (`outcome`, wymaga tokenu) albo zakończyć
+        się na samym przyjęciu (accept-only).
+        """
         batch_id = self._scenario.batch_id()
         domain = self._domain()
         results: list[StepResult] = []
 
         for step in self._scenario.steps:
-            if step.expect.httpStatus != EXPECTED_HTTP_STATUS:
-                raise RunnerError(
-                    f"etap {step.stageId}: klient obsługuje tylko status {EXPECTED_HTTP_STATUS}"
-                )
             timestamp = self._clock()
             report = generate_report(
                 step.stageId,
@@ -140,6 +154,11 @@ class Runner:
             submission = build_stage_submission(
                 report, self._certificate, deadline=deadline, signed=signed
             )
+
+            if step.expect.httpStatus != EXPECTED_HTTP_STATUS:
+                results.append(self._expect_rejection(step, batch_id, submission, report))
+                continue
+
             accepted = self._api.submit_stage(batch_id, submission)
             if step.expect.outcome is None:
                 self._check_accept_only(step, report.qaPassed)
@@ -150,7 +169,9 @@ class Runner:
                 status_text, command_id, outcome = status.status, status.commandId, status.outcome
 
             next_stage = None
-            if self._chain is not None:
+            if step.expect.nextStage is not None:
+                next_stage = self._await_next_stage(batch_id, step.expect.nextStage)
+            elif self._chain is not None:
                 next_stage = self._chain.get_batch(batch_id).next_stage
 
             results.append(
@@ -201,6 +222,73 @@ class Runner:
                 f"etap {step.stageId}: qaPassed={qa_passed} nie odpowiada trybowi "
                 f"forceQaFail={step.forceQaFail}"
             )
+
+    def _expect_rejection(
+        self, step: ScenarioStep, batch_id: str, submission: StageSubmission, report: Report
+    ) -> StepResult:
+        """Krok negatywny: zgłoszenie ma zostać odrzucone podanym statusem i kodem.
+
+        Sprawdzamy, że backend faktycznie odrzucił zgłoszenie (a nie je przyjął),
+        i że kod domenowy zgadza się z oczekiwaniem. Krok negatywny nie czeka na
+        potwierdzenie i nie przesuwa partii.
+        """
+        expected_status = step.expect.httpStatus
+        try:
+            self._api.submit_stage(batch_id, submission)
+        except ApiError as exc:
+            if exc.status != expected_status:
+                raise RunnerError(
+                    f"etap {step.stageId}: oczekiwano HTTP {expected_status}, "
+                    f"a backend zwrócił {exc.status} ({exc.code})"
+                ) from exc
+            if step.expect.errorCode is not None and exc.code != step.expect.errorCode:
+                raise RunnerError(
+                    f"etap {step.stageId}: oczekiwano kodu {step.expect.errorCode}, "
+                    f"a backend zwrócił {exc.code}"
+                ) from exc
+            return StepResult(
+                stage_id=step.stageId,
+                qa_passed=report.qaPassed,
+                command_id="",
+                status="ERROR",
+                outcome=None,
+                next_stage=None,
+                http_status=exc.status,
+                error_code=exc.code,
+            )
+        raise RunnerError(
+            f"etap {step.stageId}: oczekiwano odrzucenia HTTP {expected_status}, "
+            "a backend przyjął zgłoszenie"
+        )
+
+    def _await_next_stage(self, batch_id: str, expected: int) -> int:
+        """Czeka na potwierdzenie etapu w publicznej projekcji partii.
+
+        `GET /api/v1/batches/{batchId}` nie wymaga tokenu. `404` oznacza, że
+        indexer nie widzi jeszcze partii (np. `CREATE_BATCH` nie został jeszcze
+        potwierdzony) - ponawiamy do limitu prób. Flaga `stale` nie zatrzymuje
+        pętli; czekamy, aż projekcja pokaże oczekiwany `nextStage`.
+        """
+        last_seen: int | None = None
+        for _ in range(self._poll_attempts):
+            try:
+                batch = self._api.get_batch_projection(batch_id)
+            except ApiError as exc:
+                if exc.status != 404:
+                    raise
+            else:
+                if batch.completed:
+                    raise RunnerError(
+                        f"partia {batch_id} jest zakończona, a oczekiwano etapu {expected}"
+                    )
+                last_seen = batch.nextStage
+                if batch.nextStage == expected:
+                    return expected
+            self._sleep(self._poll_interval)
+        raise RunnerError(
+            f"etap {expected} nie został potwierdzony w limicie prób "
+            f"(ostatni nextStage={last_seen})"
+        )
 
     def _domain(self) -> Eip712Domain:
         """Domena EIP-712 z konfiguracji sieci (chainId i kontrakt wdrożenia)."""

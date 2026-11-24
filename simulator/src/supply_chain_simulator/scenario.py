@@ -31,15 +31,20 @@ class ScenarioError(ValueError):
 
 
 class StepExpectation(StrictModel):
-    """Oczekiwany wynik jednego kroku: status HTTP i opcjonalny wynik polecenia.
+    """Oczekiwany wynik jednego kroku: status HTTP, wynik polecenia i etap.
 
-    `outcome` pomijamy tam, gdzie polecenie nie osiąga `CONFIRMED` (brak workera
-    i relayera) - wtedy wystarcza `202` z `POST stages`. Gdy `outcome` jest
-    podane, runner czeka na status terminalny i porównuje wynik (tygodnie z workerem).
+    - `outcome` pomijamy tam, gdzie polecenie nie osiąga `CONFIRMED` (brak workera).
+    - `nextStage` włącza tryb E2E: runner czeka (z limitem czasu), aż publiczna
+      projekcja partii pokaże ten `nextStage` (np. 1 po ukończeniu etapu 0).
+    - `errorCode` opisuje oczekiwany kod błędu dla kroku negatywnego
+      (np. `STAGE_ALREADY_COMPLETED`, `PROFILE_VIOLATION`); taki krok nie kończy
+      się sukcesem i nie czeka na potwierdzenie.
     """
 
     httpStatus: Annotated[int, Field(ge=100, le=599)] = 202
     outcome: Literal["ACCEPTED", "REJECTED"] | None = None
+    nextStage: Annotated[int, Field(ge=0, le=4)] | None = None
+    errorCode: str | None = None
 
 
 class ScenarioStep(StrictModel):
@@ -69,11 +74,20 @@ class Scenario(StrictModel):
 
     @model_validator(mode="after")
     def _stages_are_sequential(self) -> Scenario:
+        """Etapy dodatnie (oczekujące `202`) muszą iść kolejno od 0.
+
+        Kroki negatywne (`expect.httpStatus != 202`) mogą wskazywać dowolny etap -
+        właśnie po to istnieją: sprawdzają np. powtórne zgłoszenie już ukończonego
+        etapu (`409 STAGE_ALREADY_COMPLETED`). Nie przesuwają licznika.
+        """
         expected = 0
         for step in self.steps:
+            if step.expect.httpStatus != 202:
+                continue
             if step.stageId != expected:
                 raise ValueError(
-                    f"etapy muszą być kolejne od 0; oczekiwano {expected}, jest {step.stageId}"
+                    f"etapy dodatnie muszą być kolejne od 0; oczekiwano {expected}, "
+                    f"jest {step.stageId}"
                 )
             expected += 1
         return self
@@ -81,6 +95,25 @@ class Scenario(StrictModel):
     def batch_id(self) -> str:
         """`batchId = keccak256(utf8(batchNumber))` (V2-11, DEC-12)."""
         return keccak256_text(self.batchNumber)
+
+
+def override_batch_number(scenario: Scenario, batch_number: str) -> Scenario:
+    """Zwraca scenariusz z innym numerem partii (numer nadany przez backend).
+
+    Backend nadaje numery `B-RRRR-NNNN` sekwencyjnie, więc stały numer w pliku nie
+    wystarcza dla kolejnych partii. Numer nadpisujemy przez ponowną walidację
+    modelem, żeby literówka nie przeszła po cichu.
+    """
+    if not isinstance(batch_number, str) or batch_number == scenario.batchNumber:
+        return scenario
+    data = scenario.model_dump()
+    data["batchNumber"] = batch_number
+    try:
+        return Scenario(**data)
+    except ValidationError as exc:
+        raise ScenarioError(
+            f"numer partii {batch_number!r} niezgodny z B-RRRR-NNNN: {exc}"
+        ) from exc
 
 
 def default_scenarios_directory() -> Path:

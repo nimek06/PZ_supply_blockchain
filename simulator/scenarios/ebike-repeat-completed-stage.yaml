@@ -1,0 +1,20 @@
+scenarioVersion: 1
+name: ebike-repeat-completed-stage
+description: >-
+  Po potwierdzeniu etapu 0 ponowne zgłoszenie tego samego etapu (nowy raport, inny
+  digest) ma zostać odrzucone przez backend: `409 STAGE_ALREADY_COMPLETED`. To krok
+  negatywny - nie czeka na potwierdzenie i nie przesuwa partii. Sprawdza, że
+  ukończonego etapu nie da się powtórzyć przez API.
+batchNumber: B-2026-0001
+station:
+  reference: ST-001
+seed: 20261123
+steps:
+  - stageId: 0
+    expect:
+      httpStatus: 202
+      nextStage: 1
+  - stageId: 0
+    expect:
+      httpStatus: 409
+      errorCode: STAGE_ALREADY_COMPLETED

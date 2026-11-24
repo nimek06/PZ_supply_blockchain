@@ -1,8 +1,9 @@
 """Podpisy EIP-712 `StageCompletion`, `StageApproval` i `StationCertificate`.
 
 Typy i kolejność pól są częścią specyfikacji (`docs/protocol.md`, EIP-712,
-zmiany v2: V2-01, V2-03, V2-10; certyfikat: DEC-13). Nie używamy
-`encode_defunct`/`personal_sign` jako zamiennika EIP-712.
+zmiany v2: V2-01, V2-03, V2-10; certyfikat: DEC-13). `encode_defunct`/
+`personal_sign` nie zastępuje EIP-712; jedynym wyjątkiem jest login SIWE
+(`sign_siwe_message`), który zgodnie z EIP-4361 używa EIP-191.
 Podpis certyfikatu ma własny typ i domenę wystawcy (`certificate.py`), więc nie
 da się go użyć jako `StageCompletion` ani odwrotnie.
 """
@@ -13,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from eth_account import Account
-from eth_account.messages import SignableMessage, encode_typed_data
+from eth_account.messages import SignableMessage, encode_defunct, encode_typed_data
 
 from supply_chain_simulator.canonical import keccak256_hex
 from supply_chain_simulator.models import (
@@ -213,3 +214,17 @@ def recover_certificate_issuer(
 ) -> str:
     """Odzyskuje adres wystawcy certyfikatu (checksummed)."""
     return recover_signer("StationCertificate", domain, message, signature)
+
+
+def sign_siwe_message(message: str, private_key: int) -> str:
+    """Podpis EIP-191 wiadomości SIWE (login), zwraca `0x` + 65 bajtów hex.
+
+    Login używa EIP-191 (`personal_sign`), nie EIP-712 - tak stanowi EIP-4361.
+    Backend odtwarza z tego podpisu adres i porównuje z adresem challenge'u.
+    Tego podpisu nie wolno użyć jako `StageCompletion`, `StageApproval` ani
+    certyfikatu (inne typy i domeny).
+    """
+    signed = Account.sign_message(
+        encode_defunct(text=message), private_key=private_key_hex(private_key)
+    )
+    return "0x" + bytes(signed.signature).hex()
