@@ -19,5 +19,6 @@ Podsumowania zachowują faktycznie wykonane prace, nie są przepisywane pod nowy
 | 2 | [week2-plan.md](week2/week2-plan.md) | [week2-summary.md](week2/week2-summary.md) | — | [gas (Adam)](week2/notes/adam-gas-report.md), [indexer (Adam)](week2/notes/adam-indexer-notes.md) |
 | 3 | [week3-plan.md](week3/week3-plan.md) | po odbiorze | [Adam](week3/plans/adam-plan.md), [Mikołaj](week3/plans/mikolaj-plan.md), [Kuba](week3/plans/kuba-plan.md), [Robert](week3/plans/robert-plan.md) | wpięcie certyfikatów, trwałe przyjęcie, frontend lokalny |
 | 4 | [week4-plan.md](week4/week4-plan.md) | po odbiorze | [Adam](week4/plans/adam-plan.md), [Mikołaj](week4/plans/mikolaj-plan.md), [Kuba](week4/plans/kuba-plan.md), [Robert](week4/plans/robert-plan.md) | relayer, worker, indexer i pierwszy etap E2E |
+| 5 | [week5-plan.md](week5/week5-plan.md) | po odbiorze | [Adam](week5/plans/adam-plan.md), [Mikołaj](week5/plans/mikolaj-plan.md), [Kuba](week5/plans/kuba-plan.md), [Robert](week5/plans/robert-plan.md) | pokaz w GUI: tworzenie partii i rzeczywista historia etapów; QA jako rozszerzenie |
 
 Ogólny harmonogram: [plan.md](../plan.md); podział ról: [team-split.md](../team-split.md).

@@ -62,8 +62,8 @@ Po wynikach tygodnia 2 frontend startuje w tygodniu 3:
 | T021 | API kolejki QA i `POST` approval | 2 | 3 | 5-6 |
 | T022 | Frontend: klient API, operator, tworzenie/status partii | 3 | 4 | 5 |
 | T023 | Frontend: panel QA, podpis `StageApproval`, sieć/odmowa portfela | 3 | 1 | 6 |
-| T024 | API historii i projekcji (publiczne DTO, paginacja) | 1 | 2 | 6-7 |
-| T025 | Paszport: oś czasu, QR, weryfikacja integralności | 3 | 4 | 7 |
+| T024 | API historii i projekcji (publiczne DTO, paginacja) | 1 | 2 | 5 (historia na pokaz), 6-7 (domknięcie) |
+| T025 | Paszport: oś czasu, QR, weryfikacja integralności | 3 | 4 | 5 (podstawowa historia), 7 (domknięcie i integralność) |
 | T026 | Wznowienie: reguła zastępowania, CLI ponowienia, testy wygaśnięcia | 2 | 1, 4 | 6-7 |
 | T027 | Testy restartu, konkurencji, reorg, certyfikatów, dwóch podpisów | 4 | autorzy modułów | 7-9 |
 | T028 | CI w `.github/workflows/` (szkielet od osoby 4 w tyg. 1) | 1 | 4 | 2-9 |

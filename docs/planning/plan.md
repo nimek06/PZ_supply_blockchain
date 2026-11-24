@@ -63,8 +63,9 @@ T026 jest zadaniem wykonawczym bez blokady decyzyjnej.
 ## 2. Harmonogram i punkty odbioru
 
 Kolumny „Osoba” wynikają z [team-split](team-split.md). Tygodnie 1–2 są historyczne;
-szczegóły dalszej pracy: [tydzień 3](weekly/week3/week3-plan.md)
-i [tydzień 4](weekly/week4/week4-plan.md).
+szczegóły dalszej pracy: [tydzień 3](weekly/week3/week3-plan.md),
+[tydzień 4](weekly/week4/week4-plan.md) i
+[tydzień 5](weekly/week5/week5-plan.md).
 
 | Tydzień | Wspólny wynik | Osoba 1 - kontrakt, indexer, CI | Osoba 2 - backend | Osoba 3 - schematy/Java/infra (tyg. 1), potem frontend | Osoba 4 - symulator/testy/dokumentacja |
 |---|---|---|---|---|---|
@@ -72,16 +73,16 @@ i [tydzień 4](weekly/week4/week4-plan.md).
 | 2 | zmergowane API, profile, certyfikaty, Kubo i scenariusze; frontend odłożony | T010 (weryfikator), ABI parity, invariant/gas, projekt indexera | auth, partie, profile, migracje | Kubo, OpenAPI, Compose, fixture'y | generatory, certyfikaty, runner i scenariusze |
 | 3 | domknięcie lokalnego przyjęcia i start frontendu | T010 (wpięcie), T013, kontrakt odbioru T019 | T011/T014/T015: integracja i luki, kolejka | T005/T032, TS: wektor, SIWE i widoki na fixture'ach | T020: dopasowanie scenariuszy, dry-run/accept-only |
 | 4 | pierwszy lokalny pion: partia i etap 0 potwierdzone | T019: start indexera/projekcji i reorg | T016 (integracja Kubo), T017, T018 (start) | odczyty API, statusy, obsługa lokalnego portfela | T020: etap 0 E2E i scenariusze negatywne |
-| 5 | **lokalny pionowy MVP**, kolejne etapy i kolejka QA | T019 (dokończenie) | T018, T021 (start) | T022 | partia do QA, QA fail; pełne zamknięcie QA po podłączeniu T021/T023 |
-| 6 | pełna kontrola dwóch kluczy | T024 (historia) | T021, T026 (start) | T023 (podpis approval) | scenariusze brakujących podpisów |
-| 7 | publiczny paszport i wznowienie | T024 | T026 | T025 (QR, integralność) | T027 (start) |
+| 5 | **pokaz w GUI:** utworzenie partii i historia etapów 0–1 | T019, przyspieszona część T024 (historia API) | T018, T021 (start po pokazie) | T022, podstawowy widok historii T025 | symulator dla partii z GUI i odbiór pokazu; QA jako rozszerzenie |
+| 6 | pełna kontrola dwóch kluczy | T024 (pozostała część) | T021, T026 (start) | T023 (podpis approval) | scenariusze brakujących podpisów |
+| 7 | pełny publiczny paszport i wznowienie | T024 (domknięcie) | T026 | T025 (QR, integralność i domknięcie) | T027 (start) |
 | 8 | odporność na restart | poprawki reguł, reorg testy | retry i odzysk | prezentacja awarii/statusów | awarie i konkurencja |
 | 9 | odbiór lokalny | fuzz/role/deadline | migracje i auth tests | UI/E2E/accessibility | pełna macierz integracyjna |
 | 10 | próba lokalnego demo + dodatkowe demo samego kontraktu Amoy | T029: skrypt partii 0..3, tx/explorer | lokalny backend i odzysk | lokalny UI/portfel/QR | próba prezentacji, przegląd skryptu Amoy |
 | 11 | bufor poprawek | usuwanie błędów | usuwanie błędów | UX/mobile | regresja i raport |
 | 12 | demonstracja i dokumentacja | opis kontraktu | instrukcja uruchomienia | instrukcja użytkownika | spójny scenariusz, wyniki i ograniczenia |
 
-Tydzień 5 to działający przepływ minimalny, nie pełna gotowość UI.
+Tydzień 5 daje pokazowy przepływ GUI z podstawową historią, nie pełny paszport.
 Obsługa reguł dwóch kluczy istnieje w kontrakcie wcześniej; tydzień 6 spina
 ją z wygodnym panelem operatora. Nie demonstruj kontroli bez drugiego klucza
 jako ukończonego wymagania.
